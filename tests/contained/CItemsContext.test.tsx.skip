@@ -1,0 +1,99 @@
+/* eslint-disable no-undefined */
+import { CItemsContextType, useCItems } from '@/contained/CItemsContext';
+import { Item } from '@fjell/core';
+import { renderHook } from '@testing-library/react';
+import React, { ReactNode } from 'react';
+
+interface ContainerType extends Item<'container'> {
+    whatever: string;
+}
+
+interface TestType extends Item<'test', 'container'> {
+    stuff: string;
+}
+
+interface TestItemProviderContextType extends CItemsContextType<TestType, 'test', 'container'> {}
+
+const mockContextValue: TestItemProviderContextType = {
+  name: 'test',
+  items: [],
+  isLoading: false,
+  isCreating: false,
+  isUpdating: false,
+  isRemoving: false,
+  pkType: 'test',
+  create: jest.fn(),
+  update: jest.fn(),
+  remove: jest.fn(),
+  all: jest.fn(),
+  one: jest.fn(),
+  allAction: jest.fn(),
+  find: jest.fn(),
+  actions: {},
+  parentItem: {} as ContainerType,
+  locations: [{kt: 'container', lk: '1-1-1-1-1'}],
+};
+
+const TestContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
+TestContext.displayName = 'TestContext';
+
+describe('useCItems', () => {
+  it('should return context value if used within a provider', () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestContext.Provider value={mockContextValue}>{children}</TestContext.Provider>
+    );
+
+    const { result } = renderHook(() => useCItems(TestContext), { wrapper });
+    expect(result.current).toBe(mockContextValue);
+  });
+
+  it('should throw error when used outside of provider', () => {
+    expect(() => {
+      renderHook(() => useCItems(TestContext));
+    }).toThrow(`his TestContext hook must be used within the appropriate provider.`);
+  });
+
+  it('should expose parent locations', () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestContext.Provider value={mockContextValue}>{children}</TestContext.Provider>
+    );
+
+    const { result } = renderHook(() => useCItems(TestContext), { wrapper });
+    expect(result.current.locations).toEqual([{kt: 'container', lk: '1-1-1-1-1'}]);
+  });
+
+  it('should expose CRUD operations', () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestContext.Provider value={mockContextValue}>{children}</TestContext.Provider>
+    );
+
+    const { result } = renderHook(() => useCItems(TestContext), { wrapper });
+    expect(result.current.create).toBeDefined();
+    expect(result.current.update).toBeDefined();
+    expect(result.current.remove).toBeDefined();
+    expect(result.current.all).toBeDefined();
+    expect(result.current.one).toBeDefined();
+  });
+
+  it('should expose loading states', () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestContext.Provider value={mockContextValue}>{children}</TestContext.Provider>
+    );
+
+    const { result } = renderHook(() => useCItems(TestContext), { wrapper });
+    expect(result.current.isLoading).toBeDefined();
+    expect(result.current.isCreating).toBeDefined();
+    expect(result.current.isUpdating).toBeDefined();
+    expect(result.current.isRemoving).toBeDefined();
+  });
+
+  it('should handle undefined contextInstance', () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestContext.Provider value={undefined}>{children}</TestContext.Provider>
+    );
+
+    expect(() => {
+      renderHook(() => useCItems(TestContext), { wrapper });
+    }).toThrow('This TestContext hook must be used within the appropriate provider.');
+  });
+});

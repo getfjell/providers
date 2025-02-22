@@ -1,0 +1,516 @@
+/* eslint-disable max-lines */
+
+import { AItemContext } from '@/AItemContext';
+import { useAItem } from '@/AItemProvider';
+import { useCItemAdapter } from '@/contained/CItemAdapter';
+import { CItemAdapterContext, CItemAdapterContextType } from '@/contained/CItemAdapterContext';
+import { CItemContext, CItemContextType, useCItem } from '@/contained/CItemContext';
+import { CItemQuery } from '@/contained/CItemQuery';
+import { CacheMap } from '@fjell/cache';
+import { ComKey, Item, ItemQuery, TypesProperties } from '@fjell/core';
+import { render, waitFor } from '@testing-library/react';
+import React from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+
+jest.mock('@/contained/CItemAdapter');
+jest.mock('@/AItemProvider');
+
+interface TestItem extends Item<'test', 'container'> {
+  name: string;
+}
+
+describe('CItemQuery', () => {
+
+  let item: TestItem;
+  let key: ComKey<"test", "container">;
+  let mockAdapter: jest.Mocked<CItemAdapterContextType<TestItem, 'test', 'container'>>;
+  let mockCacheMap: jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
+  let adapterContext: React.Context<CItemAdapterContextType<TestItem, 'test', 'container'>>;
+  let parentContext: React.Context<AItemContext<Item<"container">, "container">>;
+  let testContext: React.Context<CItemContextType<TestItem, 'test', 'container'>>;
+
+  let TestItemQuery: React.FC<{
+    children: React.ReactNode;
+    query?: ItemQuery;
+    notFound?: React.ReactNode;
+    create?: TypesProperties<TestItem, 'test', 'container'>;
+  }>;
+  let TestItemRender: React.FC;
+
+  beforeEach(() => {
+
+    key = {
+      kt: 'test', pk: '1-1-1-1-1',
+      loc: [{ kt: 'container', lk: '2-2-2-2-2' }],
+    } as unknown as ComKey<"test", "container">;
+
+    item = {
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      name: 'Test Item',
+    } as unknown as TestItem
+    
+    // @ts-ignore
+    mockCacheMap = {
+      get: jest.fn(),
+    };
+
+    mockAdapter = {
+      name: 'test',
+      get: jest.fn(),
+      action: jest.fn(),
+      find: jest.fn(),
+      cacheMap: mockCacheMap,
+      pkType: 'test',
+      all: jest.fn(),
+      one: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+      allAction: jest.fn(),
+      retrieve: jest.fn(),
+    };
+    
+    const mockParentAdapter = {
+      locations: [{ kt: 'container', lk: 'location1' }],
+      item: { id: 'parent1', name: 'Parent Item' },
+    };
+  
+    (useCItemAdapter as jest.Mock).mockReturnValue(mockAdapter);
+    (useAItem as jest.Mock).mockReturnValue(mockParentAdapter);
+
+    // @ts-ignore - this is a mock
+    adapterContext =
+    // eslint-disable-next-line no-undefined
+    React.createContext<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+    // @ts-ignore - this is a mock
+    parentContext =
+    // eslint-disable-next-line no-undefined
+    React.createContext<AItemContext<Item<"container">, "container"> | undefined>(undefined);
+    // @ts-ignore - this is a mock
+    testContext =
+    // eslint-disable-next-line no-undefined
+    React.createContext<CItemContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+
+    TestItemQuery = (
+      {
+        children,
+        query,
+        notFound,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+        notFound?: React.ReactNode;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: true,
+        notFound,
+      });
+    };
+
+    TestItemRender = () => {
+      const { item } = useCItem<TestItem, 'test', 'container'>(
+        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+      );
+      return <div>{item ? item?.name : 'No Item'}</div>;
+    };
+
+  });
+
+  it('should render children', async () => {
+  
+    mockCacheMap.get.mockReturnValue(item);
+    mockAdapter.one.mockReturnValue(Promise.resolve(item));
+
+    const { getByText } = render(
+      <TestItemQuery query={{}}>
+        <div>placeholder</div>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('Test Item')).toBeInTheDocument();
+    });
+  });
+ 
+  it('should render children', async () => {
+    mockCacheMap.get.mockReturnValue(item);
+    mockAdapter.one.mockReturnValue(Promise.resolve(item));
+
+    const { getByText } = render(
+      <TestItemQuery>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('No Item')).toBeInTheDocument();
+    });
+  });
+
+  it('should render notfound', async () => {
+  
+    TestItemQuery = (
+      {
+        children,
+        query,
+        notFound,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+        notFound?: React.ReactNode;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: false,
+        notFound,
+      });
+    };
+    
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockReturnValue(Promise.resolve(null));
+
+    const { getByText } = render(
+      <TestItemQuery notFound={<div>Not Found</div>}>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('Not Found')).toBeInTheDocument();
+    });
+  });
+
+  it('should invoke error boundary', async () => {
+  
+    TestItemQuery = (
+      {
+        children,
+        query,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: false,
+      });
+    };
+    
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockReturnValue(Promise.resolve(null));
+
+    const { getByText } = render(
+      <ErrorBoundary fallbackRender={() => <div>Error Thrown</div>}>
+        <TestItemQuery query={{}}>
+          <TestItemRender />
+        </TestItemQuery>
+      </ErrorBoundary>
+    );
+
+    await waitFor(() => {
+      expect(getByText('Error Thrown')).toBeInTheDocument();
+    });
+  });
+
+  it('should create an item', async () => {
+
+    item = {
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      name: 'Test Item Created',
+    } as unknown as TestItem
+
+    TestItemQuery = (
+      {
+        children,
+        query,
+        create,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+        create?: TypesProperties<TestItem, 'test', 'container'>;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: false,
+        create,
+      });
+    };
+    
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockReturnValue(Promise.resolve(null));
+    mockAdapter.create.mockReturnValue(Promise.resolve(item));
+    mockCacheMap.get.mockReturnValue(item);
+
+    const { getByText } = render(
+      <TestItemQuery query={{}} create={{ name: 'Test Item Created' }}>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('Test Item Created')).toBeInTheDocument();
+    });
+  });
+
+  it('should create an item after an exception', async () => {
+
+    item = {
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      name: 'Test Item Created',
+    } as unknown as TestItem
+
+    TestItemQuery = (
+      {
+        children,
+        query,
+        create,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+        create?: TypesProperties<TestItem, 'test', 'container'>;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: false,
+        create,
+      });
+    };
+    
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockImplementation(() => { throw new Error('Test Error'); });
+    mockAdapter.create.mockReturnValue(Promise.resolve(item));
+    mockCacheMap.get.mockReturnValue(item);
+
+    const { getByText } = render(
+      <TestItemQuery query={{}} create={{ name: 'Test Item Created' }}>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('Test Item Created')).toBeInTheDocument();
+    });
+  });
+
+  it('should skip an optional item after an exception', async () => {
+
+    item = {
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      name: 'Test Item',
+    } as unknown as TestItem
+
+    TestItemQuery = (
+      {
+        children,
+        query,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: true,
+      });
+    };
+    
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockImplementation(() => { throw new Error('Test Error'); });
+    mockAdapter.create.mockReturnValue(Promise.resolve(item));
+    mockCacheMap.get.mockReturnValue(item);
+
+    const { getByText } = render(
+      <TestItemQuery query={{}}>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('No Item')).toBeInTheDocument();
+    });
+  });
+
+  it('should throw error if no create is provided and error is thrown on a non-optional item', async () => {
+
+    item = {
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      name: 'Test Item',
+    } as unknown as TestItem
+
+    TestItemQuery = (
+      {
+        children,
+        query,
+      }: {
+        children: React.ReactNode;
+        query?: ItemQuery;
+      }
+    ) => {
+      return CItemQuery<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: false,
+      });
+    };
+    
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockImplementation(() => { throw new Error('Error'); });
+    mockAdapter.create.mockReturnValue(Promise.resolve(item));
+    mockCacheMap.get.mockReturnValue(item);
+
+    const { getByText } = render(
+      <ErrorBoundary fallbackRender={() => <div>Error Thrown</div>}>
+        <TestItemQuery query={{}}>
+          <TestItemRender />
+        </TestItemQuery>
+      </ErrorBoundary>
+    );
+
+    await waitFor(() => {
+      expect(getByText('Error Thrown')).toBeInTheDocument();
+    });
+  });
+
+  it('should skip an optional item', async () => {
+
+    item = {
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      name: 'Test Item',
+    } as unknown as TestItem;
+
+    TestItemQuery = (
+      {
+        children,
+        query,
+      }: {
+      children: React.ReactNode;
+      query?: ItemQuery;
+    }
+    ) => {
+      return CItemQuery<TestItem, "test", "container">({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        children,
+        query,
+        optional: true,
+      });
+    };
+  
+    //    mockCacheMap.get.mockReturnValue(undefined);
+    mockAdapter.one.mockReturnValue(Promise.resolve(null));
+    mockAdapter.create.mockReturnValue(Promise.resolve(item));
+    mockCacheMap.get.mockReturnValue(item);
+
+    const { getByText } = render(
+      <TestItemQuery query={{}}>
+        <TestItemRender />
+      </TestItemQuery>
+    );
+
+    await waitFor(() => {
+      expect(getByText('No Item')).toBeInTheDocument();
+    });
+  });
+});
+

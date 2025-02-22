@@ -1,0 +1,199 @@
+/* eslint-disable no-undefined */
+import { AItemContext } from '@/AItemContext';
+import { useAItem } from '@/AItemProvider';
+import { useCItemAdapter } from '@/contained/CItemAdapter';
+import { CItemAdapterContextType } from '@/contained/CItemAdapterContext';
+import { CItemsContextType, useCItems } from '@/contained/CItemsContext';
+import { CItemsProvider } from '@/contained/CItemsProvider';
+import { CacheMap } from '@fjell/cache';
+import { Item } from '@fjell/core';
+import { render, renderHook, waitFor } from '@testing-library/react';
+import React, { ReactNode } from 'react';
+
+jest.mock('@/contained/CItemAdapter');
+jest.mock('@/AItemProvider');
+
+interface TestItem extends Item<'test', 'container'> {
+  name: string;
+}
+
+describe('CItemsProvider', () => {
+
+  let mockCacheMap: CacheMap<TestItem, 'test', 'container', never, never, never, never>;
+  let mockAdapter: CItemAdapterContextType<TestItem, 'test', 'container'>;
+  let mockParentAdapter: AItemContext<Item<"container">, "container">;
+
+  let adapterContext: React.Context<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>;
+  let parentContext: React.Context<AItemContext<Item<"container">, "container"> | undefined>;
+  let TestContext: React.Context<CItemsContextType<TestItem, 'test', 'container'> | undefined>;
+
+  let TestItemsProvider: React.FC<{ children: React.ReactNode }>;
+  let useTestItems: () => CItemsContextType<TestItem, 'test', 'container'>;
+  beforeEach(() => {
+
+    mockCacheMap = {
+      get: jest.fn(),
+      set: jest.fn(),
+      delete: jest.fn(),
+      has: jest.fn(),
+      size: jest.fn(),
+    } as unknown as jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
+
+    mockAdapter = {
+      cacheMap: mockCacheMap,
+      pkType: 'test',
+      all: jest.fn(),
+      one: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+      allAction: jest.fn(),
+    } as unknown as CItemAdapterContextType<TestItem, 'test', 'container'>;
+    
+    mockParentAdapter = {
+      locations: [{ kt: 'container', lk: 'location1' }],
+      item: { id: 'parent1', name: 'Parent Item' },
+    } as unknown as AItemContext<Item<"container">, "container">;
+
+    (useCItemAdapter as jest.Mock).mockReturnValue(mockAdapter);
+    (useAItem as jest.Mock).mockReturnValue(mockParentAdapter);
+
+    adapterContext =
+    React.createContext<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+    parentContext =
+    React.createContext<AItemContext<Item<"container">, "container"> | undefined>(undefined);
+    TestContext =
+    React.createContext<CItemsContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+
+    TestItemsProvider = (
+      {
+        children,
+      }: {
+        children: React.ReactNode;
+      }
+    ) => {
+      return CItemsProvider<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext,
+        context: TestContext,
+        children,
+      });
+    };
+
+    useTestItems = () =>
+      useCItems<TestItem, 'test', 'container'>(TestContext) as CItemsContextType<TestItem, 'test', 'container'>;
+  });
+
+  it('should render children', () => {
+    const { getByText } = render(
+      <TestItemsProvider>
+        <div>Child Component</div>
+      </TestItemsProvider>
+    );
+
+    expect(getByText('Child Component')).toBeInTheDocument();
+  });
+
+  it('create', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsProvider>
+        {children}
+      </TestItemsProvider>
+    );
+
+    const { result } =
+    renderHook(() => useTestItems(), { wrapper });
+
+    await waitFor(async () => {
+      await result.current.create({ name: 'test' });
+    });
+    expect(mockAdapter.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('update', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsProvider>
+        {children}
+      </TestItemsProvider>
+    );
+
+    const { result } = renderHook(() => useTestItems(), { wrapper });
+
+    await waitFor(async () => {
+      await result.current.update({
+        kt: 'test', pk: '1-1-1-1-1',
+        loc: [{ kt: 'container', lk: '2-2-2-2-2'}]
+      }, { name: 'test' });
+    });
+    expect(mockAdapter.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('remove', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsProvider>
+        {children}
+      </TestItemsProvider>
+    );
+
+    const { result } = renderHook(() => useTestItems(), { wrapper });
+
+    await waitFor(async () => {
+      await result.current.remove({
+        kt: 'test', pk: '1-1-1-1-1',
+        loc: [{ kt: 'container', lk: '2-2-2-2-2'}]
+      });
+    });
+    expect(mockAdapter.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('all', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsProvider>
+        {children}
+      </TestItemsProvider>
+    );
+
+    const { result } = renderHook(() => useTestItems(), { wrapper });
+
+    await waitFor(async () => {
+      await result.current.all();
+    });
+    expect(mockAdapter.all).toHaveBeenCalledTimes(1);
+  });
+
+  it('one', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsProvider>
+        {children}
+      </TestItemsProvider>
+    );
+
+    const { result } = renderHook(() => useTestItems(), { wrapper });
+
+    await waitFor(async () => {
+      await result.current.one();
+    });
+    expect(mockAdapter.one).toHaveBeenCalledTimes(1);
+  });
+
+  it('allAction', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsProvider>
+        {children}
+      </TestItemsProvider>
+    );
+
+    const { result } = renderHook(() => useTestItems(), { wrapper });
+
+    await waitFor(async () => {
+      await result.current.allAction('whatever', {});
+    });
+    expect(mockAdapter.allAction).toHaveBeenCalledTimes(1);
+  });
+
+});
