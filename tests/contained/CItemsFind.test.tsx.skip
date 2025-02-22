@@ -1,0 +1,132 @@
+import { AItemContext } from '@/AItemContext';
+import { useAItem } from '@/AItemProvider';
+import { useCItemAdapter } from '@/contained/CItemAdapter';
+import { CItemAdapterContextType } from '@/contained/CItemAdapterContext';
+import { CItemsContextType } from '@/contained/CItemsContext';
+import { CItemsFind } from '@/contained/CItemsFind';
+import { CacheMap } from '@fjell/cache';
+import { Item, LocKeyArray } from '@fjell/core';
+import { render } from '@testing-library/react';
+import React from 'react';
+
+jest.mock('@/contained/CItemAdapter');
+jest.mock('@/AItemProvider');
+
+interface TestItem extends Item<'test', 'container'> {
+  name: string;
+}
+
+describe('CItemsFind', () => {
+
+  let mockCacheMap: jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
+  let mockAdapter: CItemAdapterContextType<TestItem, 'test', 'container'>;
+  let mockParentAdapter: AItemContext<Item<"container">, "container">;
+
+  let adapterContext: React.Context<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>;
+  let parentContext: React.Context<AItemContext<Item<"container">, "container"> | undefined>;
+  let testContext: React.Context<CItemsContextType<TestItem, 'test', 'container'> | undefined>;
+
+  let TestItemsFind: React.FC<{ children?: React.ReactNode }>;
+  beforeEach(() => {
+    jest.resetAllMocks();
+
+    mockCacheMap = {
+      get: jest.fn(),
+      set: jest.fn(),
+      delete: jest.fn(),
+      has: jest.fn(),
+      size: jest.fn(),
+    } as unknown as jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
+
+    mockAdapter = {
+      cacheMap: mockCacheMap,
+      pkType: 'test',
+      all: jest.fn(),
+      one: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+      allAction: jest.fn(),
+      find: jest.fn(),
+      name: 'mockAdapter',
+      get: jest.fn(),
+      retrieve: jest.fn(),
+      action: jest.fn(),
+    } as unknown as CItemAdapterContextType<TestItem, 'test', 'container'>;
+    
+    mockParentAdapter = {
+      locations: [{ kt: 'container', lk: 'location1' }] as LocKeyArray<'container'>,
+      item: { id: 'parent1', name: 'Parent Item' },
+    } as unknown as AItemContext<Item<"container">, "container">;
+
+    (useCItemAdapter as jest.Mock).mockReturnValue(mockAdapter);
+    (useAItem as jest.Mock).mockReturnValue(mockParentAdapter);
+    
+    adapterContext =
+      // eslint-disable-next-line no-undefined
+      React.createContext<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+    parentContext =
+      // eslint-disable-next-line no-undefined
+      React.createContext<AItemContext<Item<"container">, "container"> | undefined>(undefined);
+    testContext =
+      // eslint-disable-next-line no-undefined
+      React.createContext<CItemsContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+    
+    TestItemsFind = (
+      {
+        children,
+      }: {
+        children?: React.ReactNode;
+      }
+    ) => {
+      return CItemsFind<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext,
+        context: testContext,
+        children,
+        finder: 'testFinder',
+        finderParams: {},
+      });
+    };
+
+  });
+
+  it('should render children', () => {
+    const { getByText } = render(
+      <TestItemsFind>
+        <div>Child Component</div>
+      </TestItemsFind>
+    );
+
+    expect(getByText('Child Component')).toBeInTheDocument();
+  });
+
+  it('test with default children and finder params', () => {
+
+    TestItemsFind = () => {
+      return CItemsFind<
+        TestItem,
+        "test",
+        "container"
+      >({
+        name: 'test',
+        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext,
+        context: testContext,
+        finder: 'testFinder',
+      });
+    };
+
+    render(
+      <TestItemsFind>
+      </TestItemsFind>
+    );
+
+  });
+
+});
