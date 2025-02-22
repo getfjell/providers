@@ -1436,60 +1436,60 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fjell/cache@npm:^4.4.0":
-  version: 4.4.0
-  resolution: "@fjell/cache@npm:4.4.0"
+"@fjell/cache@npm:^4.4":
+  version: 4.4.1
+  resolution: "@fjell/cache@npm:4.4.1"
   dependencies:
-    "@fjell/client-api": "npm:^4.3.0"
-    "@fjell/core": "npm:^4.3.1"
-    "@fjell/http-api": "npm:^4.3.0"
-    "@fjell/logging": "npm:^4.3.4"
+    "@fjell/client-api": "npm:^4.3"
+    "@fjell/core": "npm:^4.3"
+    "@fjell/http-api": "npm:^4.3"
+    "@fjell/logging": "npm:^4.3"
     d3: "npm:^7.9.0"
     dayjs: "npm:^1.11.13"
     react: "npm:18.3.1"
-  checksum: 10c0/9f4dc624aeb2f278aa5b6986846320e35f9a9789b30bf4a173eabd59f8c43df8d19df4c7e818f79fb672299ad72b23838c7d9fbf814bf283201391bbc7874727
+  checksum: 10c0/5a23270bc39003aa41bf33b50c2006cf6a3abc28434011f547ad1335cb57a42240966dc37e717e72190441261c9e4c0c38dc7cf959397689ddafb5042e4f6418
   languageName: node
   linkType: hard
 
-"@fjell/client-api@npm:^4.3.0":
-  version: 4.3.0
-  resolution: "@fjell/client-api@npm:4.3.0"
-  dependencies:
-    "@fjell/core": "npm:^4.3.1"
-    "@fjell/http-api": "npm:^4.3.0"
-    "@fjell/logging": "npm:^4.3.4"
-  checksum: 10c0/530a30e36ff541608577f56113aefe14ddfe82c5a8bb4eecb0a090cd15a6388620ccca92199ad770872d8a5daa0adcc8eac2674e08868aa005bf562c43f9d40b
-  languageName: node
-  linkType: hard
-
-"@fjell/core@npm:^4.3.1":
+"@fjell/client-api@npm:^4.3":
   version: 4.3.1
-  resolution: "@fjell/core@npm:4.3.1"
+  resolution: "@fjell/client-api@npm:4.3.1"
   dependencies:
-    "@fjell/logging": "npm:^4.3.4"
+    "@fjell/core": "npm:^4.3"
+    "@fjell/http-api": "npm:^4.3"
+    "@fjell/logging": "npm:^4.3"
+  checksum: 10c0/c87e6a8feaf4e47c8f869961efbf57e32dda6f96299950ce68b0be9d5288b318cb6dd28ec6a828f16371c712b0f27972815bcbfc82f46aee020b78eb703b657a
+  languageName: node
+  linkType: hard
+
+"@fjell/core@npm:^4.3":
+  version: 4.3.2
+  resolution: "@fjell/core@npm:4.3.2"
+  dependencies:
+    "@fjell/logging": "npm:^4.3"
     flatted: "npm:^3.3.3"
     luxon: "npm:^3.5.0"
-  checksum: 10c0/a007891960d14b0136e45fd4d246b3c4b29d2624d7d231bc69ba794dd1ca583ec0ccc457bcf10ec75edb5d4856b333923c18227a9ff0545583f46898ee750af0
+  checksum: 10c0/63490c0999b597895ddc4d13bbabf70605c9b9210368025b2618cb6f46bc72b3dd9039b1fbb9f67f5ac8fbb5132f571b0201ea9691925177e99dd63c2c901deb
   languageName: node
   linkType: hard
 
-"@fjell/http-api@npm:^4.3.0":
-  version: 4.3.0
-  resolution: "@fjell/http-api@npm:4.3.0"
+"@fjell/http-api@npm:^4.3":
+  version: 4.3.3
+  resolution: "@fjell/http-api@npm:4.3.3"
   dependencies:
-    "@fjell/logging": "npm:^4.3.4"
-  checksum: 10c0/b101b3f7bf1c1507dca86dfb6cf97d774234f3142b9a5849469d4efeb1e4ddb29e96679de9411aefc920f66eb3f90380df2f280a8472ee82af153618c9ccf40e
+    "@fjell/logging": "npm:^4.3"
+  checksum: 10c0/7141aac73af2b99aa44fb788de432c386f8b9f3395682c1d23823b0c2e2c974471a95920a7de3f008e07eca30ae686f2bd569ae64eda56927b599c661bf9197c
   languageName: node
   linkType: hard
 
-"@fjell/logging@npm:^4.3.4":
-  version: 4.3.4
-  resolution: "@fjell/logging@npm:4.3.4"
+"@fjell/logging@npm:^4.3":
+  version: 4.3.8
+  resolution: "@fjell/logging@npm:4.3.8"
   dependencies:
     "@types/node": "npm:^22.13.4"
     flatted: "npm:^3.3.3"
     ts-node: "npm:^10.9.2"
-  checksum: 10c0/451697fa24c732c6842b84f65207dfe2811d00bc5d5afe5e5ace4dd660f988481073311ba23f5ecd05ac92f61344756d756b1c60781ce887644015b78a13a735
+  checksum: 10c0/a9f785913b9b824d19315f8f9cbf0653cda836ba01afa589429fb2da6fefcbee71d140cfbdd80fdabcfc557fedd7ee25f60048544c6ddeb5817ebe5073523beb
   languageName: node
   linkType: hard
 
@@ -1500,19 +1500,19 @@ __metadata:
     "@babel/preset-env": "npm:^7.26.9"
     "@babel/preset-react": "npm:^7.26.3"
     "@babel/preset-typescript": "npm:^7.26.0"
-    "@fjell/cache": "npm:^4.4.0"
-    "@fjell/core": "npm:^4.3.1"
-    "@fjell/logging": "npm:^4.3.4"
+    "@fjell/cache": "npm:^4.4"
+    "@fjell/core": "npm:^4.3"
+    "@fjell/logging": "npm:^4.3"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.6.3"
     "@testing-library/react": "npm:^16.2.0"
     "@tsconfig/recommended": "npm:^1.0.8"
-    "@types/babel__preset-env": "npm:^7"
+    "@types/babel__preset-env": "npm:^7.10.0"
     "@types/jest": "npm:^29.5.14"
     "@types/react": "npm:^18.3.18"
-    "@types/react-dom": "npm:^18"
-    "@typescript-eslint/eslint-plugin": "npm:^7"
-    "@typescript-eslint/parser": "npm:^7"
+    "@types/react-dom": "npm:^18.3.5"
+    "@typescript-eslint/eslint-plugin": "npm:^7.18.0"
+    "@typescript-eslint/parser": "npm:^7.18.0"
     concurrently: "npm:^8.2.2"
     eslint: "npm:^8.57.1"
     jest: "npm:^29.7.0"
@@ -2081,7 +2081,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/babel__preset-env@npm:^7":
+"@types/babel__preset-env@npm:^7.10.0":
   version: 7.10.0
   resolution: "@types/babel__preset-env@npm:7.10.0"
   checksum: 10c0/5ad0c3a8bec4f7612ee8aeecb4ee94494d3bc193f6da608cd118175e726bb2cf649515aded650defb968bfae4ec6e6c52c0c06fc83be261c0b8eaa3f8f2cf336
@@ -2178,7 +2178,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:^18":
+"@types/react-dom@npm:^18.3.5":
   version: 18.3.5
   resolution: "@types/react-dom@npm:18.3.5"
   peerDependencies:
@@ -2227,7 +2227,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/eslint-plugin@npm:^7":
+"@typescript-eslint/eslint-plugin@npm:^7.18.0":
   version: 7.18.0
   resolution: "@typescript-eslint/eslint-plugin@npm:7.18.0"
   dependencies:
@@ -2250,7 +2250,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@typescript-eslint/parser@npm:^7":
+"@typescript-eslint/parser@npm:^7.18.0":
   version: 7.18.0
   resolution: "@typescript-eslint/parser@npm:7.18.0"
   dependencies:
