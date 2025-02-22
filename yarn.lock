@@ -1436,7 +1436,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fjell/cache@npm:^4.4.2":
+"@fjell/cache@npm:^4.4":
   version: 4.4.2
   resolution: "@fjell/cache@npm:4.4.2"
   dependencies:
@@ -1462,7 +1462,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fjell/core@npm:^4.3.3":
+"@fjell/core@npm:^4.3, @fjell/core@npm:^4.3.3":
   version: 4.3.3
   resolution: "@fjell/core@npm:4.3.3"
   dependencies:
@@ -1482,7 +1482,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fjell/logging@npm:^4.3.8":
+"@fjell/logging@npm:^4.3, @fjell/logging@npm:^4.3.8":
   version: 4.3.8
   resolution: "@fjell/logging@npm:4.3.8"
   dependencies:
@@ -1500,9 +1500,9 @@ __metadata:
     "@babel/preset-env": "npm:^7.26.9"
     "@babel/preset-react": "npm:^7.26.3"
     "@babel/preset-typescript": "npm:^7.26.0"
-    "@fjell/cache": "npm:^4.4.2"
-    "@fjell/core": "npm:^4.3.3"
-    "@fjell/logging": "npm:^4.3.8"
+    "@fjell/cache": "npm:^4.4"
+    "@fjell/core": "npm:^4.3"
+    "@fjell/logging": "npm:^4.3"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.6.3"
     "@testing-library/react": "npm:^16.2.0"
