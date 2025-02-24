@@ -2,7 +2,7 @@
 import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
-import { PItemContext, PItemContextType, usePItem } from '@/primary/PItemContext';
+import { PItemContext, PItemContextType, usePItem } from '../../src/primary/PItemContext';
 
 interface TestItem extends Item<'test'> {
   name: string;
@@ -21,7 +21,7 @@ describe('PItemContext', () => {
       isLoading: false,
       isUpdating: false,
       isRemoving: false,
-      pkType: 'test',
+      pkTypes: ['test'],
       remove: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue({ name: 'updated' } as TestItem),
       action: jest.fn().mockResolvedValue({ name: 'actioned' } as TestItem),
@@ -48,7 +48,7 @@ describe('PItemContext', () => {
 
     expect(result.current).toBe(mockContextValue);
     expect(result.current.name).toBe('test');
-    expect(result.current.pkType).toBe('test');
+    expect(result.current.pkTypes).toEqual(['test']);
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isUpdating).toBe(false);
     expect(result.current.isRemoving).toBe(false);

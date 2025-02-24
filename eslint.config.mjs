@@ -64,7 +64,7 @@ export default [{
     "@typescript-eslint/no-explicit-any": "off",
 
     "no-restricted-imports": ["error", {
-      patterns: ["..*", "src/*"],
+      patterns: ["src/*"],
     }],
   },
 }];

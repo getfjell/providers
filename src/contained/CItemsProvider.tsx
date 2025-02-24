@@ -72,7 +72,7 @@ export const CItemsProvider = <
 
   // Destructure the values we need to define functions.
   const {
-    pkType,
+    pkTypes,
     all: allItems,
     one: oneItem,
     create: createItem,
@@ -81,7 +81,7 @@ export const CItemsProvider = <
     allAction: allActionItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
-  const logger = LibLogger.get('CItemsProvider', pkType);
+  const logger = LibLogger.get('CItemsProvider', ...pkTypes);
 
   const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
 
@@ -190,7 +190,7 @@ export const CItemsProvider = <
     isCreating,
     isUpdating,
     isRemoving,
-    pkType,
+    pkTypes,
     locations: parentLocations,
     create,
     update,

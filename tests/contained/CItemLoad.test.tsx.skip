@@ -1,10 +1,10 @@
-import { AItemContext } from '@/AItemContext';
-import { useAItem } from '@/AItemProvider';
-import { useCItemAdapter } from '@/contained/CItemAdapter';
-import { CItemAdapterContext, CItemAdapterContextType } from '@/contained/CItemAdapterContext';
-import { CItemContext, CItemContextType, useCItem } from '@/contained/CItemContext';
-import { CItemLoad } from '@/contained/CItemLoad';
-import { CacheMap } from '@fjell/cache';
+import { AItemContext } from '../../src/AItemContext';
+import { useAItem } from '../../src/AItemProvider';
+import { useCItemAdapter } from '../../src/contained/CItemAdapter';
+import { CItemAdapterContext, CItemAdapterContextType } from '../../src/contained/CItemAdapterContext';
+import { CItemContext, CItemContextType, useCItem } from '../../src/contained/CItemContext';
+import { CItemLoad } from '../../src/contained/CItemLoad';
+import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
 import { ComKey, Item } from '@fjell/core';
 import { render, waitFor } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
@@ -47,7 +47,7 @@ describe('CItemLoad', () => {
       action: jest.fn(),
       find: jest.fn(),
       cacheMap: mockCacheMap,
-      pkType: 'test',
+      pkTypes: ['test', 'container'],
       all: jest.fn(),
       one: jest.fn(),
       create: jest.fn(),

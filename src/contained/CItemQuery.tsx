@@ -68,12 +68,12 @@ export const CItemQuery = <
 
   // Destructure the values we need to define functions.
   const {
-    pkType,
+    pkTypes,
     one: oneItem,
     create: createItem,
   } = useMemo(() => cItemAdapter, [cItemAdapter]);
 
-  const logger = LibLogger.get('CItemQueryProvider', pkType);
+  const logger = LibLogger.get('CItemQueryProvider', ...pkTypes);
 
   const parentItemContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
 import { AItemContextType } from "@/AItemContext";
-import { ComKey, LocKeyArray } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, LocKeyArray } from "@fjell/core";
 
 import { TypesProperties } from "@fjell/core";
 
@@ -23,7 +23,7 @@ export interface CItemContextType<
   isLoading: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   remove: () => Promise<void>;
   update: (item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => Promise<V | null>;
   action: (

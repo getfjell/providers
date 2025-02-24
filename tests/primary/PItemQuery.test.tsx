@@ -1,17 +1,15 @@
 /* eslint-disable no-undefined */
 import {
-  PItemAdapterContext,
-  PItemAdapterContextType,
-  PItemContext,
-  PItemContextType,
   PItemQuery,
-  usePItem,
-} from '@/index';
-import { PItemAdapter } from '@/primary/PItemAdapter';
-import { CacheMap, PItemCache } from '@fjell/cache';
+} from '../../src/primary/PItemQuery';
+import { PItemAdapter } from '../../src/primary/PItemAdapter';
+import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
 import { IQFactory, Item, ItemQuery, PriKey, TypesProperties, UUID } from '@fjell/core';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
+import { PItemAdapterContext, PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
+import { PItemContext, PItemContextType, usePItem } from '../../src/primary/PItemContext';
+import { Cache } from '@fjell/cache/dist/src/Cache';
 
 interface TestItem extends Item<'test'> {
   name: string;
@@ -19,7 +17,7 @@ interface TestItem extends Item<'test'> {
 
 type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
 type TestItemContextType = PItemContextType<TestItem, 'test'>;
-type TestItemCache = PItemCache<TestItem, 'test'>;
+type TestItemCache = Cache<TestItem, 'test'>;
 
 describe('PItemQueryProvider', () => {
   const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
@@ -55,8 +53,7 @@ describe('PItemQueryProvider', () => {
     cacheMap.set(priKey, testItem);
 
     testItemCache = {
-      getPkType: jest.fn().mockReturnValue('test'),
-      getKeyTypes: jest.fn().mockReturnValue(['id']),
+      pkTypes: ['test'],
       all: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
       one: jest.fn().mockResolvedValue([cacheMap, testItem]),
       create: jest.fn().mockResolvedValue([cacheMap, testItem]),

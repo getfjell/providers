@@ -1,10 +1,10 @@
 /* eslint-disable no-undefined */
-import { CacheMap } from "@fjell/cache";
+import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
 import { Item } from "@fjell/core";
 import { renderHook } from '@testing-library/react';
 import React from 'react';
-import { useAItemAdapter } from '@/AItemAdapter';
-import { AItemAdapterContextType } from "@/AItemAdapterContext";
+import { useAItemAdapter } from '../src/AItemAdapter';
+import { AItemAdapterContextType } from "../src/AItemAdapterContext";
 
 interface TestItem extends Item<"test", "container"> { }
 
@@ -22,7 +22,7 @@ describe('useAItemAdapter', () => {
     mockContextValue = {
       name: 'test',
       cacheMap: new CacheMap<TestItem, 'test', 'container'>(['test', 'container']),
-      pkType: 'test',
+      pkTypes: ['test', 'container'],
       all: jest.fn().mockResolvedValue([]),
       one: jest.fn().mockResolvedValue(null),
       create: jest.fn().mockResolvedValue({} as TestItem),

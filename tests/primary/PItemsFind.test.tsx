@@ -1,11 +1,13 @@
 /* eslint-disable no-undefined */
-import { PItemAdapterContextType, PItemsContextType, usePItems } from '@/index';
-import { PItemAdapter } from '@/primary/PItemAdapter';
-import { PItemsQuery } from '@/primary/PItemsQuery';
-import { CacheMap, PItemCache } from '@fjell/cache';
-import { IQFactory, Item, PriKey, UUID } from '@fjell/core';
-import { act, renderHook } from '@testing-library/react';
+import { PItemAdapter } from '../../src/primary/PItemAdapter';
+import { PItemsFind } from '../../src/primary/PItemsFind';
+import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
+import { Item, PriKey, UUID } from '@fjell/core';
+import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
+import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
+import { PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
+import { Cache } from '@fjell/cache/dist/src/Cache';
 
 interface TestItem extends Item<'test'> {
   name: string;
@@ -13,9 +15,9 @@ interface TestItem extends Item<'test'> {
 
 type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
 type TestItemsProviderContextType = PItemsContextType<TestItem, 'test'>;
-type TestItemCache = PItemCache<TestItem, 'test'>;
+type TestItemCache = Cache<TestItem, 'test'>;
 
-describe('PItemsQuery', () => {
+describe('PItemsFind', () => {
   const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
   const testItem: TestItem = {
     key: priKey,
@@ -32,7 +34,7 @@ describe('PItemsQuery', () => {
   let TestItemAdapterContext: React.Context<TestItemAdapterContextType | undefined>;
   let TestItemsProviderContext: React.Context<TestItemsProviderContextType | undefined>;
   let TestItemsAdapter: React.FC<{ children: React.ReactNode }>;
-  let TestItemsQuery: typeof PItemsQuery<
+  let TestItemsFind: typeof PItemsFind<
     TestItem,
     'test'
   >;
@@ -43,8 +45,7 @@ describe('PItemsQuery', () => {
     cacheMap = new CacheMap<TestItem, 'test'>(['test']);
 
     testItemCache = {
-      getPkType: jest.fn().mockReturnValue('test'),
-      getKeyTypes: jest.fn().mockReturnValue(['id']),
+      pkTypes: ['test'],
       all: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
       one: jest.fn().mockResolvedValue([cacheMap, testItem]),
       create: jest.fn().mockResolvedValue([cacheMap, testItem]),
@@ -54,6 +55,7 @@ describe('PItemsQuery', () => {
       update: jest.fn().mockResolvedValue([cacheMap, testItem]),
       action: jest.fn().mockResolvedValue([cacheMap, testItem]),
       allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      find: jest.fn().mockResolvedValue([cacheMap, [testItem, testItem]]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -74,14 +76,14 @@ describe('PItemsQuery', () => {
       });
     }
 
-    TestItemsQuery = (
+    TestItemsFind = (
       {
         children,
       }: {
         children: React.ReactNode;
       }
     ) => {
-      return PItemsQuery<
+      return PItemsFind<
         TestItem,
         'test'
       >({
@@ -89,50 +91,31 @@ describe('PItemsQuery', () => {
         adapter: TestItemAdapterContext,
         context: TestItemsProviderContext,
         children,
-        query: IQFactory.all().toQuery(),
+        finder: 'testFinder',
+        finderParams: {},
       });
     };
 
   });
 
-  it('should fetch all items', async () => {
+  it('should fetch items', async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemsAdapter>
-        <TestItemsQuery
+        <TestItemsFind
           name="test"
           adapter={TestItemAdapterContext}
           context={TestItemsProviderContext}
-          query={IQFactory.all().toQuery()}
-        >{children}</TestItemsQuery>
+          finder="testFinder"
+          finderParams={{}}
+        >{children}</TestItemsFind>
       </TestItemsAdapter>
     );
 
     const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
 
-    await act(async () => {
-      const items = await result.current.all();
-      expect(items).toEqual([testItem]);
+    await waitFor(async () => {
+      const items = result.current.items;
+      expect(items).toEqual([testItem, testItem]);
     });
   });
-
-  it('should perform an allAction', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemsAdapter>
-        <TestItemsQuery
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-          query={IQFactory.all().toQuery()}
-        >{children}</TestItemsQuery>
-      </TestItemsAdapter>
-    );
-
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
-
-    await act(async () => {
-      const item = await result.current.allAction('testAction', { data: 'test' });
-      expect(item).toEqual([testItem]);
-    });
-  });
-
 });

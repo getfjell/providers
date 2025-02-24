@@ -1,27 +1,28 @@
 /* eslint-disable no-undefined */
 import React, { ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
-import { useAItem } from '@/AItemProvider';
-import { AItemContextType } from "@/AItemContext";
-import { Item, PriKey } from '@fjell/core';
+import { useCItem } from '../../src/contained/CItemContext';
+import { CItemContextType } from "../../src/contained/CItemContext";
+import { ComKey, Item } from '@fjell/core';
 
-interface TestItem extends Item<'test'> { }
+interface TestItem extends Item<'test', 'container'> { }
 
-interface TestItemProviderContextType extends AItemContextType<TestItem, 'test'> { }
+interface TestItemProviderContextType extends CItemContextType<TestItem, 'test', 'container'> { }
 
 const TestContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
 
-describe('useAItemProvider', () => {
+describe('useCItemProvider', () => {
 
   it('should return the context value if used within its provider', () => {
     const contextValue: TestItemProviderContextType = {
       name: 'test',
-      key: null as unknown as PriKey<"test">,
+      key: null as unknown as ComKey<"test", "container">,
       item: null,
+      parentItem: null,
       isLoading: false,
       isUpdating: false,
       isRemoving: false,
-      pkType: 'test',
+      pkTypes: ['test', 'container'],
       remove: jest.fn(),
       update: jest.fn(),
       action: jest.fn(),
@@ -33,13 +34,13 @@ describe('useAItemProvider', () => {
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 
-    const { result } = renderHook(() => useAItem(TestContext), { wrapper });
+    const { result } = renderHook(() => useCItem(TestContext), { wrapper });
     expect(result.current).toBe(contextValue);
   });
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => useAItem(TestContext));
-    }).toThrow(`This generic abstract item hook must be used within a ${TestContext.displayName}`);
+      const {} = renderHook(() => useCItem(TestContext));
+    }).toThrow(`This generic composite item hook must be used within a ${TestContext.displayName}`);
   });
 });

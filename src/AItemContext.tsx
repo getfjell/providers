@@ -1,4 +1,4 @@
-import { ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
 
 export interface AItemContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -15,7 +15,7 @@ export interface AItemContextType<
   isLoading: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   remove: () => Promise<void>;
   update: (item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => Promise<V | null>;
   action: (

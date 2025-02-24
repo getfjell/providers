@@ -1,10 +1,10 @@
-import { ComKey, PriKey, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, PriKey, TypesProperties } from "@fjell/core";
 
 import { Item } from "@fjell/core";
 
 import { LocKeyArray } from "@fjell/core";
 
-import { CacheMap } from "@fjell/cache";
+import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
 import { ItemQuery } from "@fjell/core";
 
 export interface AItemAdapterContextType<
@@ -18,7 +18,7 @@ export interface AItemAdapterContextType<
 > {
   name: string;
   cacheMap: CacheMap<V, S, L1, L2, L3, L4, L5>;
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   all: (
     query?: ItemQuery,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>

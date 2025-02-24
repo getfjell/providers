@@ -1,6 +1,5 @@
 /* eslint-disable no-undefined, max-params */
 import LibLogger from "@/logger";
-import { AggregateConfig, AItemAggregator, CacheMap, CItemCache } from "@fjell/cache";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
   ComKey,
@@ -9,6 +8,9 @@ import {
 } from "@fjell/core";
 import React, { createElement, useCallback, useMemo } from "react";
 import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
+import { Cache } from "@fjell/cache/dist/src/Cache";
+import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { AggregateConfig, createAggregator } from "@fjell/cache/dist/src/Aggregator";
 
 export const useCItemAdapter = <
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -39,7 +41,7 @@ export const CItemAdapter = <
 >(
     { name, cache, context, aggregates, events, addActions, children }: {
     name: string;
-    cache: CItemCache<V, S, L1, L2, L3, L4, L5>;
+    cache: Cache<V, S, L1, L2, L3, L4, L5>;
     context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
     aggregates?: AggregateConfig;
     events?: AggregateConfig;
@@ -52,15 +54,15 @@ export const CItemAdapter = <
   }
   ) => {
 
-  const pkType = useMemo(() => cache.getPkType(), [cache]);
-  const logger = LibLogger.get('CItemAdapter', pkType);
+  const pkTypes = useMemo(() => cache.pkTypes, [cache]);
+  const logger = LibLogger.get('CItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =
-    React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(cache.getKeyTypes()));
+    React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(cache.pkTypes));
 
   const sourceCache = useMemo(() => {
     if ((aggregates && Object.keys(aggregates).length > 0) || (events && Object.keys(events).length > 0)) {
-      return new AItemAggregator<V, S, L1, L2, L3, L4, L5>(
+      return createAggregator<V, S, L1, L2, L3, L4, L5>(
         cache, { aggregates, events });
     } else {
       return cache
@@ -74,7 +76,7 @@ export const CItemAdapter = <
   ): Promise<V[] | null> => {
     logger.trace('all', {
       query: query && abbrevQuery(query),
-      cache: cache.getPkType(),
+      cache: cache.pkTypes,
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
     });
     logger.debug('Fetching Items from sourceCache.all');
@@ -189,7 +191,7 @@ export const CItemAdapter = <
   const contextValue: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
     cacheMap,
-    pkType,
+    pkTypes,
     all,
     one,
     create,

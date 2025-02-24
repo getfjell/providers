@@ -1,4 +1,4 @@
-import { Item, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, Item, TypesProperties } from "@fjell/core";
 
 export interface AItemsContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -15,7 +15,7 @@ export interface AItemsContextType<
   isCreating: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   create: (
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
   ) => Promise<V>;

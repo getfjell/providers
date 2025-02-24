@@ -67,13 +67,13 @@ export const CItemLoad = <
   // Destructure the values we need to define functions.
   const {
     cacheMap,
-    pkType,
+    pkTypes,
     retrieve: retrieveItem,
     remove: removeItem,
     update: updateItem,
   } = useMemo(() => cItemAdapter, [cItemAdapter]);
 
-  const logger = LibLogger.get('CItemProvider', pkType);
+  const logger = LibLogger.get('CItemProvider', ...pkTypes);
 
   const parentItemAdapter = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
 
@@ -195,7 +195,7 @@ export const CItemLoad = <
     isLoading,
     isUpdating,
     isRemoving,
-    pkType,
+    pkTypes,
     remove,
     update,
     action,
