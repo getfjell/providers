@@ -1,17 +1,18 @@
 /* eslint-disable no-undefined */
-import { CacheMap, PItemCache } from '@fjell/cache';
+import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
 import { Item, PriKey, UUID } from '@fjell/core';
 import { act, renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
-import { PItemAdapter, usePItemAdapter } from '@/primary/PItemAdapter';
-import { PItemAdapterContextType } from '@/index';
+import { PItemAdapter, usePItemAdapter } from '../../src/primary/PItemAdapter';
+import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
+import { Cache } from '@fjell/cache/dist/src/Cache';
 
 interface TestItem extends Item<'test'> {
   name: string;
 }
 
 type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
-type TestItemCache = PItemCache<TestItem, 'test'>;
+type TestItemCache = Cache<TestItem, 'test'>;
 
 describe('PItemAdapter', () => {
 
@@ -38,8 +39,7 @@ describe('PItemAdapter', () => {
     cacheMap = new CacheMap<TestItem, 'test'>(['test']);
 
     testItemCache = {
-      getPkType: jest.fn().mockReturnValue('test'),
-      getKeyTypes: jest.fn().mockReturnValue(['id']),
+      pkTypes: ['test'],
       all: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
       one: jest.fn().mockResolvedValue([cacheMap, testItem]),
       create: jest.fn().mockResolvedValue([cacheMap, testItem]),
@@ -83,8 +83,8 @@ describe('PItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
-    const { pkType } = result.current;
-    expect(pkType).toBe('test');
+    const { pkTypes } = result.current;
+    expect(pkTypes).toEqual(['test']);
   });
 
   it('should fetch all items', async () => {

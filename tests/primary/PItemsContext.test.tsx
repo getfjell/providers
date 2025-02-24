@@ -2,7 +2,7 @@
 import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
-import { PItemsContext, PItemsContextType, usePItems } from '@/primary/PItemsContext';
+import { PItemsContext, PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
 
 interface TestItem extends Item<'test'> {
   name: string;

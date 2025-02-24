@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.3.4",
+  "version": "4.4.0",
   "license": "Apache-2.0",
   "main": "./dist/src/index.js",
   "exports": {
@@ -20,9 +20,9 @@
     "test": "yarn run lint && NODE_OPTIONS='--experimental-require-module' yarn run jest --coverage"
   },
   "dependencies": {
-    "@fjell/cache": "^4.4",
-    "@fjell/core": "^4.3",
-    "@fjell/logging": "^4.3",
+    "@fjell/cache": "^4.5.0",
+    "@fjell/core": "^4.3.4",
+    "@fjell/logging": "^4.3.8",
     "@types/jest": "^29.5.14",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

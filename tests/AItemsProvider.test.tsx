@@ -1,8 +1,8 @@
 /* eslint-disable no-undefined */
 import { renderHook } from '@testing-library/react';
 import React from 'react';
-import { useAItems } from '@/AItemsProvider';
-import { AItemsContextType } from "@/AItemsContext";
+import { useAItems } from '../src/AItemsProvider';
+import { AItemsContextType } from "../src/AItemsContext";
 import { Item } from '@fjell/core';
 
 interface TestItem extends Item<'test', 'container'> { }
@@ -14,7 +14,7 @@ const mockContextValue: AItemsContextType<TestItem, 'test', 'container'> = {
   isCreating: false,
   isUpdating: false,
   isRemoving: false,
-  pkType: 'test',
+  pkTypes: ['test'],
   create: jest.fn(),
   all: jest.fn(),
   one: jest.fn(),

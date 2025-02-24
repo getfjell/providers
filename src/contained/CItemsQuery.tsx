@@ -62,12 +62,12 @@ export const CItemsQuery = <
   // Destructure the values we need to define functions.
   const {
     cacheMap,
-    pkType,
+    pkTypes,
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
-  const logger = LibLogger.get('CItemsProvider', pkType);
+  const logger = LibLogger.get('CItemsQuery', ...pkTypes);
 
   const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
 

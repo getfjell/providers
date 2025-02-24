@@ -27,10 +27,10 @@ const jestConfig: JestConfigWithTsJest = {
   ],
   coverageThreshold: {
     global: {
-      branches: 0,
-      functions: 0,
-      lines: 0,
-      statements: 0,
+      branches: 41,
+      functions: 57,
+      lines: 51,
+      statements: 51,
     },
   },
   preset: 'ts-jest/presets/js-with-ts',

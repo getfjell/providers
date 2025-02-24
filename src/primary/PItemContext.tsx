@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
 import { AItemContextType } from "@/AItemContext";
-import { Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
 import React from "react";
 
 export interface PItemContextType<
@@ -14,7 +14,7 @@ export interface PItemContextType<
   isLoading: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S>;
   remove: () => Promise<void>;
   update: (item: TypesProperties<V, S>) => Promise<V>;
   action: (

@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
 import { AItemsContextType } from "@/AItemsContext";
-import { ComKey, Item, LocKeyArray, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, TypesProperties } from "@fjell/core";
 import React from "react";
 
 export interface CItemsContextType<
@@ -19,7 +19,7 @@ export interface CItemsContextType<
   isCreating: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   locations: LocKeyArray<L1, L2, L3, L4, L5> | null;
 
   create: (

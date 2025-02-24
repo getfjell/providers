@@ -1,8 +1,8 @@
 import { ComKey, Item, PriKey } from "@fjell/core";
 
 import { AItemAdapterContextType } from "@/AItemAdapterContext";
-import { CacheMap } from "@fjell/cache";
-import { ItemQuery, LocKeyArray, TypesProperties } from "@fjell/core";
+import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { AllItemTypeArrays, ItemQuery, LocKeyArray, TypesProperties } from "@fjell/core";
 
 export interface CItemAdapterContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -16,7 +16,7 @@ export interface CItemAdapterContextType<
   name: string;
   cacheMap: CacheMap<V, S, L1, L2, L3, L4, L5>;
 
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   all: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V[] | null>;
   one: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V | null>;
   create: (item: TypesProperties<V, S, L1, L2, L3, L4, L5>, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V>;

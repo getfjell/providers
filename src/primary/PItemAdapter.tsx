@@ -1,10 +1,12 @@
 /* eslint-disable no-undefined */
-import { AggregateConfig, AItemAggregator, CacheMap, PItemCache } from "@fjell/cache";
 import { abbrevIK, Item, ItemQuery, PriKey, TypesProperties } from "@fjell/core";
 import React, { createElement, useCallback, useMemo } from "react";
 import { PItemAdapterContext, PItemAdapterContextType } from "./PItemAdapterContext";
 
 import LibLogger from '@/logger';
+import { AggregateConfig, createAggregator } from "@fjell/cache/dist/src/Aggregator";
+import { Cache } from "@fjell/cache/dist/src/Cache";
+import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
 
 export const usePItemAdapter = <
   V extends Item<S>,
@@ -20,13 +22,13 @@ export const usePItemAdapter = <
 };
 
 export const PItemAdapter = <
-  Cache extends PItemCache<V, S>,
+  C extends Cache<V, S>,
   V extends Item<S>,
   S extends string
 >(
     { name, cache, context, aggregates = {}, events = {}, addActions, children }: {
     name: string;
-    cache: Cache;
+    cache: C;
     context: PItemAdapterContext<V, S>;
     aggregates?: AggregateConfig;
     events?: AggregateConfig;
@@ -39,15 +41,15 @@ export const PItemAdapter = <
   }
   ) => {
 
-  const pkType = useMemo(() => cache.getPkType(), [cache]);
-  const logger = LibLogger.get('PItemAdapter', pkType);
+  const pkTypes = useMemo(() => cache.pkTypes, [cache]);
+  const logger = LibLogger.get('PItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =
-    React.useState<CacheMap<V, S>>(new CacheMap<V, S>(cache.getKeyTypes()));
+    React.useState<CacheMap<V, S>>(new CacheMap<V, S>(cache.pkTypes));
 
   const sourceCache = useMemo(() => {
     if (aggregates && Object.keys(aggregates).length > 0) {
-      return new AItemAggregator<V, S>(cache, { aggregates, events });
+      return createAggregator<V, S>(cache, { aggregates, events });
     } else {
       return cache
     }
@@ -212,7 +214,7 @@ export const PItemAdapter = <
   const contextValue: PItemAdapterContextType<V, S> = {
     name,
     cacheMap,
-    pkType,
+    pkTypes,
     all,
     one,
     create,

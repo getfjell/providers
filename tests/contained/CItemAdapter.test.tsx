@@ -1,18 +1,20 @@
 /* eslint-disable no-undefined */
-import { CItemAdapter, useCItemAdapter } from '@/contained/CItemAdapter';
-import { CItemAdapterContextType } from '@/contained/CItemAdapterContext';
-import { AggregateConfig, CacheMap, CItemCache } from '@fjell/cache';
+import { CItemAdapter, useCItemAdapter } from '../../src/contained/CItemAdapter';
+import { CItemAdapterContextType } from '../../src/contained/CItemAdapterContext';
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
 import { jest } from '@jest/globals';
 import { act, renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
+import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
+import { Cache } from '@fjell/cache/dist/src/Cache';
+import { AggregateConfig } from '@fjell/cache/dist/src/Aggregator';
 
 interface TestItem extends Item<'test', 'container'> {
   name: string;
 }
 
 type TestItemAdapterContextType = CItemAdapterContextType<TestItem, 'test', 'container'>;
-type TestItemCache = CItemCache<TestItem, 'test', 'container'>;
+type TestItemCache = Cache<TestItem, 'test', 'container'>;
 
 describe('CItemAdapter', () => {
   const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
@@ -40,8 +42,7 @@ describe('CItemAdapter', () => {
     cacheMap = new CacheMap<TestItem, 'test', 'container'>(['test']);
 
     testItemCache = {
-      getPkType: jest.fn().mockReturnValue('test'),
-      getKeyTypes: jest.fn().mockReturnValue(['id']),
+      pkTypes: ['test', 'container'],
       // @ts-ignore
       all: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
       // @ts-ignore
@@ -80,8 +81,8 @@ describe('CItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
-    const { pkType } = result.current;
-    expect(pkType).toBe('test');
+    const { pkTypes } = result.current;
+    expect(pkTypes).toEqual(['test', 'container']);
   });
 
   it('should fetch all items', async () => {

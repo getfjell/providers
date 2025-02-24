@@ -42,12 +42,12 @@ export const PItemsQuery = <
   // Destructure the values we need to define functions.
   const {
     cacheMap,
-    pkType,
+    pkTypes,
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
-  const logger = LibLogger.get('PItemsQuery', pkType);
+  const logger = LibLogger.get('PItemsQuery', ...pkTypes);
 
   // TODO: Same in CItemsProvider, this is a way to avoid needles rerender on a change to the instance of query
   const queryString = useMemo(() => JSON.stringify(query), [query]);

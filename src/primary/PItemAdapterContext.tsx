@@ -1,6 +1,6 @@
 import { AItemAdapterContextType } from "@/AItemAdapterContext";
-import { CacheMap } from "@fjell/cache";
-import { Item, ItemQuery, PriKey, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, Item, ItemQuery, PriKey, TypesProperties } from "@fjell/core";
+import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
 
 export interface PItemAdapterContextType<
   V extends Item<S>,
@@ -9,7 +9,7 @@ export interface PItemAdapterContextType<
   name: string;
   cacheMap: CacheMap<V, S>;
 
-  pkType: string;
+  pkTypes: AllItemTypeArrays<S>;
   all: (query?: ItemQuery) => Promise<V[] | null>;
   one: (query?: ItemQuery) => Promise<V | null>;
   create: (item: TypesProperties<V, S>) => Promise<V>;

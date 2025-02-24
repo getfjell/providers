@@ -51,7 +51,7 @@ export const PItemsProvider = <
 
   // Destructure the values we need to define functions.
   const {
-    pkType,
+    pkTypes,
     all: allItems,
     one: oneItem,
     create: createItem,
@@ -60,7 +60,7 @@ export const PItemsProvider = <
     allAction: allItemAction,
   } = useMemo(() => adapterContext, [adapterContext]);
 
-  const logger = LibLogger.get('PItemsProvider', pkType);
+  const logger = LibLogger.get('PItemsProvider', ...pkTypes);
 
   useEffect(() => {
     setIsLoading(isLoadingParam);
@@ -125,7 +125,7 @@ export const PItemsProvider = <
 
   const contextValue: PItemsContextType<V, S> = {
     name,
-    pkType,
+    pkTypes,
     items,
     isLoading,
     isCreating,

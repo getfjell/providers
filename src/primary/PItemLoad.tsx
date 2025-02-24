@@ -46,14 +46,14 @@ export const PItemLoad = <
   // Destructure the values we need to define functions.
   const {
     cacheMap,
-    pkType,
+    pkTypes,
     retrieve: retrieveItem,
     remove: removeItem,
     update: updateItem,
     action: actionItem,
   } = useMemo(() => PItemAdapter, [PItemAdapter]);
 
-  const logger = LibLogger.get('PItemLoad', pkType);
+  const logger = LibLogger.get('PItemLoad', ...pkTypes);
 
   const item: V | null = useMemo(() => {
     let item: V | null = null;
@@ -167,7 +167,7 @@ export const PItemLoad = <
     isLoading,
     isUpdating,
     isRemoving,
-    pkType,
+    pkTypes,
     remove,
     update,
     action,
