@@ -145,10 +145,7 @@ export const PItemLoad = <
 
   const set = useCallback(async (item: V): Promise<V> => {
     logger.trace("set", { item });
-    if (itemKey && isValidPriKey(itemKey)) {
-      const retItem = await setItem(itemKey, item);
-      return retItem as V;
-    } else if (item && isValidPriKey(item.key)) {
+    if (item && isValidPriKey(item.key)) {
       const retItem = await setItem(item.key, item);
       return retItem as V;
     } else {

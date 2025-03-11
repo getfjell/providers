@@ -172,8 +172,8 @@ export const CItemLoad = <
 
   const set = useCallback(async (item: V): Promise<V> => {
     logger.trace("set", { item });
-    if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
-      const retItem = await setItem(itemKey, item);
+    if (item && isValidComKey(item.key as ComKey<S, L1, L2, L3, L4, L5>)) {
+      const retItem = await setItem(item.key, item);
       return retItem as V;
     } else {
       logger.error(`${name}: Item key is required to set an item`);
