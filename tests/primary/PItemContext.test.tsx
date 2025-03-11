@@ -25,7 +25,8 @@ describe('PItemContext', () => {
       remove: jest.fn().mockResolvedValue(undefined),
       update: jest.fn().mockResolvedValue({ name: 'updated' } as TestItem),
       action: jest.fn().mockResolvedValue({ name: 'actioned' } as TestItem),
-      locations: null
+      locations: null,
+      set: jest.fn().mockResolvedValue({ name: 'set' } as TestItem),
     };
 
     TestContext = React.createContext<PItemContextType<TestItem, 'test'> | undefined>(undefined);
@@ -52,5 +53,6 @@ describe('PItemContext', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isUpdating).toBe(false);
     expect(result.current.isRemoving).toBe(false);
+    expect(result.current.set).toBe(mockContextValue.set);
   });
 });

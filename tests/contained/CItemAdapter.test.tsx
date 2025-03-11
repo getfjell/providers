@@ -61,6 +61,8 @@ describe('CItemAdapter', () => {
       action: jest.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
       allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      // @ts-ignore
+      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -244,4 +246,19 @@ describe('CItemAdapter', () => {
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
     expect(result.current).toBeDefined();
   });
+
+  it('should set an item', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestItemAdapter>{children}</TestItemAdapter>
+    );
+
+    const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
+
+    await act(async () => {
+      await result.current.set(itemKey, testItem);
+    });
+    expect(testItemCache.set).toHaveBeenCalledTimes(1);
+    expect(testItemCache.set).toHaveBeenCalledWith(itemKey, testItem);
+  });
+  
 });

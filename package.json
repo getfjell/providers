@@ -20,7 +20,7 @@
     "test": "yarn run lint && NODE_OPTIONS='--experimental-require-module' yarn run jest --coverage"
   },
   "dependencies": {
-    "@fjell/cache": "^4.5.0",
+    "@fjell/cache": "^4.5.1",
     "@fjell/core": "^4.3.4",
     "@fjell/logging": "^4.3.8",
     "@types/jest": "^29.5.14",
@@ -47,9 +47,9 @@
     "jest-environment-jsdom": "^29.7.0",
     "react-test-renderer": "^18.3.1",
     "rimraf": "^6.0.1",
-    "ts-jest": "^29.2.5",
-    "tsc-alias": "^1.8.10",
-    "typescript": "^5.7.3"
+    "ts-jest": "^29.2.6",
+    "tsc-alias": "^1.8.11",
+    "typescript": "^5.8.2"
   },
   "packageManager": "yarn@4.6.0",
   "repository": {

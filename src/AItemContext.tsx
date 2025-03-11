@@ -18,6 +18,7 @@ export interface AItemContextType<
   pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   remove: () => Promise<void>;
   update: (item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => Promise<V | null>;
+  set: (item: V) => Promise<V>;
   action: (
     action: string,
     body?: any,

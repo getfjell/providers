@@ -27,6 +27,7 @@ describe('useAItemProvider', () => {
       action: jest.fn(),
       actions: {},
       locations: null,
+      set: jest.fn().mockResolvedValue({} as TestItem),
     };
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (

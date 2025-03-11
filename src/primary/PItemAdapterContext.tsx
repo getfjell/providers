@@ -28,6 +28,7 @@ export interface PItemAdapterContextType<
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ) => Promise<V[] | null>;
+  set: (key: PriKey<S>, item: V) => Promise<V>;
 }
 
 export type PItemAdapterContext<V extends Item<S>, S extends string> =

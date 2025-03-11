@@ -54,6 +54,7 @@ describe('PItemsProvider', () => {
       update: jest.fn().mockResolvedValue([cacheMap, testItem]),
       action: jest.fn().mockResolvedValue([cacheMap, testItem]),
       allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     // eslint-disable-next-line no-undefined
@@ -208,4 +209,25 @@ describe('PItemsProvider', () => {
     });
   });
 
+  it('set', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsAdapter>
+        <TestItemsProvider
+          name="test"
+          adapter={TestItemAdapterContext}
+          context={TestItemsProviderContext}
+        >{children}</TestItemsProvider>
+      </TestItemsAdapter>
+    );
+
+    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+
+    const key = { pk: '1', kt: 'test' } as PriKey<'test'>;
+    const item = { key, name: 'set', events: { created: { at: new Date() } } } as TestItem;
+
+    await act(async () => {
+      const retItem = await result.current.set(key, item);
+      expect(retItem).toEqual(testItem);
+    });
+  });
 });

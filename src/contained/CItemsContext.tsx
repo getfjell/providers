@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
 import { AItemsContextType } from "@/AItemsContext";
-import { AllItemTypeArrays, ComKey, Item, LocKeyArray, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
 import React from "react";
 
 export interface CItemsContextType<
@@ -40,6 +40,10 @@ export interface CItemsContextType<
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ) => Promise<V[] | null>;
+  set: (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    item: V,
+  ) => Promise<V>;
   actions?: Record<string, (...params: any[]) => Promise<any>>;
   queries?: Record<string, (...params: any[]) => Promise<string | boolean | number | null>>;
 }

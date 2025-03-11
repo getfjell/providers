@@ -56,6 +56,7 @@ describe('PItemsFind', () => {
       action: jest.fn().mockResolvedValue([cacheMap, testItem]),
       allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
       find: jest.fn().mockResolvedValue([cacheMap, [testItem, testItem]]),
+      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);

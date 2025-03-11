@@ -89,7 +89,7 @@ export const CItemsQuery = <
       setIsLoading(false);
       return result;
     } else {
-      logger.error(`${name}: No parent locations present to query for all containeditems`,
+      logger.default(`${name}: No parent locations present to query for all containeditems`,
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for all containeditems in ${name}`);
     }
@@ -104,7 +104,7 @@ export const CItemsQuery = <
       setIsLoading(false);
       return result;
     } else {
-      logger.error(`${name}: No parent locations present to query for one containeditem`,
+      logger.default(`${name}: No parent locations present to query for one containeditem`,
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for one containeditem in ${name}`);
     }

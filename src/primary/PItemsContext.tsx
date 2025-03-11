@@ -29,6 +29,10 @@ export interface PItemsContextType<
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ) => Promise<V[] | null>;
+  set: (
+    key: PriKey<S>,
+    item: V,
+  ) => Promise<V>;
   
   // TODO: Again, this allAction should return either an object or an array
   allAction: (action: string,

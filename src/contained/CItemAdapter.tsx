@@ -188,6 +188,16 @@ export const CItemAdapter = <
     return newItems as V[];
   }, [cache]);
 
+  const set = useCallback(async (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    item: V,
+  ): Promise<V> => {
+    logger.trace('set', { key, item });
+    const [newCacheMap, newItem] = await sourceCache.set(key, item);
+    setCacheMap(newCacheMap.clone());
+    return newItem as V;
+  }, [cache]);
+
   const contextValue: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
     cacheMap,
@@ -202,6 +212,7 @@ export const CItemAdapter = <
     action,
     allAction,
     find,
+    set,
   };
 
   if (addActions && contextValue) {

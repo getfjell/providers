@@ -35,6 +35,7 @@ describe('useAItemAdapter', () => {
       actions: {
         customAction: jest.fn().mockResolvedValue(null),
       },
+      set: jest.fn().mockResolvedValue({} as TestItem),
     };
   });
 

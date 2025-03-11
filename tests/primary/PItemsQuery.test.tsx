@@ -55,6 +55,7 @@ describe('PItemsQuery', () => {
       update: jest.fn().mockResolvedValue([cacheMap, testItem]),
       action: jest.fn().mockResolvedValue([cacheMap, testItem]),
       allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -133,6 +134,29 @@ describe('PItemsQuery', () => {
     await act(async () => {
       const item = await result.current.allAction('testAction', { data: 'test' });
       expect(item).toEqual([testItem]);
+    });
+  });
+
+  it('should set an item', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <TestItemsAdapter>
+        <TestItemsQuery
+          name="test"
+          adapter={TestItemAdapterContext}
+          context={TestItemsProviderContext}
+          query={IQFactory.all().toQuery()}
+        >{children}</TestItemsQuery>
+      </TestItemsAdapter>
+    );
+
+    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+
+    const key = { pk: '1', kt: 'test' } as PriKey<'test'>;
+    const item = { key, name: 'set', events: { created: { at: new Date() } } } as TestItem;
+
+    await act(async () => {
+      const retItem = await result.current.set(key, item);
+      expect(retItem).toEqual(testItem);
     });
   });
 

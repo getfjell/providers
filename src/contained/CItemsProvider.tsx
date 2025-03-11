@@ -79,6 +79,8 @@ export const CItemsProvider = <
     update: updateItem,
     remove: removeItem,
     allAction: allActionItem,
+    set: setItem,
+    find: findItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const logger = LibLogger.get('CItemsProvider', ...pkTypes);
@@ -175,12 +177,19 @@ export const CItemsProvider = <
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ) => {
     if (parentLocations) {
-      return adapterContext.find(finder, finderParams, parentLocations);
+      return findItem(finder, finderParams, parentLocations);
     } else {
       logger.error(`${name}: No parent locations present to query for find containeditems`, { finder, finderParams });
       throw new Error(`No parent locations present to query for find containeditems in ${name}`);
     }
   }, [adapterContext, parentLocations]);
+
+  const set = useCallback(async (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    item: V,
+  ) => {
+    return setItem(key, item);
+  }, [setItem, parentLocations]);
 
   const contextValue: CItemsContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
@@ -199,6 +208,7 @@ export const CItemsProvider = <
     one: overrides?.one || one,
     allAction,
     find,
+    set,
   };
 
   contextValue.actions = useMemo(
