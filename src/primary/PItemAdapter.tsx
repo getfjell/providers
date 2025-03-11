@@ -211,6 +211,23 @@ export const PItemAdapter = <
     }
   }, [cache]);
 
+  // TODO: This may be temporary, it is related to the fact that the consumer may have a subscription to update events.
+  // In fact, this begs the question, should the consumer be subscribing or should the cache be subscribing?
+  const set = useCallback(async (
+    key: PriKey<S>,
+    item: V,
+  ): Promise<V> => {
+    logger.trace('set', { key: abbrevIK(key), item });
+    if (cache) {
+      const [newCacheMap, newItem] = await sourceCache.set(key, item);
+      setCacheMap(newCacheMap.clone());
+      return newItem as V;
+    } else {
+      logger.error('Cache not initialized in %s', name);
+      throw new Error(`Cache not initialized in ${name}`);
+    }
+  }, [cache]);
+
   const contextValue: PItemAdapterContextType<V, S> = {
     name,
     cacheMap,
@@ -225,6 +242,7 @@ export const PItemAdapter = <
     action,
     allAction,
     find,
+    set,
   };
 
   if (addActions && contextValue) {

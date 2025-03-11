@@ -51,6 +51,7 @@ export const PItemLoad = <
     remove: removeItem,
     update: updateItem,
     action: actionItem,
+    set: setItem,
   } = useMemo(() => PItemAdapter, [PItemAdapter]);
 
   const logger = LibLogger.get('PItemLoad', ...pkTypes);
@@ -142,6 +143,20 @@ export const PItemLoad = <
     }
   }, [updateItem, itemKey]);
 
+  const set = useCallback(async (item: V): Promise<V> => {
+    logger.trace("set", { item });
+    if (itemKey && isValidPriKey(itemKey)) {
+      const retItem = await setItem(itemKey, item);
+      return retItem as V;
+    } else if (item && isValidPriKey(item.key)) {
+      const retItem = await setItem(item.key, item);
+      return retItem as V;
+    } else {
+      logger.error(`${name}: Item key is required to set an item`);
+      throw new Error(`Item key is required to set an item in ${name}`);
+    }
+  }, [setItem, itemKey]);
+
   const action = useCallback(async (
     actionName: string,
     body?: any,
@@ -171,6 +186,7 @@ export const PItemLoad = <
     remove,
     update,
     action,
+    set,
     locations,
   };
 

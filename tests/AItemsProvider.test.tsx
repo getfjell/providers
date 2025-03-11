@@ -21,6 +21,7 @@ const mockContextValue: AItemsContextType<TestItem, 'test', 'container'> = {
   allAction: jest.fn(),
   finders: {},
   actions: {},
+  set: jest.fn(),
 };
 
 const TestContext = React.createContext<AItemsContextType<TestItem, 'test', 'container'> | undefined>(undefined);

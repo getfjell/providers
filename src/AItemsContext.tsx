@@ -1,4 +1,4 @@
-import { AllItemTypeArrays, Item, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, PriKey, TypesProperties } from "@fjell/core";
 
 export interface AItemsContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -28,6 +28,10 @@ export interface AItemsContextType<
   finders?: Record<string, (...params: any[]) =>
     Promise<V[] | V | null>>;
   actions?: Record<string, (...params: any[]) => Promise<any>>;
+  set: (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    item: V,
+  ) => Promise<V>;
 }
 
 export type AItemsContext<

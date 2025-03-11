@@ -71,6 +71,7 @@ export const CItemLoad = <
     retrieve: retrieveItem,
     remove: removeItem,
     update: updateItem,
+    set: setItem,
   } = useMemo(() => cItemAdapter, [cItemAdapter]);
 
   const logger = LibLogger.get('CItemProvider', ...pkTypes);
@@ -169,6 +170,17 @@ export const CItemLoad = <
     }
   }, [updateItem, itemKey]);
 
+  const set = useCallback(async (item: V): Promise<V> => {
+    logger.trace("set", { item });
+    if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
+      const retItem = await setItem(itemKey, item);
+      return retItem as V;
+    } else {
+      logger.error(`${name}: Item key is required to set an item`);
+      throw new Error(`Item key is required to set an item in ${name}`);
+    }
+  }, [setItem, itemKey]);
+
   const action = useCallback(async (
     actionName: string,
     body?: any,
@@ -199,6 +211,7 @@ export const CItemLoad = <
     remove,
     update,
     action,
+    set,
     locations,
   };
 

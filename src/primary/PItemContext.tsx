@@ -21,6 +21,7 @@ export interface PItemContextType<
     actionName: string,
     body?: any
   ) => Promise<V>;
+  set: (item: V) => Promise<V>;
   actions?: Record<string, (body?: any) => Promise<V | null>>;
   locations: LocKeyArray<S> | null;
 }

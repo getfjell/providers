@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { Item } from '@fjell/core';
+import { Item, PriKey } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import { PItemsContext, PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
@@ -32,7 +32,8 @@ describe('PItemsContext', () => {
       },
       queries: {
         testQuery: jest.fn().mockResolvedValue('queryResult')
-      }
+      },
+      set: jest.fn().mockResolvedValue({ name: 'set' } as TestItem),
     } as unknown as PItemsContextType<TestItem, 'test'>;
 
     TestContext = React.createContext<PItemsContextType<TestItem, 'test'> | undefined>(undefined);
@@ -107,5 +108,21 @@ describe('PItemsContext', () => {
 
     const queryResult = await result.current.queries?.testQuery();
     expect(queryResult).toBe('queryResult');
+  });
+
+  it('should have working set operation', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestContext.Provider value={mockContextValue}>
+        {children}
+      </TestContext.Provider>
+    );
+
+    const { result } = renderHook(() => usePItems(TestContext), { wrapper });
+
+    const key = { pk: '1', kt: 'test' } as PriKey<'test'>;
+    const item = { key, name: 'set', events: { created: { at: new Date() } } } as TestItem;
+
+    const setItem = await result.current.set(key, item);
+    expect(setItem.name).toBe('set');
   });
 });

@@ -63,6 +63,7 @@ describe('PItemQueryProvider', () => {
       update: jest.fn().mockResolvedValue([cacheMap, testItem]),
       action: jest.fn().mockResolvedValue([cacheMap, testItem]),
       allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -228,6 +229,33 @@ describe('PItemQueryProvider', () => {
 
     expect(testItemCache.one).not.toHaveBeenCalled();
     expect(testItemCache.create).not.toHaveBeenCalled();
+  });
+
+  it('should set item', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <TestItemAdapter>
+        <TestItemQueryProvider
+          optional={true}
+        >
+          {children}
+        </TestItemQueryProvider>
+      </TestItemAdapter>
+    );
+
+    const { result } = renderHook(() => usePItem(TestItemContext), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
+    const newItem = {
+      ...testItem,
+      name: 'new name',
+    };
+
+    await result.current.set(newItem);
+
+    expect(testItemCache.set).toHaveBeenCalledWith(newItem.key, newItem);
   });
 
 });

@@ -58,6 +58,7 @@ export const PItemsProvider = <
     update: updateItem,
     remove: removeItem,
     allAction: allItemAction,
+    set: setItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const logger = LibLogger.get('PItemsProvider', ...pkTypes);
@@ -123,6 +124,12 @@ export const PItemsProvider = <
     return adapterContext.find(finder, finderParams);
   }, [adapterContext]);
 
+  const set = useCallback(async (key: PriKey<S>, item: V) => {
+    logger.trace('set', { key, item });
+    const result = await setItem(key, item) as V;
+    return result;
+  }, [setItem]);
+
   const contextValue: PItemsContextType<V, S> = {
     name,
     pkTypes,
@@ -138,6 +145,7 @@ export const PItemsProvider = <
     one: overrides?.one || one,
     allAction,
     find,
+    set,
   };
 
   contextValue.actions = useMemo(() =>

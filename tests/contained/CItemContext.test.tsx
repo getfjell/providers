@@ -28,6 +28,7 @@ describe('useCItemProvider', () => {
       action: jest.fn(),
       actions: {},
       locations: null,
+      set: jest.fn(),
     };
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
