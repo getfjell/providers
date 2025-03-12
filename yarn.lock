@@ -1436,9 +1436,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fjell/cache@npm:^4.5.1":
-  version: 4.5.1
-  resolution: "@fjell/cache@npm:4.5.1"
+"@fjell/cache@npm:^4.5.2":
+  version: 4.5.2
+  resolution: "@fjell/cache@npm:4.5.2"
   dependencies:
     "@fjell/client-api": "npm:^4.3"
     "@fjell/core": "npm:^4.3"
@@ -1447,7 +1447,7 @@ __metadata:
     d3: "npm:^7.9.0"
     dayjs: "npm:^1.11.13"
     react: "npm:18.3.1"
-  checksum: 10c0/d908bb7a69cf0b035b4bf9c7e01173b2acdcc69c12efea6e3938ac2cbab0778a06b480387939e649eef549534cfa908a99766c55d1ca3e7574ca71aa84112b31
+  checksum: 10c0/342de2c227f71e50dfb2ee8d133740f3715e4ef00c10937e8c2cecbc7ace7324c9368a3853e04f09d274d94c759a947d31b97572338c3ee5ceb521d72eca05ab
   languageName: node
   linkType: hard
 
@@ -1511,7 +1511,7 @@ __metadata:
     "@babel/preset-env": "npm:^7.26.9"
     "@babel/preset-react": "npm:^7.26.3"
     "@babel/preset-typescript": "npm:^7.26.0"
-    "@fjell/cache": "npm:^4.5.1"
+    "@fjell/cache": "npm:^4.5.2"
     "@fjell/core": "npm:^4.3.4"
     "@fjell/logging": "npm:^4.3.8"
     "@testing-library/dom": "npm:^10.4.0"
