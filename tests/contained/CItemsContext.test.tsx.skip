@@ -3,6 +3,7 @@ import { CItemsContextType, useCItems } from '@/contained/CItemsContext';
 import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
+import { vi } from 'vitest';
 
 interface ContainerType extends Item<'container'> {
     whatever: string;
@@ -22,13 +23,13 @@ const mockContextValue: TestItemProviderContextType = {
   isUpdating: false,
   isRemoving: false,
   pkType: 'test',
-  create: jest.fn(),
-  update: jest.fn(),
-  remove: jest.fn(),
-  all: jest.fn(),
-  one: jest.fn(),
-  allAction: jest.fn(),
-  find: jest.fn(),
+  create: vi.fn(),
+  update: vi.fn(),
+  remove: vi.fn(),
+  all: vi.fn(),
+  one: vi.fn(),
+  allAction: vi.fn(),
+  find: vi.fn(),
   actions: {},
   parentItem: {} as ContainerType,
   locations: [{kt: 'container', lk: '1-1-1-1-1'}],

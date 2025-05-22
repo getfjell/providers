@@ -1,11 +1,16 @@
 /* eslint-disable no-undefined */
+/// <reference types="vitest/globals" />
+import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React from 'react';
-import { useAItems } from '../src/AItemsProvider';
+import { describe, expect, it } from 'vitest';
 import { AItemsContextType } from "../src/AItemsContext";
-import { Item } from '@fjell/core';
+import { useAItems } from '../src/AItemsProvider';
+import { vi } from 'vitest';
 
-interface TestItem extends Item<'test', 'container'> { }
+// @vitest-environment jsdom
+
+type TestItem = Item<'test', 'container'>;
 
 const mockContextValue: AItemsContextType<TestItem, 'test', 'container'> = {
   name: 'test',
@@ -15,13 +20,13 @@ const mockContextValue: AItemsContextType<TestItem, 'test', 'container'> = {
   isUpdating: false,
   isRemoving: false,
   pkTypes: ['test'],
-  create: jest.fn(),
-  all: jest.fn(),
-  one: jest.fn(),
-  allAction: jest.fn(),
+  create: vi.fn(),
+  all: vi.fn(),
+  one: vi.fn(),
+  allAction: vi.fn(),
   finders: {},
   actions: {},
-  set: jest.fn(),
+  set: vi.fn(),
 };
 
 const TestContext = React.createContext<AItemsContextType<TestItem, 'test', 'container'> | undefined>(undefined);
@@ -40,7 +45,7 @@ describe('useAItemsProvider', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => useAItems(TestContext));
+      const { } = renderHook(() => useAItems(TestContext));
     }).toThrow(`This generic abstract items hook must be used within a ${TestContext.displayName}`);
   });
 });

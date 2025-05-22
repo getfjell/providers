@@ -1,7 +1,7 @@
 import { ComKey, Item, PriKey } from "@fjell/core";
 
 import { AItemAdapterContextType } from "@/AItemAdapterContext";
-import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { CacheMap } from "@fjell/cache";
 import { AllItemTypeArrays, ItemQuery, LocKeyArray, TypesProperties } from "@fjell/core";
 
 export interface CItemAdapterContextType<

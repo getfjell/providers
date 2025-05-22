@@ -4,7 +4,7 @@ import { Item } from "@fjell/core";
 
 import { LocKeyArray } from "@fjell/core";
 
-import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { CacheMap } from "@fjell/cache";
 import { ItemQuery } from "@fjell/core";
 
 export interface AItemAdapterContextType<

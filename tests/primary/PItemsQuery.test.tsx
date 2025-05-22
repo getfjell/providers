@@ -6,8 +6,10 @@ import { act, renderHook } from '@testing-library/react';
 import React from 'react';
 import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
 import { PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
-import { Cache } from '@fjell/cache/dist/src/Cache';
-import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
+import { Cache } from '@fjell/cache';
+import { CacheMap } from '@fjell/cache';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 
 interface TestItem extends Item<'test'> {
   name: string;
@@ -40,22 +42,23 @@ describe('PItemsQuery', () => {
   >;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     cacheMap = new CacheMap<TestItem, 'test'>(['test']);
 
     testItemCache = {
       pkTypes: ['test'],
-      all: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
-      one: jest.fn().mockResolvedValue([cacheMap, testItem]),
-      create: jest.fn().mockResolvedValue([cacheMap, testItem]),
-      get: jest.fn().mockResolvedValue([cacheMap, testItem]),
-      remove: jest.fn().mockResolvedValue(cacheMap),
-      retrieve: jest.fn().mockResolvedValue([cacheMap, testItem]),
-      update: jest.fn().mockResolvedValue([cacheMap, testItem]),
-      action: jest.fn().mockResolvedValue([cacheMap, testItem]),
-      allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
-      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
+      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
+      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
+      remove: vi.fn().mockResolvedValue(cacheMap),
+      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
+      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
+      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
+      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+      find: vi.fn().mockResolvedValue([cacheMap, [testItem, testItem]]),
+      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
     } as unknown as jest.Mocked<TestItemCache>;
 
     TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);

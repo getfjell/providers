@@ -7,9 +7,10 @@ import { IQFactory, Item } from '@fjell/core';
 import { render, renderHook, waitFor } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import { CItemAdapterContextType } from '@/contained/CItemAdapterContext';
+import { vi } from 'vitest';
 
-jest.mock('@/contained/CItemAdapter');
-jest.mock('@/AItemProvider');
+vi.mock('@/contained/CItemAdapter');
+vi.mock('@/AItemProvider');
 
 interface TestItem extends Item<'test', 'container'> {
   name: string;
@@ -30,16 +31,16 @@ describe('CItemsQuery', () => {
 
     mockAdapter = {
       cacheMap: {
-        queryIn: jest.fn(),
+        queryIn: vi.fn(),
       },
       isLoading: false,
       pkType: 'test',
-      all: jest.fn(),
-      one: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      remove: jest.fn(),
-      allAction: jest.fn(),
+      all: vi.fn(),
+      one: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      remove: vi.fn(),
+      allAction: vi.fn(),
     } as unknown as CItemAdapterContextType<TestItem, 'test', 'container'>;
     
     mockParentAdapter = {
@@ -47,8 +48,8 @@ describe('CItemsQuery', () => {
       item: { id: 'parent1', name: 'Parent Item' },
     } as unknown as AItemContext<Item<"container">, "container">;
 
-    (useCItemAdapter as jest.Mock).mockReturnValue(mockAdapter);
-    (useAItem as jest.Mock).mockReturnValue(mockParentAdapter);
+    (useCItemAdapter as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockAdapter);
+    (useAItem as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockParentAdapter);
 
     AdapterContext =
     // eslint-disable-next-line no-undefined

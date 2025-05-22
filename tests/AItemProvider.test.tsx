@@ -1,13 +1,15 @@
 /* eslint-disable no-undefined */
-import React, { ReactNode } from 'react';
-import { renderHook } from '@testing-library/react';
-import { useAItem } from '../src/AItemProvider';
-import { AItemContextType } from "../src/AItemContext";
 import { Item, PriKey } from '@fjell/core';
+import { renderHook } from '@testing-library/react';
+import React, { ReactNode } from 'react';
+import { describe, expect, it } from 'vitest';
+import { AItemContextType } from "../src/AItemContext";
+import { useAItem } from '../src/AItemProvider';
+import { vi } from 'vitest';
 
-interface TestItem extends Item<'test'> { }
+type TestItem = Item<'test'>;
 
-interface TestItemProviderContextType extends AItemContextType<TestItem, 'test'> { }
+type TestItemProviderContextType = AItemContextType<TestItem, 'test'>;
 
 const TestContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
 
@@ -22,12 +24,12 @@ describe('useAItemProvider', () => {
       isUpdating: false,
       isRemoving: false,
       pkTypes: ['test'],
-      remove: jest.fn(),
-      update: jest.fn(),
-      action: jest.fn(),
+      remove: vi.fn(),
+      update: vi.fn(),
+      action: vi.fn(),
       actions: {},
       locations: null,
-      set: jest.fn().mockResolvedValue({} as TestItem),
+      set: vi.fn().mockResolvedValue({} as TestItem),
     };
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -40,7 +42,7 @@ describe('useAItemProvider', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => useAItem(TestContext));
+      const { } = renderHook(() => useAItem(TestContext));
     }).toThrow(`This generic abstract item hook must be used within a ${TestContext.displayName}`);
   });
 });

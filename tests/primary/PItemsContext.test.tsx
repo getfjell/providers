@@ -3,6 +3,8 @@ import { Item, PriKey } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import { PItemsContext, PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 
 interface TestItem extends Item<'test'> {
   name: string;
@@ -20,20 +22,20 @@ describe('PItemsContext', () => {
       isCreating: false,
       isUpdating: false,
       isRemoving: false,
-      create: jest.fn().mockResolvedValue({ name: 'created' } as TestItem),
-      update: jest.fn().mockResolvedValue({ name: 'updated' } as TestItem),
-      remove: jest.fn().mockResolvedValue(undefined),
-      all: jest.fn().mockResolvedValue([{ name: 'item1' }, { name: 'item2' }] as TestItem[]),
-      one: jest.fn().mockResolvedValue({ name: 'single' } as TestItem),
-      find: jest.fn().mockResolvedValue([{ name: 'found' }] as TestItem[]),
-      allAction: jest.fn().mockResolvedValue({ name: 'actioned' } as TestItem),
+      create: vi.fn().mockResolvedValue({ name: 'created' } as TestItem),
+      update: vi.fn().mockResolvedValue({ name: 'updated' } as TestItem),
+      remove: vi.fn().mockResolvedValue(undefined),
+      all: vi.fn().mockResolvedValue([{ name: 'item1' }, { name: 'item2' }] as TestItem[]),
+      one: vi.fn().mockResolvedValue({ name: 'single' } as TestItem),
+      find: vi.fn().mockResolvedValue([{ name: 'found' }] as TestItem[]),
+      allAction: vi.fn().mockResolvedValue({ name: 'actioned' } as TestItem),
       actions: {
-        testAction: jest.fn().mockResolvedValue({ name: 'customAction' })
+        testAction: vi.fn().mockResolvedValue({ name: 'customAction' })
       },
       queries: {
-        testQuery: jest.fn().mockResolvedValue('queryResult')
+        testQuery: vi.fn().mockResolvedValue('queryResult')
       },
-      set: jest.fn().mockResolvedValue({ name: 'set' } as TestItem),
+      set: vi.fn().mockResolvedValue({ name: 'set' } as TestItem),
     } as unknown as PItemsContextType<TestItem, 'test'>;
 
     TestContext = React.createContext<PItemsContextType<TestItem, 'test'> | undefined>(undefined);
@@ -41,7 +43,7 @@ describe('PItemsContext', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => usePItems(TestContext));
+      const { } = renderHook(() => usePItems(TestContext));
     }).toThrow(`This hook must be used within a undefined`);
   });
 

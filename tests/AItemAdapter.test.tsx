@@ -1,12 +1,14 @@
 /* eslint-disable no-undefined */
-import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { CacheMap } from "@fjell/cache";
 import { Item } from "@fjell/core";
 import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { useAItemAdapter } from '../src/AItemAdapter';
 import { AItemAdapterContextType } from "../src/AItemAdapterContext";
+import { beforeEach, describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 
-interface TestItem extends Item<"test", "container"> { }
+type TestItem = Item<"test", "container">;
 
 describe('useAItemAdapter', () => {
 
@@ -17,25 +19,25 @@ describe('useAItemAdapter', () => {
   TestContext.displayName = 'TestContext';
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockContextValue = {
       name: 'test',
       cacheMap: new CacheMap<TestItem, 'test', 'container'>(['test', 'container']),
       pkTypes: ['test', 'container'],
-      all: jest.fn().mockResolvedValue([]),
-      one: jest.fn().mockResolvedValue(null),
-      create: jest.fn().mockResolvedValue({} as TestItem),
-      get: jest.fn().mockResolvedValue(null),
-      remove: jest.fn().mockResolvedValue({} as TestItem),
-      retrieve: jest.fn().mockResolvedValue(null),
-      update: jest.fn().mockResolvedValue({} as TestItem),
-      action: jest.fn().mockResolvedValue({} as TestItem),
-      allAction: jest.fn().mockResolvedValue({} as TestItem),
+      all: vi.fn().mockResolvedValue([]),
+      one: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({} as TestItem),
+      get: vi.fn().mockResolvedValue(null),
+      remove: vi.fn().mockResolvedValue({} as TestItem),
+      retrieve: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue({} as TestItem),
+      action: vi.fn().mockResolvedValue({} as TestItem),
+      allAction: vi.fn().mockResolvedValue({} as TestItem),
       actions: {
-        customAction: jest.fn().mockResolvedValue(null),
+        customAction: vi.fn().mockResolvedValue(null),
       },
-      set: jest.fn().mockResolvedValue({} as TestItem),
+      set: vi.fn().mockResolvedValue({} as TestItem),
     };
   });
 
@@ -53,7 +55,7 @@ describe('useAItemAdapter', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => useAItemAdapter(TestContext));
+      const { } = renderHook(() => useAItemAdapter(TestContext));
     }).toThrow(`This generic item adapter hook must be used within a TestContext`);
   });
 });

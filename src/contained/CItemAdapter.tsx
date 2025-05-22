@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined, max-params */
+/* eslint-disable no-undefined */
 import LibLogger from "@/logger";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
@@ -8,9 +8,9 @@ import {
 } from "@fjell/core";
 import React, { createElement, useCallback, useMemo } from "react";
 import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
-import { Cache } from "@fjell/cache/dist/src/Cache";
-import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
-import { AggregateConfig, createAggregator } from "@fjell/cache/dist/src/Aggregator";
+import { Cache } from "@fjell/cache";
+import { CacheMap } from "@fjell/cache";
+import { AggregateConfig, createAggregator } from "@fjell/cache";
 
 export const useCItemAdapter = <
   V extends Item<S, L1, L2, L3, L4, L5>,

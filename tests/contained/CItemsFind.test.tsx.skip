@@ -8,9 +8,10 @@ import { CacheMap } from '@fjell/cache';
 import { Item, LocKeyArray } from '@fjell/core';
 import { render } from '@testing-library/react';
 import React from 'react';
+import { vi } from 'vitest';
 
-jest.mock('@/contained/CItemAdapter');
-jest.mock('@/AItemProvider');
+vi.mock('@/contained/CItemAdapter');
+vi.mock('@/AItemProvider');
 
 interface TestItem extends Item<'test', 'container'> {
   name: string;
@@ -18,9 +19,9 @@ interface TestItem extends Item<'test', 'container'> {
 
 describe('CItemsFind', () => {
 
-  let mockCacheMap: jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
-  let mockAdapter: CItemAdapterContextType<TestItem, 'test', 'container'>;
-  let mockParentAdapter: AItemContext<Item<"container">, "container">;
+  let mockCacheMap: ReturnType<typeof vi.fn>;
+  let mockAdapter: ReturnType<typeof vi.fn>;
+  let mockParentAdapter: ReturnType<typeof vi.fn>;
 
   let adapterContext: React.Context<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>;
   let parentContext: React.Context<AItemContext<Item<"container">, "container"> | undefined>;
@@ -28,39 +29,39 @@ describe('CItemsFind', () => {
 
   let TestItemsFind: React.FC<{ children?: React.ReactNode }>;
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockCacheMap = {
-      get: jest.fn(),
-      set: jest.fn(),
-      delete: jest.fn(),
-      has: jest.fn(),
-      size: jest.fn(),
-    } as unknown as jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
+      get: vi.fn(),
+      set: vi.fn(),
+      delete: vi.fn(),
+      has: vi.fn(),
+      size: vi.fn(),
+    } as unknown as ReturnType<typeof vi.fn>;
 
     mockAdapter = {
       cacheMap: mockCacheMap,
       pkType: 'test',
-      all: jest.fn(),
-      one: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      remove: jest.fn(),
-      allAction: jest.fn(),
-      find: jest.fn(),
+      all: vi.fn(),
+      one: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      remove: vi.fn(),
+      allAction: vi.fn(),
+      find: vi.fn(),
       name: 'mockAdapter',
-      get: jest.fn(),
-      retrieve: jest.fn(),
-      action: jest.fn(),
-    } as unknown as CItemAdapterContextType<TestItem, 'test', 'container'>;
+      get: vi.fn(),
+      retrieve: vi.fn(),
+      action: vi.fn(),
+    } as unknown as ReturnType<typeof vi.fn>;
     
     mockParentAdapter = {
-      locations: [{ kt: 'container', lk: 'location1' }] as LocKeyArray<'container'>,
+      locations: [{ kt: 'container', lk: 'location1' }],
       item: { id: 'parent1', name: 'Parent Item' },
-    } as unknown as AItemContext<Item<"container">, "container">;
+    } as unknown as ReturnType<typeof vi.fn>;
 
-    (useCItemAdapter as jest.Mock).mockReturnValue(mockAdapter);
-    (useAItem as jest.Mock).mockReturnValue(mockParentAdapter);
+    (vi.fn() as any).mockReturnValue(mockAdapter);
+    (vi.fn() as any).mockReturnValue(mockParentAdapter);
     
     adapterContext =
       // eslint-disable-next-line no-undefined

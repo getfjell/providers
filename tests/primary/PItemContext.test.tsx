@@ -3,6 +3,8 @@ import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import { PItemContext, PItemContextType, usePItem } from '../../src/primary/PItemContext';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 
 interface TestItem extends Item<'test'> {
   name: string;
@@ -22,11 +24,11 @@ describe('PItemContext', () => {
       isUpdating: false,
       isRemoving: false,
       pkTypes: ['test'],
-      remove: jest.fn().mockResolvedValue(undefined),
-      update: jest.fn().mockResolvedValue({ name: 'updated' } as TestItem),
-      action: jest.fn().mockResolvedValue({ name: 'actioned' } as TestItem),
+      remove: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue({ name: 'updated' } as TestItem),
+      action: vi.fn().mockResolvedValue({ name: 'actioned' } as TestItem),
       locations: null,
-      set: jest.fn().mockResolvedValue({ name: 'set' } as TestItem),
+      set: vi.fn().mockResolvedValue({ name: 'set' } as TestItem),
     };
 
     TestContext = React.createContext<PItemContextType<TestItem, 'test'> | undefined>(undefined);
@@ -34,7 +36,7 @@ describe('PItemContext', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => usePItem(TestContext));
+      const { } = renderHook(() => usePItem(TestContext));
     }).toThrow(`This hook must be used within a undefined`);
   });
 
