@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { useAItem } from "@/AItemProvider";
 import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";

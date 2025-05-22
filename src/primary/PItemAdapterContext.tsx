@@ -1,6 +1,6 @@
 import { AItemAdapterContextType } from "@/AItemAdapterContext";
 import { AllItemTypeArrays, Item, ItemQuery, PriKey, TypesProperties } from "@fjell/core";
-import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { CacheMap } from "@fjell/cache";
 
 export interface PItemAdapterContextType<
   V extends Item<S>,

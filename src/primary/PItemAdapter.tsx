@@ -4,9 +4,9 @@ import React, { createElement, useCallback, useMemo } from "react";
 import { PItemAdapterContext, PItemAdapterContextType } from "./PItemAdapterContext";
 
 import LibLogger from '@/logger';
-import { AggregateConfig, createAggregator } from "@fjell/cache/dist/src/Aggregator";
-import { Cache } from "@fjell/cache/dist/src/Cache";
-import { CacheMap } from "@fjell/cache/dist/src/CacheMap";
+import { AggregateConfig, createAggregator } from "@fjell/cache";
+import { Cache } from "@fjell/cache";
+import { CacheMap } from "@fjell/cache";
 
 export const usePItemAdapter = <
   V extends Item<S>,
@@ -169,7 +169,7 @@ export const PItemAdapter = <
     body?: any,
   ): Promise<V> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
-    
+
     if (cache) {
       const [newCacheMap, newItem] = await sourceCache.action(key, action, body);
       setCacheMap(newCacheMap.clone());

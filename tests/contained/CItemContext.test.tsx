@@ -1,13 +1,14 @@
 /* eslint-disable no-undefined */
-import React, { ReactNode } from 'react';
-import { renderHook } from '@testing-library/react';
-import { useCItem } from '../../src/contained/CItemContext';
-import { CItemContextType } from "../../src/contained/CItemContext";
 import { ComKey, Item } from '@fjell/core';
+import { renderHook } from '@testing-library/react';
+import React, { ReactNode } from 'react';
+import { describe, expect, it } from 'vitest';
+import { CItemContextType, useCItem } from '../../src/contained/CItemContext';
+import { vi } from 'vitest';
 
-interface TestItem extends Item<'test', 'container'> { }
+type TestItem = Item<'test', 'container'>;
 
-interface TestItemProviderContextType extends CItemContextType<TestItem, 'test', 'container'> { }
+type TestItemProviderContextType = CItemContextType<TestItem, 'test', 'container'>;
 
 const TestContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
 
@@ -23,12 +24,12 @@ describe('useCItemProvider', () => {
       isUpdating: false,
       isRemoving: false,
       pkTypes: ['test', 'container'],
-      remove: jest.fn(),
-      update: jest.fn(),
-      action: jest.fn(),
+      remove: vi.fn(),
+      update: vi.fn(),
+      action: vi.fn(),
       actions: {},
       locations: null,
-      set: jest.fn(),
+      set: vi.fn(),
     };
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -41,7 +42,7 @@ describe('useCItemProvider', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => useCItem(TestContext));
+      const { } = renderHook(() => useCItem(TestContext));
     }).toThrow(`This generic composite item hook must be used within a ${TestContext.displayName}`);
   });
 });

@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { Item, ItemQuery } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";

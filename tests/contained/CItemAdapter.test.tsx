@@ -2,12 +2,13 @@
 import { CItemAdapter, useCItemAdapter } from '../../src/contained/CItemAdapter';
 import { CItemAdapterContextType } from '../../src/contained/CItemAdapterContext';
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import React, { ReactNode } from 'react';
-import { CacheMap } from '@fjell/cache/dist/src/CacheMap';
-import { Cache } from '@fjell/cache/dist/src/Cache';
-import { AggregateConfig } from '@fjell/cache/dist/src/Aggregator';
+import { CacheMap } from '@fjell/cache';
+import { Cache } from '@fjell/cache';
+import { AggregateConfig } from '@fjell/cache';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 interface TestItem extends Item<'test', 'container'> {
   name: string;
@@ -37,33 +38,33 @@ describe('CItemAdapter', () => {
   let useTestItemAdapter: () => TestItemAdapterContextType;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     cacheMap = new CacheMap<TestItem, 'test', 'container'>(['test']);
 
     testItemCache = {
       pkTypes: ['test', 'container'],
       // @ts-ignore
-      all: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
       // @ts-ignore
-      one: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
-      create: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
-      get: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
-      remove: jest.fn().mockResolvedValue(cacheMap),
+      remove: vi.fn().mockResolvedValue(cacheMap),
       // @ts-ignore
-      retrieve: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
-      update: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
-      action: jest.fn().mockResolvedValue([cacheMap, testItem]),
+      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
       // @ts-ignore
-      allAction: jest.fn().mockResolvedValue([cacheMap, [testItem]]),
+      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
       // @ts-ignore
-      set: jest.fn().mockResolvedValue([cacheMap, testItem]),
-    } as unknown as jest.Mocked<TestItemCache>;
+      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
+    } as unknown as ReturnType<typeof vi.fn>;
 
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
 
@@ -209,10 +210,10 @@ describe('CItemAdapter', () => {
     expect(testItemCache.allAction).toHaveBeenCalledTimes(1);
     expect(testItemCache.allAction).toHaveBeenCalledWith('someAction', { data: 'test' }, locKeyArray);
   });
-  
+
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const {} = renderHook(() => useTestItemAdapter());
+      const { } = renderHook(() => useTestItemAdapter());
     }).toThrow(`This generic item adapter hook must be used within a ${TestItemContext.displayName}`);
   });
 
@@ -260,5 +261,5 @@ describe('CItemAdapter', () => {
     expect(testItemCache.set).toHaveBeenCalledTimes(1);
     expect(testItemCache.set).toHaveBeenCalledWith(itemKey, testItem);
   });
-  
+
 });
