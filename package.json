@@ -24,6 +24,7 @@
     "@fjell/cache": "^4.6.0",
     "@fjell/core": "^4.4.2",
     "@fjell/logging": "^4.4.2",
+    "@fjell/providers": "link:",
     "@types/react": "^18.3.22",
     "@types/react-dom": "^18.3.7",
     "react": "18.3.1",
