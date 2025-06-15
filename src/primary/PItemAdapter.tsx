@@ -11,11 +11,11 @@ import { CacheMap } from "@fjell/cache";
 export const usePItemAdapter = <
   V extends Item<S>,
   S extends string
->(context: PItemAdapterContext<V, S>): PItemAdapterContextType<V, S> => {
+>(context: PItemAdapterContext<V, S>, contextName: string): PItemAdapterContextType<V, S> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This generic item adapter hook must be used within a ${context.displayName}`,
+      `This generic item adapter hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

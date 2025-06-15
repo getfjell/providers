@@ -1,4 +1,4 @@
- 
+
 import { useAItem } from "@/AItemProvider";
 import { abbrevLKA, abbrevQuery, Item, ItemQuery, LocKeyArray } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo } from "react";
@@ -26,7 +26,9 @@ export const CItemsQuery = <
       addQueries = () => ({}),
       children = (<></>),
       context,
+      contextName,
       parent,
+      parentContextName,
       query = {},
       renderEach,
     }: {
@@ -48,8 +50,10 @@ export const CItemsQuery = <
       Record<string, (params: any) => Promise<string | boolean | number | null>>;
     children?: React.ReactNode;
     context: CItemsContext<V, S, L1, L2, L3, L4, L5>;
+    contextName: string;
     query?: ItemQuery;
     parent: AItemContext<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
+    parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
   }
   ) => {
@@ -57,7 +61,7 @@ export const CItemsQuery = <
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
 
   // Since we pass this to the actions constructor, don't destructure it yet
-  const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter);
+  const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {
@@ -69,7 +73,7 @@ export const CItemsQuery = <
 
   const logger = LibLogger.get('CItemsQuery', ...pkTypes);
 
-  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
+  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     name: parentName,
@@ -162,10 +166,12 @@ export const CItemsQuery = <
     addQueries,
     children,
     context,
+    contextName,
     renderEach,
     items,
     isLoadingParam: isLoading,
     parent,
+    parentContextName,
     overrides: {
       all: all,
       one: one,

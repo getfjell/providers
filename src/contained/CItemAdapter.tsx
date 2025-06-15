@@ -20,11 +20,12 @@ export const useCItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>): CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
+>(context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>, contextName: string):
+  CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This generic item adapter hook must be used within a ${context.displayName}`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

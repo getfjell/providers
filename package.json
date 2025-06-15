@@ -15,6 +15,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit && vite build",
+    "dev": "concurrently \"tsc --noEmit --watch\" \"vite build --watch\"",
     "lint": "eslint . --ext .ts --fix",
     "clean": "rimraf dist",
     "test": "pnpm run lint && vitest run --coverage",

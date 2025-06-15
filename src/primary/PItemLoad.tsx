@@ -17,24 +17,16 @@ import { PItemContext, PItemContextType } from "./PItemContext";
 export const PItemLoad = <
   V extends Item<S>,
   S extends string
->(
-    {
-      name,
-      adapter,
-      addActions = () => ({}),
-      children,
-      context,
-      ik,
-    }: {
-    name: string;
-    // TODO: I want this to be two separate properties.
-    adapter: PItemAdapterContext<V, S>;
-    addActions?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
-    children: React.ReactNode;
-    context: PItemContext<V, S>;
-    ik: PriKey<S> | null;
-  }
-  ) => {
+>({ name, adapter, addActions = () => ({}), children, context, contextName, ik }: {
+  name: string;
+  // TODO: I want this to be two separate properties.
+  adapter: PItemAdapterContext<V, S>;
+  addActions?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
+  children: React.ReactNode;
+  context: PItemContext<V, S>;
+  contextName: string;
+  ik: PriKey<S> | null;
+}) => {
   const logger = LibLogger.get('PItemLoad');
 
   logger.debug(`${name}: Component initialized with props`, {
@@ -59,7 +51,7 @@ export const PItemLoad = <
   });
 
   // Since we pass this to the actions constructor, don't destructure it yet
-  const PItemAdapter = usePItemAdapter<V, S>(adapter);
+  const PItemAdapter = usePItemAdapter<V, S>(adapter, contextName);
   logger.debug(`${name}: PItemAdapter initialized`, { hasAdapter: !!PItemAdapter });
 
   // Destructure the values we need to define functions.

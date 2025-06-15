@@ -1,4 +1,4 @@
- 
+
 import { useAItem } from "@/AItemProvider";
 import { Item, ItemQuery, LocKeyArray } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
@@ -25,7 +25,9 @@ export const CItemsFind = <
       addQueries = () => ({}),
       children = (<></>),
       context,
+      contextName,
       parent,
+      parentContextName,
       renderEach,
       finder,
       finderParams = {},
@@ -48,8 +50,10 @@ export const CItemsFind = <
       Record<string, (params: any) => Promise<string | boolean | number | null>>;
     children?: React.ReactNode;
     context: CItemsContext<V, S, L1, L2, L3, L4, L5>;
+    contextName: string;
     query?: ItemQuery;
     parent: AItemContext<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
+    parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
     finder: string,
     finderParams?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -59,19 +63,19 @@ export const CItemsFind = <
   const [items, setItems] = React.useState<V[] | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   // Since we pass this to the actions constructor, don't destructure it yet
-  const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter);
+  const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
-  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
+  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     locations: parentLocations,
   } = useMemo(() => parentContext, [parentContext]);
-  
+
   // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the params have changed.
   const finderParamsString = useMemo(() => JSON.stringify(finderParams), [finderParams]);
 
   useEffect(() => {
-    if(finder && finderParams && parentLocations) {
+    if (finder && finderParams && parentLocations) {
       (async () => {
         const result = await adapterContext.find(finder, finderParams, parentLocations);
         setItems(result as V[] | null);
@@ -87,9 +91,11 @@ export const CItemsFind = <
     addQueries,
     children,
     context,
+    contextName,
     renderEach,
     items,
     isLoadingParam: isLoading,
     parent,
+    parentContextName,
   });
 }
