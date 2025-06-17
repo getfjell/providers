@@ -1,4 +1,4 @@
- 
+
 import { useAItem } from "@/AItemProvider";
 import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
@@ -25,7 +25,9 @@ export const CItemsProvider = <
       addQueries = () => ({}),
       children = (<></>),
       context,
+      contextName,
       parent,
+      parentContextName,
       renderEach,
       items = [],
       isLoadingParam = false,
@@ -51,7 +53,9 @@ export const CItemsProvider = <
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children?: React.ReactNode;
     context: CItemsContext<V, S, L1, L2, L3, L4, L5>;
+    contextName: string;
     parent: AItemContext<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
+    parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
     items?: V[] | null;
     isLoadingParam?: boolean;
@@ -68,7 +72,7 @@ export const CItemsProvider = <
   const [isRemoving, setIsRemoving] = React.useState<boolean>(false);
 
   // Since we pass this to the actions constructor, don't destructure it yet
-  const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter);
+  const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {
@@ -85,7 +89,7 @@ export const CItemsProvider = <
 
   const logger = LibLogger.get('CItemsProvider', ...pkTypes);
 
-  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
+  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     locations: parentLocations,
@@ -214,9 +218,10 @@ export const CItemsProvider = <
   contextValue.actions = useMemo(
     () => {
       logger.debug('Adding Actions', { parentLocations: abbrevLKA(parentLocations as any), parentItem });
-      if(parentLocations && parentItem) {
+      if (parentLocations && parentItem) {
         logger.debug('Adding Actions for Locations and Item', {
-          parentLocations: abbrevLKA(parentLocations as any), parentItem });
+          parentLocations: abbrevLKA(parentLocations as any), parentItem
+        });
         return addActions(adapterContext, parentLocations, parentItem);
       }
       return {};
@@ -225,9 +230,10 @@ export const CItemsProvider = <
   contextValue.queries = useMemo(
     () => {
       logger.debug('Adding Queries', { parentLocations: abbrevLKA(parentLocations as any), parentItem });
-      if(parentLocations && parentItem) {
+      if (parentLocations && parentItem) {
         logger.debug('Adding Queries for Locations and Item', {
-          parentLocations: abbrevLKA(parentLocations as any), parentItem });
+          parentLocations: abbrevLKA(parentLocations as any), parentItem
+        });
         return addQueries(adapterContext, parentLocations, parentItem);
       }
       return {};

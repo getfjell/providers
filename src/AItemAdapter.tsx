@@ -12,11 +12,17 @@ export const useAItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(context: AItemAdapterContext<V, S, L1, L2, L3, L4, L5>): AItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
+>(
+  // eslint-disable-next-line indent
+  context: AItemAdapterContext<V, S, L1, L2, L3, L4, L5>,
+  // eslint-disable-next-line indent
+  contextName: string
+  // eslint-disable-next-line indent
+): AItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This generic item adapter hook must be used within a ${context.displayName}`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

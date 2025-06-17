@@ -1,4 +1,4 @@
- 
+
 import LibLogger from "@/logger";
 import {
   abbrevQuery,
@@ -13,40 +13,31 @@ import { PItemAdapterContext } from "./PItemAdapterContext";
 import { PItemContext, PItemContextType } from "./PItemContext";
 import { PItemLoad } from "./PItemLoad";
 
-export const PItemQuery = <
-  V extends Item<S>,
-  S extends string
->(
-    {
-      name,
-      adapter,
-      addActions = () => ({}),
-      children,
-      context,
-      create,
-      loading,
-      notFound,
-      optional = false,
-      query,
-    }: {
+export const PItemQuery = <V extends Item<S>, S extends string>({
+  name,
+  adapter,
+  addActions = () => ({}),
+  children,
+  context, contextName, create, loading, notFound, optional = false, query }: {
     // TODO: I want this to be two separate properties.
     name: string;
     adapter: PItemAdapterContext<V, S>;
     addActions?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
     children: React.ReactNode;
     context: PItemContext<V, S>;
+    contextName: string,
     create?: TypesProperties<V, S>;
     loading?: React.ReactNode;
     notFound?: React.ReactNode;
     optional?: boolean;
     query?: ItemQuery;
   }
-  ) => {
+) => {
   const [itemKey, setItemKey] = React.useState<PriKey<S> | null>(null);
   const [queryRunning, setQueryRunning] = React.useState<boolean>(true);
 
   // Since we pass this to the actions constructor, don't destructure it yet
-  const PItemAdapter = usePItemAdapter<V, S>(adapter);
+  const PItemAdapter = usePItemAdapter<V, S>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {
@@ -116,6 +107,7 @@ export const PItemQuery = <
     ik: itemKey,
     adapter,
     context,
+    contextName,
     addActions,
     children,
   });

@@ -44,27 +44,20 @@ describe('CItemAdapter', () => {
 
     testItemCache = {
       pkTypes: ['test', 'container'],
-      // @ts-ignore
       all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      // @ts-ignore
       one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      // @ts-ignore
       create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      // @ts-ignore
       get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      // @ts-ignore
       remove: vi.fn().mockResolvedValue(cacheMap),
-      // @ts-ignore
       retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      // @ts-ignore
       update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      // @ts-ignore
       action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      // @ts-ignore
       allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      // @ts-ignore
       set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-    } as unknown as ReturnType<typeof vi.fn>;
+      find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+      reset: vi.fn().mockResolvedValue([cacheMap]),
+      cacheMap: cacheMap,
+    } as unknown as TestItemCache;
 
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
 
@@ -75,7 +68,7 @@ describe('CItemAdapter', () => {
     );
 
     useTestItemAdapter = () =>
-      useCItemAdapter<TestItem, 'test', 'container'>(TestItemContext);
+      useCItemAdapter<TestItem, 'test', 'container'>(TestItemContext, 'TestItemContext');
   });
 
   it('should provide context value', () => {
@@ -214,7 +207,7 @@ describe('CItemAdapter', () => {
   it('should throw error when used outside of provider', () => {
     expect(() => {
       const { } = renderHook(() => useTestItemAdapter());
-    }).toThrow(`This generic item adapter hook must be used within a ${TestItemContext.displayName}`);
+    }).toThrow(`This hook must be used within a TestItemContext`);
   });
 
   it('should create adapter with aggregates and events', () => {
