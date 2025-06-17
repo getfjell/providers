@@ -1,10 +1,11 @@
 /* eslint-disable no-undefined */
+import * as React from 'react';
 import { CItemAdapter, useCItemAdapter } from '../../src/contained/CItemAdapter';
 import { CItemAdapterContextType } from '../../src/contained/CItemAdapterContext';
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
-import { act, renderHook } from '@testing-library/react';
-import React, { ReactNode } from 'react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { ReactNode } from 'react';
 import { CacheMap } from '@fjell/cache';
 import { Cache } from '@fjell/cache';
 import { AggregateConfig } from '@fjell/cache';
@@ -12,6 +13,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 interface TestItem extends Item<'test', 'container'> {
   name: string;
+  key: ComKey<'test', 'container'>;
+  events: {
+    created: { at: Date };
+    updated: { at: Date };
+    deleted: { at: null };
+  };
 }
 
 type TestItemAdapterContextType = CItemAdapterContextType<TestItem, 'test', 'container'>;
@@ -31,7 +38,7 @@ describe('CItemAdapter', () => {
     }
   };
 
-  let cacheMap: CacheMap<TestItem, 'test', 'container'>;
+  let cacheMap: CacheMap<TestItem, 'test', 'container', never, never, never, never>;
   let testItemCache: TestItemCache;
   let TestItemContext: React.Context<TestItemAdapterContextType | undefined>;
   let TestItemAdapter: React.FC<{ children: ReactNode }>;
@@ -40,7 +47,8 @@ describe('CItemAdapter', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    cacheMap = new CacheMap<TestItem, 'test', 'container'>(['test']);
+    cacheMap = new CacheMap<TestItem, 'test', 'container', never, never, never, never>(['test']);
+    (cacheMap as any).set(itemKey, testItem);
 
     testItemCache = {
       pkTypes: ['test', 'container'],
@@ -62,7 +70,13 @@ describe('CItemAdapter', () => {
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
 
     TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <CItemAdapter name="test" cache={testItemCache} context={TestItemContext}>
+      <CItemAdapter
+        name="test"
+        cache={testItemCache}
+        context={TestItemContext}
+        aggregates={{}}
+        events={{}}
+      >
         {children}
       </CItemAdapter>
     );
@@ -71,14 +85,16 @@ describe('CItemAdapter', () => {
       useCItemAdapter<TestItem, 'test', 'container'>(TestItemContext, 'TestItemContext');
   });
 
-  it('should provide context value', () => {
+  it('should provide context value', async () => {
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
       <TestItemAdapter>{children}</TestItemAdapter>
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
-    const { pkTypes } = result.current;
-    expect(pkTypes).toEqual(['test', 'container']);
+
+    await waitFor(() => {
+      expect(result.current.pkTypes).toEqual(['test', 'container']);
+    });
   });
 
   it('should fetch all items', async () => {
@@ -87,6 +103,10 @@ describe('CItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
 
     await act(async () => {
       await result.current.all({}, locKeyArray);
@@ -101,6 +121,10 @@ describe('CItemAdapter', () => {
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
     await act(async () => {
       await result.current.one({}, locKeyArray);
     });
@@ -113,6 +137,10 @@ describe('CItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
 
     await act(async () => {
       await result.current.create({ name: 'new test' }, locKeyArray);
@@ -128,6 +156,10 @@ describe('CItemAdapter', () => {
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
     await act(async () => {
       await result.current.get(itemKey);
     });
@@ -142,6 +174,10 @@ describe('CItemAdapter', () => {
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
     await act(async () => {
       await result.current.remove(itemKey);
     });
@@ -154,6 +190,10 @@ describe('CItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
 
     await act(async () => {
       await result.current.retrieve(itemKey);
@@ -169,6 +209,10 @@ describe('CItemAdapter', () => {
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
     await act(async () => {
       await result.current.update(itemKey, { name: 'updated test' });
     });
@@ -182,6 +226,10 @@ describe('CItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
 
     await act(async () => {
       await result.current.action(itemKey, 'someAction', { data: 'test' });
@@ -197,8 +245,12 @@ describe('CItemAdapter', () => {
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
     await act(async () => {
-      await result.current.allAction('someAction', { data: 'test' }, locKeyArray,);
+      await result.current.allAction('someAction', { data: 'test' }, locKeyArray);
     });
     expect(testItemCache.allAction).toHaveBeenCalledTimes(1);
     expect(testItemCache.allAction).toHaveBeenCalledWith('someAction', { data: 'test' }, locKeyArray);
@@ -206,11 +258,11 @@ describe('CItemAdapter', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const { } = renderHook(() => useTestItemAdapter());
+      renderHook(() => useTestItemAdapter());
     }).toThrow(`This hook must be used within a TestItemContext`);
   });
 
-  it('should create adapter with aggregates and events', () => {
+  it('should create adapter with aggregates and events', async () => {
     const aggregates = {
       test: {
         cache: testItemCache,
@@ -238,7 +290,10 @@ describe('CItemAdapter', () => {
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
-    expect(result.current).toBeDefined();
+
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
   });
 
   it('should set an item', async () => {
@@ -248,11 +303,14 @@ describe('CItemAdapter', () => {
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });
 
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
+
     await act(async () => {
       await result.current.set(itemKey, testItem);
     });
     expect(testItemCache.set).toHaveBeenCalledTimes(1);
     expect(testItemCache.set).toHaveBeenCalledWith(itemKey, testItem);
   });
-
 });

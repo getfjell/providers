@@ -1,3 +1,7 @@
+/* eslint-disable no-undefined */
+/// <reference types="vitest" />
+/// <reference types="vitest-dom" />
+
 import { AItemContext } from '../../src/AItemContext';
 import { useAItem } from '../../src/AItemProvider';
 import { useCItemAdapter } from '../../src/contained/CItemAdapter';
@@ -9,7 +13,7 @@ import { ComKey, Item } from '@fjell/core';
 import { render, waitFor } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { vi } from 'vitest';
+import { Mocked, vi } from 'vitest';
 
 vi.mock('@/contained/CItemAdapter');
 vi.mock('@/AItemProvider');
@@ -21,13 +25,14 @@ interface TestItem extends Item<'test', 'container'> {
 describe('CItemLoad', () => {
 
   let key: ComKey<"test", "container">;
-  let mockAdapter: jest.Mocked<CItemAdapterContextType<TestItem, 'test', 'container'>>;
-  let mockCacheMap: jest.Mocked<CacheMap<TestItem, 'test', 'container'>>;
-  let adapterContext: React.Context<CItemAdapterContextType<TestItem, 'test', 'container'>>;
-  let parentContext: React.Context<AItemContext<Item<"container">, "container">>;
-  let testContext: React.Context<CItemContextType<TestItem, 'test', 'container'>>;
+  let mockAdapter: Mocked<CItemAdapterContextType<TestItem, 'test', 'container'>>;
+  let mockCacheMap: Mocked<CacheMap<TestItem, 'test', 'container'>>;
+  let adapterContext: React.Context<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>;
+  let parentContext: React.Context<AItemContext<Item<"container">, "container"> | undefined>;
+  let testContext: React.Context<CItemContextType<TestItem, 'test', 'container'> | undefined>;
+  let mockTestItem: TestItem;
 
-  let TestItemLoad: React.FC<{ children: React.ReactNode; ik: ComKey<"test", "container"> }>;
+  let TestItemLoad: React.FC<{ children: React.ReactNode; ik: ComKey<"test", "container"> | null }>;
   let TestItemRender: React.FC;
 
   beforeEach(() => {
@@ -35,12 +40,11 @@ describe('CItemLoad', () => {
     key = {
       kt: 'test', pk: '1-1-1-1-1',
       loc: [{ kt: 'container', lk: '2-2-2-2-2' }],
-    } as unknown as ComKey<"test", "container">;
-    
-    // @ts-ignore
+    } as ComKey<"test", "container">;
+
     mockCacheMap = {
       get: vi.fn(),
-    } as unknown as ReturnType<typeof vi.fn>;
+    } as unknown as Mocked<CacheMap<TestItem, 'test', 'container'>>;
 
     mockAdapter = {
       name: 'test',
@@ -56,28 +60,32 @@ describe('CItemLoad', () => {
       remove: vi.fn(),
       allAction: vi.fn(),
       retrieve: vi.fn(),
-    } as unknown as ReturnType<typeof vi.fn>;
-    
+      set: vi.fn(),
+    } as Mocked<CItemAdapterContextType<TestItem, 'test', 'container'>>;
+
     const mockParentAdapter = {
       locations: [{ kt: 'container', lk: 'location1' }],
       item: { id: 'parent1', name: 'Parent Item' },
     };
-  
+
     (useCItemAdapter as jest.Mock).mockReturnValue(mockAdapter);
     (useAItem as jest.Mock).mockReturnValue(mockParentAdapter);
 
-    // @ts-ignore - this is a mock
-    adapterContext =
-    // eslint-disable-next-line no-undefined
-    React.createContext<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>(undefined);
-    // @ts-ignore - this is a mock
-    parentContext =
-    // eslint-disable-next-line no-undefined
-    React.createContext<AItemContext<Item<"container">, "container"> | undefined>(undefined);
-    // @ts-ignore - this is a mock
-    testContext =
-    // eslint-disable-next-line no-undefined
-    React.createContext<CItemContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+    adapterContext = React.createContext<CItemAdapterContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+    parentContext = React.createContext<AItemContext<Item<"container">, "container"> | undefined>(undefined);
+    testContext = React.createContext<CItemContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+
+    mockTestItem = {
+      id: 'test-id',
+      key,
+      events: {
+        created: { at: new Date() },
+        updated: { at: new Date() },
+        removed: { at: null },
+      },
+      deleted: false,
+      name: 'Test Item',
+    } as unknown as TestItem;
 
     TestItemLoad = (
       {
@@ -85,7 +93,7 @@ describe('CItemLoad', () => {
         ik,
       }: {
         children: React.ReactNode;
-        ik: ComKey<"test", "container">;
+        ik: ComKey<"test", "container"> | null;
       }
     ) => {
       return CItemLoad<
@@ -94,17 +102,20 @@ describe('CItemLoad', () => {
         "container"
       >({
         name: 'test',
-        parent: parentContext as unknown as AItemContext<Item<"container">, "container">,
-        adapter: adapterContext as unknown as CItemAdapterContext<TestItem, 'test', 'container'>,
-        context: testContext as unknown as CItemContext<TestItem, 'test', 'container'>,
+        parent: parentContext as AItemContext<Item<"container">, "container">,
+        adapter: adapterContext as CItemAdapterContext<TestItem, 'test', 'container'>,
+        context: testContext as CItemContext<TestItem, 'test', 'container'>,
         children,
         ik,
+        contextName: 'test',
+        parentContextName: 'container'
       });
     };
 
     TestItemRender = () => {
       const { item } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       return <div>{item?.name}</div>;
     };
@@ -112,16 +123,8 @@ describe('CItemLoad', () => {
   });
 
   it('should render children', () => {
-    
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
+
+    mockCacheMap.get.mockReturnValue(mockTestItem);
 
     const { getByText } = render(
       <TestItemLoad ik={key}>
@@ -131,19 +134,16 @@ describe('CItemLoad', () => {
 
     expect(getByText('Test Item')).toBeInTheDocument();
   });
- 
+
   it('pass in a null ik', () => {
- 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { getByText } = render(
-      // @ts-ignore
+
+    const { queryByText } = render(
       <TestItemLoad ik={null}>
         <TestItemRender />
       </TestItemLoad>
     );
 
-    // TODO: Figure out what to test here
-
+    expect(queryByText('Test Item')).not.toBeInTheDocument();
   });
 
   it('pass in an ik that is a PriKey', () => {
@@ -156,24 +156,16 @@ describe('CItemLoad', () => {
   });
 
   it('test remove', async () => {
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestRemove: React.FC = () => {
       const { item, remove } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [deleted, setDeleted] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( item ) {
           remove();
           setDeleted(true);
@@ -195,29 +187,21 @@ describe('CItemLoad', () => {
   });
 
   it('test remove without a valid key', async () => {
-    key = {
+    const invalidKey = {
       kt: 'test', pk: '1-1-1-1-1',
       loc: [{ kt: 'container', lk: 'null' }]
-    } as unknown as ComKey<"test", "container">;
+    } as ComKey<"test", "container">;
 
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestRemove: React.FC = () => {
       const { key, remove } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [deleted, setDeleted] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( key ) {
           remove();
           setDeleted(true);
@@ -229,7 +213,7 @@ describe('CItemLoad', () => {
 
     const { getByText } = render(
       <ErrorBoundary fallbackRender={() => <div>Error Thrown</div>}>
-        <TestItemLoad ik={key}>
+        <TestItemLoad ik={invalidKey}>
           <TestRemove />
         </TestItemLoad>
       </ErrorBoundary>
@@ -241,24 +225,16 @@ describe('CItemLoad', () => {
   });
 
   it('test update', async () => {
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestUpdate: React.FC = () => {
       const { item, update } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [updated, setUpdated] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( item ) {
           update({ name: 'Updated Item' });
           setUpdated(true);
@@ -280,24 +256,16 @@ describe('CItemLoad', () => {
   });
 
   it('test update with no item', async () => {
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestUpdate: React.FC = () => {
       const { item, update } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [updated, setUpdated] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( item ) {
           // @ts-ignore
           update(null);
@@ -322,29 +290,21 @@ describe('CItemLoad', () => {
   });
 
   it('test update without a valid key', async () => {
-    key = {
+    const invalidKey = {
       kt: 'test', pk: '1-1-1-1-1',
       loc: [{ kt: 'container', lk: 'null' }]
-    } as unknown as ComKey<"test", "container">;
+    } as ComKey<"test", "container">;
 
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestUpdate: React.FC = () => {
       const { key, update } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [updated, setUpdated] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( key ) {
           update({ name: 'Updated Item' });
           setUpdated(true);
@@ -356,7 +316,7 @@ describe('CItemLoad', () => {
 
     const { getByText } = render(
       <ErrorBoundary fallbackRender={() => <div>Error Thrown</div>}>
-        <TestItemLoad ik={key}>
+        <TestItemLoad ik={invalidKey}>
           <TestUpdate />
         </TestItemLoad>
       </ErrorBoundary>
@@ -368,24 +328,16 @@ describe('CItemLoad', () => {
   });
 
   it('test action', async () => {
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestAction: React.FC = () => {
       const { item, action } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [actioned, setActioned] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( item ) {
           action('testAction');
           setActioned(true);
@@ -407,29 +359,21 @@ describe('CItemLoad', () => {
   });
 
   it('test action without a valid key', async () => {
-    key = {
+    const invalidKey = {
       kt: 'test', pk: '1-1-1-1-1',
       loc: [{ kt: 'container', lk: 'null' }]
-    } as unknown as ComKey<"test", "container">;
+    } as ComKey<"test", "container">;
 
-    mockCacheMap.get.mockReturnValue({
-      key,
-      events: {
-        created: { at: new Date() },
-        updated: { at: new Date() },
-        removed: { at: null },
-      },
-      name: 'Test Item',
-    } as unknown as TestItem);
-    
+    mockCacheMap.get.mockReturnValue(mockTestItem);
+
     const TestAction: React.FC = () => {
       const { key, action } = useCItem<TestItem, 'test', 'container'>(
-        testContext as unknown as CItemContext<TestItem, 'test', 'container'>
+        testContext as CItemContext<TestItem, 'test', 'container'>,
+        'test'
       );
       const [actioned, setActioned] = useState(false);
 
       useEffect(() => {
-        // Add small delay before removing to simulate async operation
         if( key ) {
           action('testAction');
           setActioned(true);
@@ -441,7 +385,7 @@ describe('CItemLoad', () => {
 
     const { getByText } = render(
       <ErrorBoundary fallbackRender={() => <div>Error Thrown</div>}>
-        <TestItemLoad ik={key}>
+        <TestItemLoad ik={invalidKey}>
           <TestAction />
         </TestItemLoad>
       </ErrorBoundary>

@@ -1,28 +1,30 @@
 /* eslint-disable no-undefined */
-import { PItemAdapter } from '../../src/primary/PItemAdapter';
+import * as React from 'react';
 import { PItemsFind } from '../../src/primary/PItemsFind';
-import { CacheMap } from '@fjell/cache';
-import { Item, PriKey, UUID } from '@fjell/core';
-import { renderHook, waitFor } from '@testing-library/react';
-import React from 'react';
 import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
-import { PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
-import { Cache } from '@fjell/cache';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { ReactNode } from 'react';
+import { CacheMap } from '@fjell/cache';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 interface TestItem extends Item<'test'> {
   name: string;
+  key: ComKey<'test'>;
+  events: {
+    created: { at: Date };
+    updated: { at: Date };
+    deleted: { at: null };
+  };
 }
 
 type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
-type TestItemsProviderContextType = PItemsContextType<TestItem, 'test'>;
-type TestItemCache = Cache<TestItem, 'test'>;
 
 describe('PItemsFind', () => {
   const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
   const testItem: TestItem = {
-    key: priKey,
+    key: { kt: priKey.kt, pk: priKey.pk },
     name: 'test',
     events: {
       created: { at: new Date() },
@@ -32,21 +34,18 @@ describe('PItemsFind', () => {
   };
 
   let cacheMap: CacheMap<TestItem, 'test'>;
-  let testItemCache: TestItemCache;
-  let TestItemAdapterContext: React.Context<TestItemAdapterContextType | undefined>;
-  let TestItemsProviderContext: React.Context<TestItemsProviderContextType | undefined>;
-  let TestItemsAdapter: React.FC<{ children: React.ReactNode }>;
-  let TestItemsFind: typeof PItemsFind<
-    TestItem,
-    'test'
-  >;
+  let testItemCache: TestItemAdapterContextType;
+  let TestItemContext: React.Context<TestItemAdapterContextType | undefined>;
+  let TestItemAdapter: React.FC<{ children: ReactNode }>;
 
   beforeEach(() => {
     vi.resetAllMocks();
 
     cacheMap = new CacheMap<TestItem, 'test'>(['test']);
+    (cacheMap as any).set(testItem.key, testItem);
 
     testItemCache = {
+      name: 'test',
       pkTypes: ['test'],
       all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
       one: vi.fn().mockResolvedValue([cacheMap, testItem]),
@@ -57,68 +56,55 @@ describe('PItemsFind', () => {
       update: vi.fn().mockResolvedValue([cacheMap, testItem]),
       action: vi.fn().mockResolvedValue([cacheMap, testItem]),
       allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      find: vi.fn().mockResolvedValue([cacheMap, [testItem, testItem]]),
       set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-    } as unknown as jest.Mocked<TestItemCache>;
+      find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+      cacheMap: cacheMap,
+    } as unknown as TestItemAdapterContextType;
 
-    TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
-    TestItemsProviderContext = React.createContext<TestItemsProviderContextType | undefined>(undefined);
+    TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
 
-    TestItemsAdapter = (
-      {
-        children,
-      }: {
-        children: React.ReactNode;
-      }
-    ) => {
-      return PItemAdapter<TestItemCache, TestItem, 'test'>({
-        name: 'test',
-        cache: testItemCache,
-        context: TestItemAdapterContext,
-        children,
-      });
-    }
-
-    TestItemsFind = (
-      {
-        children,
-      }: {
-        children: React.ReactNode;
-      }
-    ) => {
-      return PItemsFind<
-        TestItem,
-        'test'
-      >({
-        name: 'test',
-        adapter: TestItemAdapterContext,
-        context: TestItemsProviderContext,
-        children,
-        finder: 'testFinder',
-        finderParams: {},
-      });
-    };
-
+    TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
+      <PItemsFind
+        name="test"
+        adapter={TestItemContext}
+        context={TestItemContext}
+        contextName="TestItemContext"
+        finder="test"
+        finderParams={{ name: 'test' }}
+      >
+        {children}
+      </PItemsFind>
+    );
   });
 
-  it('should fetch items', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemsAdapter>
-        <TestItemsFind
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-          finder="testFinder"
-          finderParams={{}}
-        >{children}</TestItemsFind>
-      </TestItemsAdapter>
+  it('should find items', async () => {
+    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+      <TestItemContext.Provider value={testItemCache}>
+        <TestItemAdapter>{children}</TestItemAdapter>
+      </TestItemContext.Provider>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+    const { result } = renderHook(() => {
+      const context = React.useContext(TestItemContext);
+      if (!context) throw new Error('Context not found');
+      return context;
+    }, { wrapper });
 
-    await waitFor(async () => {
-      const items = result.current.items;
-      expect(items).toEqual([testItem, testItem]);
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
     });
+
+    // Wait for initial mount effect to complete
+    await waitFor(() => {
+      expect(testItemCache.find).toHaveBeenCalledTimes(1);
+    });
+
+    await act(async () => {
+      const [, items] = await result.current.find('test', { name: 'test' });
+      expect(items).toEqual([testItem]);
+    });
+
+    expect(testItemCache.find).toHaveBeenCalledTimes(2);
+    expect(testItemCache.find).toHaveBeenCalledWith('test', { name: 'test' });
   });
 });

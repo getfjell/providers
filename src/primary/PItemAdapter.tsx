@@ -3,7 +3,7 @@ import { abbrevIK, Item, ItemQuery, PriKey, TypesProperties } from "@fjell/core"
 import React, { createElement, useCallback, useMemo } from "react";
 import { PItemAdapterContext, PItemAdapterContextType } from "./PItemAdapterContext";
 
-import LibLogger from '@/logger';
+import LibLogger from '../logger';
 import { AggregateConfig, createAggregator } from "@fjell/cache";
 import { Cache } from "@fjell/cache";
 import { CacheMap } from "@fjell/cache";
@@ -64,6 +64,29 @@ export const PItemAdapter = <
     }
   }, [cache, aggregates, events, name]);
 
+  const [resolvedSourceCache, setResolvedSourceCache] = React.useState<Cache<V, S> | null>(() => {
+    if (sourceCache && typeof (sourceCache as any).then !== 'function') {
+      return sourceCache as Cache<V, S>;
+    }
+    return null;
+  });
+
+  React.useEffect(() => {
+    if (sourceCache) {
+      if (typeof (sourceCache as any).then === 'function') {
+        (sourceCache as Promise<Cache<V,S>>).then(c => {
+          setResolvedSourceCache(c);
+        }).catch(error => {
+          logger.error('Failed to initialize source cache in %s: %s', name, error);
+        });
+      } else {
+        setResolvedSourceCache(sourceCache as Cache<V, S>);
+      }
+    } else {
+      setResolvedSourceCache(null);
+    }
+  }, [sourceCache, name]);
+
   const handleCacheError = useCallback((operation: string) => {
     logger.error('Cache not initialized in %s. Operation "%s" failed.', name, operation);
     throw new Error(`Cache not initialized in ${name}. Operation "${operation}" failed.`);
@@ -73,87 +96,92 @@ export const PItemAdapter = <
     query?: ItemQuery,
   ): Promise<V[] | null> => {
     logger.trace('all', { query: query && query.toString() });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('all');
     }
-    const [newCacheMap, items] = await sourceCache.all(query);
+    const result = await resolvedSourceCache.all(query);
+    if (!Array.isArray(result)) {
+      logger.error('Invalid result from cache.all() in %s', name);
+      return null;
+    }
+    const [newCacheMap, items] = result;
     setCacheMap(newCacheMap.clone());
     return items as V[] | null;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError, name]);
 
   const one = useCallback(async (
     query?: ItemQuery,
   ): Promise<V | null> => {
     logger.trace('one', { query: query && query.toString() });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('one');
     }
-    const [newCacheMap, item] = await sourceCache.one(query);
+    const [newCacheMap, item] = await resolvedSourceCache.one(query);
     setCacheMap(newCacheMap.clone());
     return item as V | null;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const create = useCallback(async (
     item: TypesProperties<V, S>,
   ): Promise<V> => {
     logger.trace('create', { item });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('create');
     }
-    const [newCacheMap, newItem] = await sourceCache.create(item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.create(item);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const get = useCallback(async (
     key: PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('get', { key: abbrevIK(key) });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('get');
     }
-    const [newCacheMap, item] = await sourceCache.get(key);
+    const [newCacheMap, item] = await resolvedSourceCache.get(key);
     setCacheMap(newCacheMap.clone());
     return item as V | null;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const remove = useCallback(async (
     key: PriKey<S>,
   ): Promise<void> => {
     logger.trace('remove', { key: abbrevIK(key) });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('remove');
     }
-    const newCacheMap = await sourceCache.remove(key);
+    const newCacheMap = await resolvedSourceCache.remove(key);
     setCacheMap(newCacheMap.clone());
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const retrieve = useCallback(async (
     key: PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('retrieve', { key: abbrevIK(key) });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('retrieve');
     }
-    const [newCacheMap, item] = await sourceCache.retrieve(key);
+    const [newCacheMap, item] = await resolvedSourceCache.retrieve(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
     return item as V | null;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const update = useCallback(async (
     key: PriKey<S>,
     item: TypesProperties<V, S>,
   ): Promise<V> => {
     logger.trace('update', { key: abbrevIK(key), item });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('update');
     }
-    const [newCacheMap, newItem] = await sourceCache.update(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.update(key, item);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const action = useCallback(async (
     key: PriKey<S>,
@@ -161,52 +189,52 @@ export const PItemAdapter = <
     body?: any,
   ): Promise<V> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('action');
     }
-    const [newCacheMap, newItem] = await sourceCache.action(key, action, body);
+    const [newCacheMap, newItem] = await resolvedSourceCache.action(key, action, body);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const allAction = useCallback(async (
     action: string,
     body?: any,
   ): Promise<V[] | null> => {
     logger.trace('action', { action, body });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('allAction');
     }
-    const [newCacheMap, newItems] = await sourceCache.allAction(action, body);
+    const [newCacheMap, newItems] = await resolvedSourceCache.allAction(action, body);
     setCacheMap(newCacheMap.clone());
     return newItems as V[];
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<V[] | null> => {
     logger.trace('find', { finder, finderParams });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('find');
     }
-    const [newCacheMap, newItems] = await sourceCache.find(finder, finderParams);
+    const [newCacheMap, newItems] = await resolvedSourceCache.find(finder, finderParams);
     setCacheMap(newCacheMap.clone());
     return newItems as V[];
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const set = useCallback(async (
     key: PriKey<S>,
     item: V,
   ): Promise<V> => {
     logger.trace('set', { key: abbrevIK(key), item });
-    if (!sourceCache) {
+    if (!resolvedSourceCache) {
       return handleCacheError('set');
     }
-    const [newCacheMap, newItem] = await sourceCache.set(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.set(key, item);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [sourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError]);
 
   const contextValue: PItemAdapterContextType<V, S> = {
     name,
