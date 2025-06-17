@@ -6,7 +6,7 @@ import {
   Item,
   ItemQuery, LocKey, LocKeyArray, PriKey, TypesProperties
 } from "@fjell/core";
-import React, { createElement, useCallback, useMemo } from "react";
+import * as React from "react";
 import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
 import { Cache } from "@fjell/cache";
 import { CacheMap } from "@fjell/cache";
@@ -60,13 +60,13 @@ export const CItemAdapter = <
     }
   }, [cache, name]);
 
-  const pkTypes = useMemo(() => cache?.pkTypes ?? [], [cache]);
+  const pkTypes = React.useMemo(() => cache?.pkTypes ?? [], [cache]);
   const logger = LibLogger.get('CItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =
     React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(pkTypes));
 
-  const sourceCache = useMemo(() => {
+  const sourceCache = React.useMemo(() => {
     if (!cache) {
       logger.error('No cache provided to %s, operations will fail', name);
       return null;
@@ -95,12 +95,12 @@ export const CItemAdapter = <
     }
   }, [sourceCache, name]);
 
-  const handleCacheError = useCallback((operation: string) => {
+  const handleCacheError = React.useCallback((operation: string) => {
     logger.error('Cache not initialized in %s. Operation "%s" failed.', name, operation);
     throw new Error(`Cache not initialized in ${name}. Operation "${operation}" failed.`);
   }, [name]);
 
-  const all = useCallback(async (
+  const all = React.useCallback(async (
     query?: ItemQuery,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<V[] | null> => {
@@ -118,7 +118,7 @@ export const CItemAdapter = <
     return items as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
-  const one = useCallback(async (
+  const one = React.useCallback(async (
     query?: ItemQuery,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<V | null> => {
@@ -134,7 +134,7 @@ export const CItemAdapter = <
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const create = useCallback(async (
+  const create = React.useCallback(async (
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<V> => {
@@ -150,7 +150,7 @@ export const CItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const get = useCallback(async (
+  const get = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('get', { key: abbrevIK(key) });
@@ -162,7 +162,7 @@ export const CItemAdapter = <
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const remove = useCallback(async (
+  const remove = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
   ): Promise<void> => {
     logger.trace('remove', { key: abbrevIK(key) });
@@ -173,7 +173,7 @@ export const CItemAdapter = <
     setCacheMap(newCacheMap.clone());
   }, [resolvedSourceCache, handleCacheError]);
 
-  const retrieve = useCallback(async (
+  const retrieve = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('retrieve', { key: abbrevIK(key) });
@@ -187,7 +187,7 @@ export const CItemAdapter = <
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const update = useCallback(async (
+  const update = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
   ): Promise<V> => {
@@ -200,7 +200,7 @@ export const CItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const action = useCallback(async (
+  const action = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     action: string,
     body?: any,
@@ -214,7 +214,7 @@ export const CItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const allAction = useCallback(async (
+  const allAction = React.useCallback(async (
     action: string,
     body?: any,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
@@ -232,7 +232,7 @@ export const CItemAdapter = <
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
-  const find = useCallback(async (
+  const find = React.useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
@@ -246,7 +246,7 @@ export const CItemAdapter = <
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
-  const set = useCallback(async (
+  const set = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: V,
   ): Promise<V> => {
@@ -280,7 +280,7 @@ export const CItemAdapter = <
     contextValue.actions = addActions(contextValue);
   }
 
-  return createElement(
+  return React.createElement(
     context.Provider,
     {
       value: contextValue,
