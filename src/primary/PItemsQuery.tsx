@@ -53,7 +53,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
 
   useEffect(() => {
     (async () => {
-      logger.trace('useEffect[queryString]', { query });
+      logger.trace('useEffect[queryString] %s', query.toString());
       await allItems(query);
       setIsLoading(false);
     })();
