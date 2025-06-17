@@ -34,25 +34,29 @@ export const CItemLoad = <
       addActions = () => ({}),
       children,
       context,
+      contextName,
       ik,
       parent,
+      parentContextName,
     }: {
-      name: string;
-      adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-      addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
-        Record<string, (...params: any[]) => Promise<V | null>>;
-      children: React.ReactNode;
-      context: CItemContext<V, S, L1, L2, L3, L4, L5>;
-      create?: TypesProperties<V, S, L1, L2, L3, L4, L5>;
-      ik: ComKey<S, L1, L2, L3, L4, L5> | null;
-      notFound?: React.ReactNode;
-      optional?: boolean;
-      parent: AItemContext<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
-    }
+    name: string;
+    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+    addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
+      Record<string, (...params: any[]) => Promise<V | null>>;
+    children: React.ReactNode;
+    context: CItemContext<V, S, L1, L2, L3, L4, L5>;
+    contextName: string;
+    create?: TypesProperties<V, S, L1, L2, L3, L4, L5>;
+    ik: ComKey<S, L1, L2, L3, L4, L5> | null;
+    notFound?: React.ReactNode;
+    optional?: boolean;
+    parent: AItemContext<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
+    parentContextName: string;
+  }
   ) => {
 
   const [error, setError] = React.useState<Error | null>(null);
-  if( error ) {
+  if (error) {
     throw error;
   }
 
@@ -62,7 +66,7 @@ export const CItemLoad = <
   const [isRemoving, setIsRemoving] = React.useState<boolean>(false);
 
   // Since we pass this to the actions constructor, don't destructure it yet
-  const cItemAdapter = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter);
+  const cItemAdapter = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {
@@ -76,7 +80,7 @@ export const CItemLoad = <
 
   const logger = LibLogger.get('CItemProvider', ...pkTypes);
 
-  const parentItemAdapter = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
+  const parentItemAdapter = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     item: parentItem,
@@ -111,7 +115,7 @@ export const CItemLoad = <
   useEffect(() => {
     logger.trace('useEffect[ik]', { ik });
     if (ik) {
-      if( isComKey(ik) ) {
+      if (isComKey(ik)) {
         logger.debug('Key has been provided', { ik });
         setItemKey(ik);
       } else {

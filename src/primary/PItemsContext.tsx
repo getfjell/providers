@@ -33,7 +33,7 @@ export interface PItemsContextType<
     key: PriKey<S>,
     item: V,
   ) => Promise<V>;
-  
+
   // TODO: Again, this allAction should return either an object or an array
   allAction: (action: string,
     body: any) => Promise<V | null>;
@@ -49,11 +49,11 @@ export type PItemsContext<
 export const usePItems = <
   V extends Item<S>,
   S extends string
->(context: PItemsContext<V, S>): PItemsContextType<V, S> => {
+>(context: PItemsContext<V, S>, contextName: string): PItemsContextType<V, S> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This hook must be used within a ${context.displayName}`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

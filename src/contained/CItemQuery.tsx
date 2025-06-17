@@ -34,24 +34,28 @@ export const CItemQuery = <
       addActions = () => ({}),
       children,
       context,
+      contextName,
       create,
       loading,
       notFound,
       optional = false,
       parent,
+      parentContextName,
       query,
     }: {
-      name: string;
-      adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-      addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
+    name: string;
+    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+    addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
       Record<string, (...params: any[]) => Promise<V | null>>;
     children: React.ReactNode;
     context: CItemContext<V, S, L1, L2, L3, L4, L5>;
+    contextName: string;
     create?: TypesProperties<V, S, L1, L2, L3, L4, L5>;
     loading?: React.ReactNode;
     notFound?: React.ReactNode;
     optional?: boolean;
     parent: AItemContext<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
+    parentContextName: string;
     query?: ItemQuery;
   }
   ) => {
@@ -64,7 +68,7 @@ export const CItemQuery = <
   }
 
   // Since we pass this to the actions constructor, don't destructure it yet
-  const cItemAdapter = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter);
+  const cItemAdapter = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {
@@ -75,7 +79,7 @@ export const CItemQuery = <
 
   const logger = LibLogger.get('CItemQueryProvider', ...pkTypes);
 
-  const parentItemContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent);
+  const parentItemContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     locations: parentLocations,
@@ -148,15 +152,17 @@ export const CItemQuery = <
     name,
     ik: itemKey as ComKey<S, L1, L2, L3, L4, L5> | null,
     parent,
+    parentContextName,
     adapter,
     context,
+    contextName,
     addActions,
     children,
   });
 
   if (queryRunning) {
     return loading;
-  } else if (itemKey || optional ) {
+  } else if (itemKey || optional) {
     return returnContext;
   } else {
     return notFound;
