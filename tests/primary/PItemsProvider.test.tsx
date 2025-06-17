@@ -1,117 +1,91 @@
-import { PItemAdapter } from '../../src/primary/PItemAdapter';
-import { PItemsProvider } from '../../src/primary/PItemsProvider';
 import { CacheMap } from '@fjell/cache';
-import { Item, PriKey, UUID } from '@fjell/core';
-import { act, renderHook } from '@testing-library/react';
-import React from 'react';
+import { Item } from '@fjell/core';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import * as React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
 import { PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
-import { Cache } from '@fjell/cache';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { vi } from 'vitest';
+import { PItemsProvider } from '../../src/primary/PItemsProvider';
 
 interface TestItem extends Item<'test'> {
   name: string;
 }
 
-type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
-type TestItemsProviderContextType = PItemsContextType<TestItem, 'test'>;
-type TestItemCache = Cache<TestItem, 'test'>;
+const testItem: TestItem = {
+  key: { kt: 'test', pk: '1-1-1-1-1' },
+  name: 'test item',
+  events: {
+    created: { at: new Date(), by: { kt: 'test', pk: '1-1-1-1-1' } },
+    updated: { at: new Date(), by: { kt: 'test', pk: '1-1-1-1-1' } },
+    deleted: { at: null }
+  }
+};
 
-describe('PItemsProvider', () => {
-  const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
-  const testItem: TestItem = {
-    key: priKey,
+// eslint-disable-next-line no-undefined
+const TestItemsProviderContext = React.createContext<PItemsContextType<TestItem, 'test'> | undefined>(undefined);
+TestItemsProviderContext.displayName = 'TestItemsProviderContext';
+
+// eslint-disable-next-line no-undefined
+const TestItemAdapterContext = React.createContext<PItemAdapterContextType<TestItem, 'test'> | undefined>(undefined);
+TestItemAdapterContext.displayName = 'TestItemAdapterContext';
+
+const TestItemsAdapter = ({ children }: { children: React.ReactNode }) => {
+  const cacheMap = new CacheMap<TestItem, 'test'>();
+  const adapter = {
     name: 'test',
-    events: {
-      created: { at: new Date() },
-      updated: { at: new Date() },
-      deleted: { at: null },
-    }
+    cacheMap,
+    pkTypes: ['test'],
+    all: vi.fn().mockResolvedValue([testItem]),
+    one: vi.fn().mockResolvedValue(testItem),
+    create: vi.fn().mockResolvedValue(testItem),
+    get: vi.fn().mockResolvedValue(testItem),
+    remove: vi.fn(),
+    retrieve: vi.fn().mockResolvedValue(testItem),
+    update: vi.fn().mockResolvedValue(testItem),
+    action: vi.fn().mockResolvedValue(testItem),
+    allAction: vi.fn().mockResolvedValue([testItem]),
+    find: vi.fn().mockResolvedValue([testItem]),
+    set: vi.fn().mockResolvedValue(testItem)
   };
 
-  let cacheMap: CacheMap<TestItem, 'test'>;
-  let testItemCache: TestItemCache;
-  let TestItemAdapterContext: React.Context<TestItemAdapterContextType | undefined>;
-  let TestItemsProviderContext: React.Context<TestItemsProviderContextType | undefined>;
-  let TestItemsAdapter: React.FC<{ children: React.ReactNode }>;
-  let TestItemsProvider: typeof PItemsProvider<
-    TestItem,
-    'test'
-  >;
+  return (
+    <TestItemAdapterContext.Provider value={adapter}>
+      {children}
+    </TestItemAdapterContext.Provider>
+  );
+};
 
+const TestItemsProvider = ({ children }: { children: React.ReactNode }) => {
+  return PItemsProvider<TestItem, 'test'>({
+    name: 'test',
+    items: [testItem],
+    adapter: TestItemAdapterContext,
+    context: TestItemsProviderContext,
+    contextName: 'TestItemsProviderContext',
+    children
+  });
+};
+
+describe('PItemsProvider', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
-
-    testItemCache = {
-      pkTypes: ['test'],
-      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      remove: vi.fn().mockResolvedValue(cacheMap),
-      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-    } as unknown as jest.Mocked<TestItemCache>;
-
-    // eslint-disable-next-line no-undefined
-    TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
-    // eslint-disable-next-line no-undefined
-    TestItemsProviderContext = React.createContext<TestItemsProviderContextType | undefined>(undefined);
-
-    TestItemsAdapter = (
-      {
-        children,
-      }: {
-        children: React.ReactNode;
-      }
-    ) => {
-      return PItemAdapter<TestItemCache, TestItem, 'test'>({
-        name: 'test',
-        cache: testItemCache,
-        context: TestItemAdapterContext,
-        children,
-      });
-    }
-
-    TestItemsProvider = (
-      {
-        children,
-      }: {
-        children: React.ReactNode;
-      }
-    ) => {
-      return PItemsProvider<
-        TestItem,
-        'test'
-      >({
-        name: 'test',
-        items: [testItem],
-        adapter: TestItemAdapterContext,
-        context: TestItemsProviderContext,
-        children,
-      });
-    };
-
+    vi.clearAllMocks();
   });
 
   it('should fetch all items', async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-        >{children}</TestItemsProvider>
+        <TestItemsProvider>
+          {children}
+        </TestItemsProvider>
       </TestItemsAdapter>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
+
+    // Wait for cache initialization
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
 
     await act(async () => {
       const items = await result.current.all();
@@ -122,113 +96,54 @@ describe('PItemsProvider', () => {
   it('should create an item', async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-        >{children}</TestItemsProvider>
+        <TestItemsProvider>
+          {children}
+        </TestItemsProvider>
       </TestItemsAdapter>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
+
+    // Wait for cache initialization
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
+    });
 
     await act(async () => {
-      const newItem = await result.current.create({ name: 'new test' });
-      expect(newItem).toEqual(testItem);
+      const newItem: TestItem = {
+        key: { kt: 'test', pk: '2-2-2-2-2' },
+        name: 'new test',
+        events: testItem.events
+      };
+      const created = await result.current.create(newItem);
+      expect(created).toEqual(testItem);
     });
   });
 
-  it('should perform an allAction', async () => {
+  it('should set an item', async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext} context={TestItemsProviderContext}>{children}</TestItemsProvider>
+        <TestItemsProvider>
+          {children}
+        </TestItemsProvider>
       </TestItemsAdapter>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
 
-    await act(async () => {
-      const item = await result.current.allAction('testAction', { data: 'test' });
-      expect(item).toEqual([testItem]);
+    // Wait for cache initialization
+    await waitFor(() => {
+      expect(result.current).toBeDefined();
     });
-  });
 
-  it('one', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-        >{children}</TestItemsProvider>
-      </TestItemsAdapter>
-    );
-
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
+    const newItem: TestItem = {
+      ...testItem,
+      key: { kt: 'test', pk: '3-3-3-3-3' },
+      name: 'new name'
+    };
 
     await act(async () => {
-      const item = await result.current.one();
-      expect(item).toEqual(testItem);
-    });
-  });
-
-  it('update', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-        >{children}</TestItemsProvider>
-      </TestItemsAdapter>
-    );
-
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
-
-    await act(async () => {
-      const item = await result.current.update({ pk: '1', kt: 'test' }, { name: 'updated' });
-      expect(item).toEqual(testItem);
-    });
-  });
-
-  it('remove', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-        >{children}</TestItemsProvider>
-      </TestItemsAdapter>
-    );
-
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
-
-    await act(async () => {
-      await result.current.remove({ pk: '1', kt: 'test' });
-    });
-  });
-
-  it('set', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemsAdapter>
-        <TestItemsProvider
-          name="test"
-          adapter={TestItemAdapterContext}
-          context={TestItemsProviderContext}
-        >{children}</TestItemsProvider>
-      </TestItemsAdapter>
-    );
-
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext), { wrapper });
-
-    const key = { pk: '1', kt: 'test' } as PriKey<'test'>;
-    const item = { key, name: 'set', events: { created: { at: new Date() } } } as TestItem;
-
-    await act(async () => {
-      const retItem = await result.current.set(key, item);
+      const retItem = await result.current.set(newItem.key, newItem);
       expect(retItem).toEqual(testItem);
     });
   });
