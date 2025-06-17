@@ -1,4 +1,4 @@
- 
+
 import { Item, PriKey, TypesProperties } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
@@ -7,22 +7,20 @@ import LibLogger from '@/logger';
 import { PItemAdapterContext } from "./PItemAdapterContext";
 import { PItemsContext, PItemsContextType } from "./PItemsContext";
 
-export const PItemsProvider = <
-  V extends Item<S>,
-  S extends string
->(
-    {
-      name,
-      items = [],
-      adapter,
-      addActions = () => ({}),
-      addQueries = () => ({}),
-      children,
-      context,
-      renderEach,
-      isLoadingParam = false,
-      overrides,
-    }: {
+export const PItemsProvider = <V extends Item<S>, S extends string>(
+  {
+    name,
+    items = [],
+    adapter,
+    addActions = () => ({}),
+    addQueries = () => ({}),
+    children,
+    context,
+    contextName,
+    renderEach,
+    isLoadingParam = false,
+    overrides,
+  }: {
     name: string;
     items?: V[];
     adapter: PItemAdapterContext<V, S>;
@@ -32,6 +30,7 @@ export const PItemsProvider = <
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children: React.ReactNode;
     context: PItemsContext<V, S>;
+    contextName: string;
     renderEach?: (item: V) => React.ReactNode;
     isLoadingParam?: boolean;
     overrides?: {
@@ -39,15 +38,15 @@ export const PItemsProvider = <
       one?: () => Promise<V | null>;
     };
   }
-  ) => {
+) => {
 
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isCreating, setIsCreating] = React.useState<boolean>(false);
   const [isUpdating, setIsUpdating] = React.useState<boolean>(false);
   const [isRemoving, setIsRemoving] = React.useState<boolean>(false);
-  
+
   // Since we pass this to the actions constructor, don't destructure it yet
-  const adapterContext = usePItemAdapter<V, S>(adapter);
+  const adapterContext = usePItemAdapter<V, S>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {

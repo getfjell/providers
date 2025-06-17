@@ -34,11 +34,11 @@ export type PItemContext<
 export const usePItem = <
   V extends Item<S>,
   S extends string
->(context: PItemContext<V, S>): PItemContextType<V, S> => {
+>(context: PItemContext<V, S>, contextName: string): PItemContextType<V, S> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This hook must be used within a ${context.displayName}`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

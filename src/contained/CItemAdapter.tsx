@@ -20,11 +20,12 @@ export const useCItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>): CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
+>(context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>, contextName: string):
+  CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This generic item adapter hook must be used within a ${context.displayName}`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;
@@ -38,52 +39,68 @@ export const CItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(
-    { name, cache, context, aggregates, events, addActions, children }: {
-    name: string;
-    cache: Cache<V, S, L1, L2, L3, L4, L5>;
-    context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    aggregates?: AggregateConfig;
-    events?: AggregateConfig;
-    addActions?: (contextValues: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>) =>
-      Record<string, (
-        ik: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-        body?: any,
-      ) => Promise<V | null>>;
-    children: React.ReactNode;
-  }
-  ) => {
+>({ name, cache, context, aggregates, events, addActions, children }: {
+  name: string;
+  cache: Cache<V, S, L1, L2, L3, L4, L5>;
+  context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+  aggregates?: AggregateConfig;
+  events?: AggregateConfig;
+  addActions?: (contextValues: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>) =>
+    Record<string, (
+      ik: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+      body?: any,
+    ) => Promise<V | null>>;
+  children: React.ReactNode;
+}) => {
 
-  const pkTypes = useMemo(() => cache.pkTypes, [cache]);
+  // Validate cache at initialization
+  React.useEffect(() => {
+    if (!cache) {
+      logger.error('Cache is undefined in %s. This will cause all operations to fail.', name);
+    }
+  }, [cache, name]);
+
+  const pkTypes = useMemo(() => cache?.pkTypes ?? [], [cache]);
   const logger = LibLogger.get('CItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =
-    React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(cache.pkTypes));
+    React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(pkTypes));
 
   const sourceCache = useMemo(() => {
+    if (!cache) {
+      logger.error('No cache provided to %s, operations will fail', name);
+      return null;
+    }
     if ((aggregates && Object.keys(aggregates).length > 0) || (events && Object.keys(events).length > 0)) {
       return createAggregator<V, S, L1, L2, L3, L4, L5>(
         cache, { aggregates, events });
     } else {
-      return cache
+      return cache;
     }
-  }, [cache, aggregates]);
+  }, [cache, aggregates, events, name]);
 
-  // TODO: Locations should be required here
+  const handleCacheError = useCallback((operation: string) => {
+    logger.error('Cache not initialized in %s. Operation "%s" failed.', name, operation);
+    throw new Error(`Cache not initialized in ${name}. Operation "${operation}" failed.`);
+  }, [name]);
+
   const all = useCallback(async (
     query?: ItemQuery,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<V[] | null> => {
     logger.trace('all', {
       query: query && abbrevQuery(query),
-      cache: cache.pkTypes,
+      cache: cache?.pkTypes,
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
     });
+    if (!sourceCache) {
+      return handleCacheError('all');
+    }
     logger.debug('Fetching Items from sourceCache.all');
     const [newCacheMap, items] = await sourceCache.all(query, locations);
     setCacheMap(newCacheMap.clone());
     return items as V[];
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const one = useCallback(async (
     query?: ItemQuery,
@@ -93,11 +110,13 @@ export const CItemAdapter = <
       query: query && abbrevQuery(query),
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
     });
-    // TODO: This isLoading thing could be a decorator method...  look into it.
+    if (!sourceCache) {
+      return handleCacheError('one');
+    }
     const [newCacheMap, item] = await sourceCache.one(query, locations);
     setCacheMap(newCacheMap.clone());
     return item as V | null;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const create = useCallback(async (
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
@@ -107,48 +126,63 @@ export const CItemAdapter = <
       item,
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
     });
+    if (!sourceCache) {
+      return handleCacheError('create');
+    }
     const [newCacheMap, newItem] = await sourceCache.create(item, locations);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const get = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('get', { key: abbrevIK(key) });
+    if (!sourceCache) {
+      return handleCacheError('get');
+    }
     const [newCacheMap, item] = await sourceCache.get(key);
     setCacheMap(newCacheMap.clone());
     return item as V | null;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const remove = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
   ): Promise<void> => {
     logger.trace('remove', { key: abbrevIK(key) });
+    if (!sourceCache) {
+      return handleCacheError('remove');
+    }
     const newCacheMap = await sourceCache.remove(key);
     setCacheMap(newCacheMap.clone());
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const retrieve = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('retrieve', { key: abbrevIK(key) });
+    if (!sourceCache) {
+      return handleCacheError('retrieve');
+    }
     const [newCacheMap, item] = await sourceCache.retrieve(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
     return item as V | null;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const update = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
   ): Promise<V> => {
     logger.trace('update', { key: abbrevIK(key), item });
+    if (!sourceCache) {
+      return handleCacheError('update');
+    }
     const [newCacheMap, newItem] = await sourceCache.update(key, item);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const action = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
@@ -156,12 +190,14 @@ export const CItemAdapter = <
     body?: any,
   ): Promise<V> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
+    if (!sourceCache) {
+      return handleCacheError('action');
+    }
     const [newCacheMap, newItem] = await sourceCache.action(key, action, body);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
-  // TODO: Locations should be mandatory here
   const allAction = useCallback(async (
     action: string,
     body?: any,
@@ -172,10 +208,13 @@ export const CItemAdapter = <
       action,
       body,
     });
+    if (!sourceCache) {
+      return handleCacheError('allAction');
+    }
     const [newCacheMap, newItems] = await sourceCache.allAction(action, body, locations);
     setCacheMap(newCacheMap.clone());
     return newItems as V[];
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const find = useCallback(async (
     finder: string,
@@ -183,20 +222,26 @@ export const CItemAdapter = <
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<V[]> => {
     logger.trace('find', { finder, finderParams, locations });
+    if (!sourceCache) {
+      return handleCacheError('find');
+    }
     const [newCacheMap, newItems] = await sourceCache.find(finder, finderParams, locations);
     setCacheMap(newCacheMap.clone());
     return newItems as V[];
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const set = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: V,
   ): Promise<V> => {
     logger.trace('set', { key, item });
+    if (!sourceCache) {
+      return handleCacheError('set');
+    }
     const [newCacheMap, newItem] = await sourceCache.set(key, item);
     setCacheMap(newCacheMap.clone());
     return newItem as V;
-  }, [cache]);
+  }, [sourceCache, handleCacheError]);
 
   const contextValue: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> = {
     name,

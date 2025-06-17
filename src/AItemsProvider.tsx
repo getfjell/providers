@@ -12,11 +12,12 @@ export const useAItems = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(context: AItemsContext<V, S, L1, L2, L3, L4, L5>): AItemsContextType<V, S, L1, L2, L3, L4, L5> => {
+>(context: AItemsContext<V, S, L1, L2, L3, L4, L5>, contextName: string):
+  AItemsContextType<V, S, L1, L2, L3, L4, L5> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This generic abstract items hook must be used within a ${context.displayName}`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

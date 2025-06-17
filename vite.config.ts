@@ -2,7 +2,7 @@
 import { defineConfig as defineVitestConfig } from 'vitest/config';
 import { VitePluginNode } from 'vite-plugin-node';
 import dts from 'vite-plugin-dts';
-import path from 'path';
+import * as path from 'path';
 
 export default defineVitestConfig({
   plugins: [
@@ -11,6 +11,9 @@ export default defineVitestConfig({
       appPath: './src/index.ts',
       exportName: 'viteNodeApp',
       tsCompiler: 'swc',
+      swcOptions: {
+        sourceMaps: true,
+      },
     }),
     // visualizer({
     //     template: 'network',
@@ -43,7 +46,6 @@ export default defineVitestConfig({
         entryFileNames: '[name].js',
         preserveModules: true,
         exports: 'named',
-        sourcemap: 'inline',
       },
     },
     // Make sure Vite generates ESM-compatible code

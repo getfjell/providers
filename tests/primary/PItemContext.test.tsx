@@ -36,8 +36,8 @@ describe('PItemContext', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const { } = renderHook(() => usePItem(TestContext));
-    }).toThrow(`This hook must be used within a undefined`);
+      const { } = renderHook(() => usePItem(TestContext, 'TestContext'));
+    }).toThrow(`This hook must be used within a TestContext`);
   });
 
   it('should return context value when used within provider', () => {
@@ -47,7 +47,7 @@ describe('PItemContext', () => {
       </TestContext.Provider>
     );
 
-    const { result } = renderHook(() => usePItem(TestContext), { wrapper });
+    const { result } = renderHook(() => usePItem(TestContext, 'TestContext'), { wrapper });
 
     expect(result.current).toBe(mockContextValue);
     expect(result.current.name).toBe('test');

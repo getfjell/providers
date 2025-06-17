@@ -66,11 +66,12 @@ export const useCItems = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(context: CItemsContext<V, S, L1, L2, L3, L4, L5>): CItemsContextType<V, S, L1, L2, L3, L4, L5> => {
+>(context: CItemsContext<V, S, L1, L2, L3, L4, L5>, contextName: string):
+  CItemsContextType<V, S, L1, L2, L3, L4, L5> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
-      `This ${context.displayName} hook must be used within the appropriate provider.`,
+      `This hook must be used within a ${contextName}`,
     );
   }
   return contextInstance;

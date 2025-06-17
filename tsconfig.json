@@ -4,6 +4,8 @@
     "baseUrl": ".",
     "sourceMap": true,
     "outDir": "dist",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./src/*"

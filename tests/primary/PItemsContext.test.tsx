@@ -43,8 +43,8 @@ describe('PItemsContext', () => {
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const { } = renderHook(() => usePItems(TestContext));
-    }).toThrow(`This hook must be used within a undefined`);
+      const { } = renderHook(() => usePItems(TestContext, 'TestContext'));
+    }).toThrow(`This hook must be used within a TestContext`);
   });
 
   it('should return context value when used within provider', () => {
@@ -54,7 +54,7 @@ describe('PItemsContext', () => {
       </TestContext.Provider>
     );
 
-    const { result } = renderHook(() => usePItems(TestContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestContext, 'TestContext'), { wrapper });
 
     expect(result.current).toBe(mockContextValue);
     expect(result.current.name).toBe('test');
@@ -72,7 +72,7 @@ describe('PItemsContext', () => {
       </TestContext.Provider>
     );
 
-    const { result } = renderHook(() => usePItems(TestContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestContext, 'TestContext'), { wrapper });
 
     const createdItem = await result.current.create({ name: 'new' });
     expect(createdItem.name).toBe('created');
@@ -100,7 +100,7 @@ describe('PItemsContext', () => {
       </TestContext.Provider>
     );
 
-    const { result } = renderHook(() => usePItems(TestContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestContext, 'TestContext'), { wrapper });
 
     const actionResult = await result.current.allAction('testAction', { data: 'test' });
     expect(actionResult?.name).toBe('actioned');
@@ -119,7 +119,7 @@ describe('PItemsContext', () => {
       </TestContext.Provider>
     );
 
-    const { result } = renderHook(() => usePItems(TestContext), { wrapper });
+    const { result } = renderHook(() => usePItems(TestContext, 'TestContext'), { wrapper });
 
     const key = { pk: '1', kt: 'test' } as PriKey<'test'>;
     const item = { key, name: 'set', events: { created: { at: new Date() } } } as TestItem;

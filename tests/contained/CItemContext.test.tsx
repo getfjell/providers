@@ -36,13 +36,13 @@ describe('useCItemProvider', () => {
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 
-    const { result } = renderHook(() => useCItem(TestContext), { wrapper });
+    const { result } = renderHook(() => useCItem(TestContext, "TestContext"), { wrapper });
     expect(result.current).toBe(contextValue);
   });
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const { } = renderHook(() => useCItem(TestContext));
-    }).toThrow(`This generic composite item hook must be used within a ${TestContext.displayName}`);
+      const { } = renderHook(() => useCItem(TestContext, 'TestContext'));
+    }).toThrow(`This hook must be used within a TestContext`);
   });
 });

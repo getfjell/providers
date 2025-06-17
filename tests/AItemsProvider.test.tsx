@@ -39,13 +39,13 @@ describe('useAItemsProvider', () => {
     );
 
     // @ts-ignore
-    const { result } = renderHook(() => useAItems(TestContext), { wrapper });
+    const { result } = renderHook(() => useAItems(TestContext, "TestContext"), { wrapper });
     expect(result.current).toBe(mockContextValue);
   });
 
   it('should throw error when used outside of provider', () => {
     expect(() => {
-      const { } = renderHook(() => useAItems(TestContext));
-    }).toThrow(`This generic abstract items hook must be used within a ${TestContext.displayName}`);
+      const { } = renderHook(() => useAItems(TestContext, 'TestContext'));
+    }).toThrow(`This hook must be used within a TestContext`);
   });
 });
