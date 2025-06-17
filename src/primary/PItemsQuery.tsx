@@ -1,4 +1,4 @@
- 
+
 import { Item, ItemQuery } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
@@ -8,20 +8,18 @@ import { PItemAdapterContext } from "./PItemAdapterContext";
 import { PItemsContext, PItemsContextType } from "./PItemsContext";
 import { PItemsProvider } from "./PItemsProvider";
 
-export const PItemsQuery = <
-  V extends Item<S>,
-  S extends string
->(
-    {
-      name,
-      adapter,
-      addActions = () => ({}),
-      addQueries = () => ({}),
-      children,
-      context,
-      query = {},
-      renderEach,
-    }: {
+export const PItemsQuery = <V extends Item<S>, S extends string>(
+  {
+    name,
+    adapter,
+    addActions = () => ({}),
+    addQueries = () => ({}),
+    children,
+    context,
+    contextName,
+    query = {},
+    renderEach,
+  }: {
     name: string;
     adapter: PItemAdapterContext<V, S>;
     addActions?: (contextValues: PItemsContextType<V, S>) =>
@@ -30,14 +28,15 @@ export const PItemsQuery = <
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children: React.ReactNode;
     context: PItemsContext<V, S>;
+    contextName: string;
     query?: ItemQuery;
     renderEach?: (item: V) => React.ReactNode;
   }
-  ) => {
+) => {
 
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   // Since we pass this to the actions constructor, don't destructure it yet
-  const adapterContext = usePItemAdapter<V, S>(adapter);
+  const adapterContext = usePItemAdapter<V, S>(adapter, contextName);
 
   // Destructure the values we need to define functions.
   const {
@@ -54,7 +53,7 @@ export const PItemsQuery = <
 
   useEffect(() => {
     (async () => {
-      logger.trace('useEffect[queryString]', { query });
+      logger.trace('useEffect[queryString] %s', query.toString());
       await allItems(query);
       setIsLoading(false);
     })();
@@ -89,6 +88,7 @@ export const PItemsQuery = <
     addQueries,
     children,
     context,
+    contextName,
     renderEach,
     items,
     isLoadingParam: isLoading,
