@@ -19,10 +19,14 @@ export interface PItemAdapterContextType<
   update: (key: PriKey<S>, item: TypesProperties<V, S>) => Promise<V>;
   action: (key: PriKey<S>, action: string, body?: any) => Promise<V>;
   allAction: (action: string, body?: any) => Promise<V[] | null>;
-  actions?: Record<string,
+  actions: Record<string,
     (
       key: PriKey<S>,
       body?: any,
+    ) => Promise<V | null>>;
+  facets: Record<string,
+    (
+      key: PriKey<S>,
     ) => Promise<V | null>>;
   find: (
     finder: string,

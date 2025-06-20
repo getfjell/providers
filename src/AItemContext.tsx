@@ -24,6 +24,8 @@ export interface AItemContextType<
     body?: any,
   ) => Promise<V | null>;
   actions?: Record<string, (body?: any) => Promise<V | null>>;
+  facet: (facet: string) => Promise<any | null>;
+  facets?: Record<string, (facet: string) => Promise<any | null>>;
   locations: LocKeyArray<S, L1, L2, L3, L4> | null;
 }
 
