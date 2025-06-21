@@ -17,11 +17,12 @@ import { PItemContext, PItemContextType } from "./PItemContext";
 export const PItemLoad = <
   V extends Item<S>,
   S extends string
->({ name, adapter, addActions = () => ({}), children, context, contextName, ik }: {
+>({ name, adapter, addActions = () => ({}), addFacets = () => ({}), children, context, contextName, ik }: {
   name: string;
   // TODO: I want this to be two separate properties.
   adapter: PItemAdapterContext<V, S>;
   addActions?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
+  addFacets?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
   children: React.ReactNode;
   context: PItemContext<V, S>;
   contextName: string;
@@ -33,6 +34,7 @@ export const PItemLoad = <
     name,
     hasAdapter: !!adapter,
     hasAddActions: !!addActions,
+    hasAddFacets: !!addFacets,
     hasChildren: !!children,
     hasContext: !!context,
     ik
@@ -62,6 +64,7 @@ export const PItemLoad = <
     remove: removeItem,
     update: updateItem,
     action: actionItem,
+    facet: facetItem,
     set: setItem,
   } = useMemo(() => {
     logger.debug(`${name}: Destructuring PItemAdapter values`);
@@ -335,6 +338,40 @@ export const PItemLoad = <
     }
   }, [actionItem, itemKey]);
 
+  const facet = useCallback(async (
+    facetName: string,
+  ) => {
+    itemLogger.trace("facet", { facetName });
+    logger.debug(`${name}: facet() called`, {
+      facetName,
+      itemKey,
+      isValidKey: itemKey ? isValidPriKey(itemKey) : false
+    });
+
+    if (itemKey && isValidPriKey(itemKey)) {
+
+      try {
+        logger.debug(`${name}: Calling facetItem`, { itemKey, facetName });
+        const response = await facetItem(itemKey, facetName);
+        logger.debug(`${name}: facetItem completed successfully`, {
+          itemKey,
+          facetName,
+          hasResult: !!response,
+          resultType: response ? typeof response : 'undefined'
+        });
+        return response as any;
+      } catch (error) {
+        logger.error(`${name}: Error during facet retrieval`, { itemKey, facetName, error });
+        setIsUpdating(false);
+        throw error;
+      }
+    } else {
+      logger.debug(`${name}: Invalid itemKey for facet`, { itemKey, facetName });
+      itemLogger.error(`${name}: Item key is required to retrieve a facet`);
+      throw new Error(`Item key is required to retrieve a facet in ${name}`);
+    }
+  }, [facetItem, itemKey]);
+
   const contextValue: PItemContextType<V, S> = {
     name,
     key: itemKey as PriKey<S>,
@@ -347,6 +384,7 @@ export const PItemLoad = <
     remove,
     update,
     action,
+    facet,
     set,
     locations,
   };
@@ -369,6 +407,15 @@ export const PItemLoad = <
     logger.debug(`${name}: Custom actions added`, {
       actionCount: contextValue.actions ? Object.keys(contextValue.actions).length : 0,
       actionNames: contextValue.actions ? Object.keys(contextValue.actions) : []
+    });
+  }
+
+  if (addFacets && contextValue) {
+    logger.debug(`${name}: Adding custom facets to context`);
+    contextValue.facets = addFacets(contextValue);
+    logger.debug(`${name}: Custom facets added`, {
+      facetCount: contextValue.facets ? Object.keys(contextValue.facets).length : 0,
+      facetNames: contextValue.facets ? Object.keys(contextValue.facets) : []
     });
   }
 
