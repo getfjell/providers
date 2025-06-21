@@ -111,7 +111,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
   const allAction = useCallback(async (action: string, body: any) => {
     logger.trace('allAction', { action, body });
     setIsUpdating(true);
-    const result = await allItemAction(action, body) as V | null;
+    const result = await allItemAction(action, body) as V[] | null;
     setIsUpdating(false);
     return result;
   }, [allItemAction]);
