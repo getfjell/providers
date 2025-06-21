@@ -76,6 +76,11 @@ export interface AItemAdapterContextType<
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ) => Promise<V[] | null>;
+  findOne?: (
+    finder: string,
+    finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
+  ) => Promise<V | null>;
   set: (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: V,
