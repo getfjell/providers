@@ -1,2 +1,0 @@
-overrides:
-  '@fjell/cache': link:../fjell-cache

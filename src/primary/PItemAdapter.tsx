@@ -22,12 +22,11 @@ export const usePItemAdapter = <
 };
 
 export const PItemAdapter = <
-  C extends Cache<V, S>,
   V extends Item<S>,
   S extends string
 >({ name, cache, context, aggregates = {}, events = {}, addActions, addFacets, children }: {
   name: string;
-  cache: C;
+  cache: Cache<V, S>;
   context: PItemAdapterContext<V, S>;
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
