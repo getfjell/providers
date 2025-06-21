@@ -39,7 +39,7 @@ export const CItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->({ name, cache, context, aggregates, events, addActions, children }: {
+>({ name, cache, context, aggregates, events, addActions, addFacets, children }: {
   name: string;
   cache: Cache<V, S, L1, L2, L3, L4, L5>;
   context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
@@ -50,6 +50,10 @@ export const CItemAdapter = <
       ik: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
       body?: any,
     ) => Promise<V | null>>;
+  addFacets?: (contextValues: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>) =>
+    Record<string, (
+      ik: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    ) => Promise<any | null>>;
   children: React.ReactNode;
 }) => {
 
@@ -232,6 +236,19 @@ export const CItemAdapter = <
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
+  const facet = React.useCallback(async (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    facet: string,
+  ): Promise<any> => {
+    logger.trace('facet', { key: abbrevIK(key), facet });
+    if (!resolvedSourceCache) {
+      return handleCacheError('facet');
+    }
+    const [newCacheMap, response] = await resolvedSourceCache.facet(key, facet);
+    setCacheMap(newCacheMap.clone());
+    return response as any;
+  }, [resolvedSourceCache, handleCacheError]);
+
   const find = React.useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -259,7 +276,7 @@ export const CItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> = {
+  const contextValue: Partial<CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>> = {
     name,
     cacheMap,
     pkTypes,
@@ -272,18 +289,27 @@ export const CItemAdapter = <
     update,
     action,
     allAction,
+    facet,
     find,
     set,
   };
 
   if (addActions && contextValue) {
-    contextValue.actions = addActions(contextValue);
+    contextValue.actions = addActions(contextValue as CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>);
+  } else {
+    contextValue.actions = {};
+  }
+
+  if (addFacets && contextValue) {
+    contextValue.facets = addFacets(contextValue as CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>);
+  } else {
+    contextValue.facets = {};
   }
 
   return React.createElement(
     context.Provider,
     {
-      value: contextValue,
+      value: contextValue as CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
     },
     children,
   );

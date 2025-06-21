@@ -47,6 +47,13 @@ export default defineVitestConfig({
         preserveModules: true,
         exports: 'named',
       },
+      external: [
+        /^@fjell\/.*/,
+        'react',
+        'react-dom',
+        'react-error-boundary',
+        'react/jsx-runtime',
+      ],
     },
     // Make sure Vite generates ESM-compatible code
     modulePreload: false,
