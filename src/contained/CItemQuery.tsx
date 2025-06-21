@@ -32,6 +32,7 @@ export const CItemQuery = <
       name,
       adapter,
       addActions = () => ({}),
+      addFacets = () => ({}),
       children,
       context,
       contextName,
@@ -46,6 +47,8 @@ export const CItemQuery = <
     name: string;
     adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
     addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
+      Record<string, (...params: any[]) => Promise<V | null>>;
+    addFacets?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
       Record<string, (...params: any[]) => Promise<V | null>>;
     children: React.ReactNode;
     context: CItemContext<V, S, L1, L2, L3, L4, L5>;
@@ -157,6 +160,7 @@ export const CItemQuery = <
     context,
     contextName,
     addActions,
+    addFacets,
     children,
   });
 
