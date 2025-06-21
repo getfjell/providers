@@ -32,6 +32,7 @@ export const CItemLoad = <
       name,
       adapter,
       addActions = () => ({}),
+      addFacets = () => ({}),
       children,
       context,
       contextName,
@@ -42,6 +43,8 @@ export const CItemLoad = <
     name: string;
     adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
     addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
+      Record<string, (...params: any[]) => Promise<V | null>>;
+    addFacets?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
       Record<string, (...params: any[]) => Promise<V | null>>;
     children: React.ReactNode;
     context: CItemContext<V, S, L1, L2, L3, L4, L5>;
@@ -203,6 +206,23 @@ export const CItemLoad = <
     }
   }, [cItemAdapter, itemKey]);
 
+  const facet = useCallback(async (
+    facetName: string,
+  ): Promise<any | null> => {
+    // TODO: Probably need exception handling here
+    if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
+      setIsUpdating(true);
+      logger.trace('facet', { itemKey: abbrevIK(itemKey), facetName });
+      const response = await cItemAdapter.facet(itemKey, facetName) as any;
+      setIsUpdating(false);
+      return response;
+    } else {
+      setIsUpdating(false);
+      setError(new Error('No item key provided for action'));
+      return null;
+    }
+  }, [cItemAdapter, itemKey]);
+
   const contextValue: CItemContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
     key: itemKey as ComKey<S, L1, L2, L3, L4, L5>,
@@ -215,12 +235,17 @@ export const CItemLoad = <
     remove,
     update,
     action,
+    facet,
     set,
     locations,
   };
 
   if (addActions && contextValue) {
     contextValue.actions = addActions(contextValue);
+  }
+
+  if (addFacets && contextValue) {
+    contextValue.facets = addFacets(contextValue);
   }
 
   return createElement(

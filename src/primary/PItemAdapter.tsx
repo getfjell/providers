@@ -22,12 +22,11 @@ export const usePItemAdapter = <
 };
 
 export const PItemAdapter = <
-  C extends Cache<V, S>,
   V extends Item<S>,
   S extends string
->({ name, cache, context, aggregates = {}, events = {}, addActions, children }: {
+>({ name, cache, context, aggregates = {}, events = {}, addActions, addFacets, children }: {
   name: string;
-  cache: C;
+  cache: Cache<V, S>;
   context: PItemAdapterContext<V, S>;
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
@@ -36,6 +35,10 @@ export const PItemAdapter = <
       ik: PriKey<S>,
       body?: any
     ) => Promise<V | null>>;
+  addFacets?: (contextValues: PItemAdapterContextType<V, S>) =>
+    Record<string, (
+      ik: PriKey<S>,
+    ) => Promise<any | null>>;
   children: React.ReactNode;
 }) => {
 
@@ -210,6 +213,19 @@ export const PItemAdapter = <
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
+  const facet = useCallback(async (
+    key: PriKey<S>,
+    facet: string,
+  ): Promise<any | null> => {
+    logger.trace('facet', { key: abbrevIK(key), facet });
+    if (!resolvedSourceCache) {
+      return handleCacheError('facet');
+    }
+    const [newCacheMap, response] = await resolvedSourceCache.facet(key, facet);
+    setCacheMap(newCacheMap.clone());
+    return response as any | null;
+  }, [resolvedSourceCache, handleCacheError]);
+
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -236,7 +252,7 @@ export const PItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: PItemAdapterContextType<V, S> = {
+  const contextValue: Partial<PItemAdapterContextType<V, S>> = {
     name,
     cacheMap,
     pkTypes,
@@ -249,18 +265,27 @@ export const PItemAdapter = <
     update,
     action,
     allAction,
+    facet,
     find,
     set,
   };
 
   if (addActions && contextValue) {
-    contextValue.actions = addActions(contextValue);
+    contextValue.actions = addActions(contextValue as PItemAdapterContextType<V, S>);
+  } else {
+    contextValue.actions = {};
+  }
+
+  if (addFacets && contextValue) {
+    contextValue.facets = addFacets(contextValue as PItemAdapterContextType<V, S>);
+  } else {
+    contextValue.facets = {};
   }
 
   return createElement(
     context.Provider,
     {
-      value: contextValue,
+      value: contextValue as PItemAdapterContextType<V, S>,
     },
     children,
   );
