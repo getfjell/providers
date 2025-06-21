@@ -64,7 +64,7 @@ export const CItemAdapter = <
     }
   }, [cache, name]);
 
-  const pkTypes = React.useMemo(() => cache?.pkTypes ?? [], [cache]);
+  const pkTypes = React.useMemo(() => cache?.pkTypes, [cache]);
   const logger = LibLogger.get('CItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =

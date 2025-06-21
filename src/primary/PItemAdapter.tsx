@@ -49,7 +49,7 @@ export const PItemAdapter = <
     }
   }, [cache, name]);
 
-  const pkTypes = useMemo(() => cache?.pkTypes ?? [], [cache]);
+  const pkTypes = useMemo(() => cache?.pkTypes, [cache]);
   const logger = LibLogger.get('PItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =

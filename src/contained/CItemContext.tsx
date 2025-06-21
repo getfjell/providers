@@ -35,6 +35,7 @@ export interface CItemContextType<
   ) => Promise<any | null>;
   set: (item: V) => Promise<V>;
   actions?: Record<string, (body?: any) => Promise<V | null>>;
+  facets?: Record<string, (facetName: string) => Promise<any | null>>;
   locations: LocKeyArray<S, L1, L2, L3, L4> | null;
 }
 
