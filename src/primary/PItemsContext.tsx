@@ -36,7 +36,7 @@ export interface PItemsContextType<
 
   // TODO: Again, this allAction should return either an object or an array
   allAction: (action: string,
-    body: any) => Promise<V | null>;
+    body: any) => Promise<V[] | null>;
   actions?: Record<string, (...params: any[]) => Promise<any>>;
   queries?: Record<string, (...params: any[]) => Promise<string | boolean | number | null>>;
 }
