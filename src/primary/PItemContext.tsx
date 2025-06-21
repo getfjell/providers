@@ -21,8 +21,12 @@ export interface PItemContextType<
     actionName: string,
     body?: any
   ) => Promise<V>;
+  facet: (
+    facetName: string,
+  ) => Promise<any | null>;
   set: (item: V) => Promise<V>;
   actions?: Record<string, (body?: any) => Promise<V | null>>;
+  facets?: Record<string, (facetName: string) => Promise<any | null>>;
   locations: LocKeyArray<S> | null;
 }
 
