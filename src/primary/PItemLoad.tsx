@@ -14,27 +14,30 @@ import { usePItemAdapter } from "./PItemAdapter";
 import { PItemAdapterContext } from "./PItemAdapterContext";
 import { PItemContext, PItemContextType } from "./PItemContext";
 
+const logger = LibLogger.get('PItemLoad');
+
 export const PItemLoad = <
   V extends Item<S>,
   S extends string
->({ name, adapter, addActions = () => ({}), addFacets = () => ({}), children, context, contextName, ik }: {
+>({
+    name,
+    adapter,
+    children,
+    context,
+    contextName,
+    ik
+  }: {
   name: string;
   // TODO: I want this to be two separate properties.
   adapter: PItemAdapterContext<V, S>;
-  addActions?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
-  addFacets?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
   children: React.ReactNode;
   context: PItemContext<V, S>;
   contextName: string;
   ik: PriKey<S> | null;
 }) => {
-  const logger = LibLogger.get('PItemLoad');
-
   logger.debug(`${name}: Component initialized with props`, {
     name,
     hasAdapter: !!adapter,
-    hasAddActions: !!addActions,
-    hasAddFacets: !!addFacets,
     hasChildren: !!children,
     hasContext: !!context,
     ik
@@ -66,6 +69,8 @@ export const PItemLoad = <
     action: actionItem,
     facet: facetItem,
     set: setItem,
+    addActions,
+    addFacets,
   } = useMemo(() => {
     logger.debug(`${name}: Destructuring PItemAdapter values`);
     const result = PItemAdapter;
@@ -340,6 +345,7 @@ export const PItemLoad = <
 
   const facet = useCallback(async (
     facetName: string,
+    params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {},
   ) => {
     itemLogger.trace("facet", { facetName });
     logger.debug(`${name}: facet() called`, {
@@ -352,7 +358,7 @@ export const PItemLoad = <
 
       try {
         logger.debug(`${name}: Calling facetItem`, { itemKey, facetName });
-        const response = await facetItem(itemKey, facetName);
+        const response = await facetItem(itemKey, facetName, params);
         logger.debug(`${name}: facetItem completed successfully`, {
           itemKey,
           facetName,
@@ -376,7 +382,6 @@ export const PItemLoad = <
     name,
     key: itemKey as PriKey<S>,
     item,
-    parentItem: null,
     isLoading,
     isUpdating,
     isRemoving,
@@ -393,7 +398,6 @@ export const PItemLoad = <
     name: contextValue.name,
     hasKey: !!contextValue.key,
     hasItem: !!contextValue.item,
-    hasParentItem: !!contextValue.parentItem,
     isLoading: contextValue.isLoading,
     isUpdating: contextValue.isUpdating,
     isRemoving: contextValue.isRemoving,

@@ -1,4 +1,5 @@
 /* eslint-disable no-undefined */
+import { ActionMethod, FacetMethod } from "@/AItemAdapterContext";
 import { AItemContextType } from "@/AItemContext";
 import { AllItemTypeArrays, ComKey, LocKeyArray } from "@fjell/core";
 
@@ -18,25 +19,31 @@ export interface CItemContextType<
 > extends AItemContextType<V, S, L1, L2, L3, L4, L5> {
   name: string;
   key: ComKey<S, L1, L2, L3, L4, L5>;
-  item: V | null;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   parentItem: Item<L1, L2, L3, L4, L5> | null;
+  locations: LocKeyArray<S, L1, L2, L3, L4> | null;
+
+  actions?: Record<string, ActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  facets?: Record<string, FacetMethod<S, L1, L2, L3, L4, L5>>;
+
+  item: V | null;
   isLoading: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
+
   remove: () => Promise<void>;
-  update: (item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => Promise<V | null>;
+  update: (item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => Promise<V>;
+
   action: (
     actionName: string,
     body?: any,
-  ) => Promise<V | null>;
+  ) => Promise<V>;
   facet: (
     facetName: string,
-  ) => Promise<any | null>;
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ) => Promise<any>;
+
   set: (item: V) => Promise<V>;
-  actions?: Record<string, (body?: any) => Promise<V | null>>;
-  facets?: Record<string, (facetName: string) => Promise<any | null>>;
-  locations: LocKeyArray<S, L1, L2, L3, L4> | null;
 }
 
 export type CItemContext<

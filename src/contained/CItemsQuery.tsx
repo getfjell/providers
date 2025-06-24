@@ -10,6 +10,8 @@ import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterCont
 import { CItemsContext } from "./CItemsContext";
 import { CItemsProvider } from "./CItemsProvider";
 
+const logger = LibLogger.get('CItemsQuery');
+
 export const CItemsQuery = <
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -22,7 +24,6 @@ export const CItemsQuery = <
     {
       name,
       adapter,
-      addActions = () => ({}),
       addQueries = () => ({}),
       children = (<></>),
       context,
@@ -34,14 +35,6 @@ export const CItemsQuery = <
     }: {
     name: string;
     adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    // TODO: Put more structure on what an action *actually* is.  Should it return a string specifying the action
-    // along with the parameters that would be used as a body?
-    addActions?: (
-      adapter: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
-      locations: LocKeyArray<L1, L2, L3, L4, L5>,
-      parentItem: Item<L1, L2, L3, L4, L5, never>
-    ) =>
-      Record<string, (params: any) => Promise<any>>;
     addQueries?: (
       adapter: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
       locations: LocKeyArray<L1, L2, L3, L4, L5>,
@@ -66,12 +59,9 @@ export const CItemsQuery = <
   // Destructure the values we need to define functions.
   const {
     cacheMap,
-    pkTypes,
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
-
-  const logger = LibLogger.get('CItemsQuery', ...pkTypes);
 
   const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
@@ -162,7 +152,6 @@ export const CItemsQuery = <
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,
     adapter,
-    addActions,
     addQueries,
     children,
     context,

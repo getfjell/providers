@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 /* eslint-disable no-undefined */
 import LibLogger from "@/logger";
 import {
@@ -11,6 +12,11 @@ import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterCont
 import { Cache } from "@fjell/cache";
 import { CacheMap } from "@fjell/cache";
 import { AggregateConfig, createAggregator } from "@fjell/cache";
+import { ActionMethod, AllActionMethod, AllFacetMethod, FacetMethod } from "@/AItemAdapterContext";
+import { CItemContextType } from "./CItemContext";
+import { CItemsContextType } from "./CItemsContext";
+
+const logger = LibLogger.get('CItemAdapter');
 
 export const useCItemAdapter = <
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -39,21 +45,27 @@ export const CItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->({ name, cache, context, aggregates, events, addActions, addFacets, children }: {
+>({
+  name,
+  cache,
+  context,
+  aggregates = {},
+  events = {},
+  addActions,
+  addFacets,
+  addAllActions,
+  addAllFacets,
+  children
+}: {
   name: string;
   cache: Cache<V, S, L1, L2, L3, L4, L5>;
   context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
-  addActions?: (contextValues: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>) =>
-    Record<string, (
-      ik: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-      body?: any,
-    ) => Promise<V | null>>;
-  addFacets?: (contextValues: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>) =>
-    Record<string, (
-      ik: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-    ) => Promise<any | null>>;
+  addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, ActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  addFacets?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, FacetMethod<S, L1, L2, L3, L4, L5>>;
+  addAllActions?: (contextValues: CItemsContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, AllActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  addAllFacets?: (contextValues: CItemsContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, AllFacetMethod<L1, L2, L3, L4, L5>>;
   children: React.ReactNode;
 }) => {
 
@@ -65,7 +77,6 @@ export const CItemAdapter = <
   }, [cache, name]);
 
   const pkTypes = React.useMemo(() => cache?.pkTypes, [cache]);
-  const logger = LibLogger.get('CItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =
     React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(pkTypes));
@@ -107,7 +118,7 @@ export const CItemAdapter = <
   const all = React.useCallback(async (
     query?: ItemQuery,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
-  ): Promise<V[] | null> => {
+  ): Promise<V[]> => {
     logger.trace('all', {
       query: query && abbrevQuery(query),
       cache: cache?.pkTypes,
@@ -125,7 +136,7 @@ export const CItemAdapter = <
   const one = React.useCallback(async (
     query?: ItemQuery,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
-  ): Promise<V | null> => {
+  ): Promise<V> => {
     logger.trace('one', {
       query: query && abbrevQuery(query),
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
@@ -135,7 +146,7 @@ export const CItemAdapter = <
     }
     const [newCacheMap, item] = await resolvedSourceCache.one(query, locations);
     setCacheMap(newCacheMap.clone());
-    return item as V | null;
+    return item as V;
   }, [resolvedSourceCache, handleCacheError]);
 
   const create = React.useCallback(async (
@@ -156,14 +167,14 @@ export const CItemAdapter = <
 
   const get = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-  ): Promise<V | null> => {
+  ): Promise<V> => {
     logger.trace('get', { key: abbrevIK(key) });
     if (!resolvedSourceCache) {
       return handleCacheError('get');
     }
     const [newCacheMap, item] = await resolvedSourceCache.get(key);
     setCacheMap(newCacheMap.clone());
-    return item as V | null;
+    return item as V;
   }, [resolvedSourceCache, handleCacheError]);
 
   const remove = React.useCallback(async (
@@ -179,7 +190,7 @@ export const CItemAdapter = <
 
   const retrieve = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-  ): Promise<V | null> => {
+  ): Promise<V> => {
     logger.trace('retrieve', { key: abbrevIK(key) });
     if (!resolvedSourceCache) {
       return handleCacheError('retrieve');
@@ -188,7 +199,7 @@ export const CItemAdapter = <
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
-    return item as V | null;
+    return item as V;
   }, [resolvedSourceCache, handleCacheError]);
 
   const update = React.useCallback(async (
@@ -249,6 +260,19 @@ export const CItemAdapter = <
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
+  const allFacet = React.useCallback(async (
+    facet: string,
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ): Promise<any> => {
+    logger.trace('allFacet', { facet, params });
+    if (!resolvedSourceCache) {
+      return handleCacheError('allFacet');
+    }
+    const [newCacheMap, response] = await resolvedSourceCache.allFacet(facet, params);
+    setCacheMap(newCacheMap.clone());
+    return response as any;
+  }, [resolvedSourceCache, handleCacheError]);
+
   const find = React.useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -290,21 +314,14 @@ export const CItemAdapter = <
     action,
     allAction,
     facet,
+    allFacet,
     find,
     set,
+    addActions,
+    addFacets,
+    addAllActions,
+    addAllFacets
   };
-
-  if (addActions && contextValue) {
-    contextValue.actions = addActions(contextValue as CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>);
-  } else {
-    contextValue.actions = {};
-  }
-
-  if (addFacets && contextValue) {
-    contextValue.facets = addFacets(contextValue as CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>);
-  } else {
-    contextValue.facets = {};
-  }
 
   return React.createElement(
     context.Provider,
