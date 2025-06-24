@@ -7,6 +7,11 @@ import LibLogger from '../logger';
 import { AggregateConfig, createAggregator } from "@fjell/cache";
 import { Cache } from "@fjell/cache";
 import { CacheMap } from "@fjell/cache";
+import { ActionMethod, AllActionMethod, AllFacetMethod, FacetMethod } from "@/AItemAdapterContext";
+import { PItemsContextType } from "./PItemsContext";
+import { PItemContextType } from "./PItemContext";
+
+const logger = LibLogger.get('PItemAdapter');
 
 export const usePItemAdapter = <
   V extends Item<S>,
@@ -24,21 +29,27 @@ export const usePItemAdapter = <
 export const PItemAdapter = <
   V extends Item<S>,
   S extends string
->({ name, cache, context, aggregates = {}, events = {}, addActions, addFacets, children }: {
+>({
+    name,
+    cache,
+    context,
+    aggregates = {},
+    events = {},
+    addActions,
+    addFacets,
+    addAllActions,
+    addAllFacets,
+    children
+  }: {
   name: string;
   cache: Cache<V, S>;
   context: PItemAdapterContext<V, S>;
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
-  addActions?: (contextValues: PItemAdapterContextType<V, S>) =>
-    Record<string, (
-      ik: PriKey<S>,
-      body?: any
-    ) => Promise<V | null>>;
-  addFacets?: (contextValues: PItemAdapterContextType<V, S>) =>
-    Record<string, (
-      ik: PriKey<S>,
-    ) => Promise<any | null>>;
+  addActions?: (contextValues: PItemContextType<V, S>) => Record<string, ActionMethod<V, S>>;
+  addFacets?: (contextValues: PItemContextType<V, S>) => Record<string, FacetMethod<S>>;
+  addAllActions?: (contextValues: PItemsContextType<V, S>) => Record<string, AllActionMethod<V, S>>;
+  addAllFacets?: (contextValues: PItemsContextType<V, S>) => Record<string, AllFacetMethod<S>>;
   children: React.ReactNode;
 }) => {
 
@@ -50,7 +61,6 @@ export const PItemAdapter = <
   }, [cache, name]);
 
   const pkTypes = useMemo(() => cache?.pkTypes, [cache]);
-  const logger = LibLogger.get('PItemAdapter', ...pkTypes);
 
   const [cacheMap, setCacheMap] =
     React.useState<CacheMap<V, S>>(new CacheMap<V, S>(pkTypes));
@@ -216,14 +226,30 @@ export const PItemAdapter = <
   const facet = useCallback(async (
     key: PriKey<S>,
     facet: string,
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<any | null> => {
-    logger.trace('facet', { key: abbrevIK(key), facet });
+    logger.trace('facet', { key: abbrevIK(key), facet, params });
     if (!resolvedSourceCache) {
       return handleCacheError('facet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.facet(key, facet);
+    const [newCacheMap, response] = params !== undefined
+      ? await resolvedSourceCache.facet(key, facet, params)
+      : await resolvedSourceCache.facet(key, facet);
     setCacheMap(newCacheMap.clone());
     return response as any | null;
+  }, [resolvedSourceCache, handleCacheError]);
+
+  const allFacet = useCallback(async (
+    facet: string,
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ): Promise<any> => {
+    logger.trace('allFacet', { facet, params });
+    if (!resolvedSourceCache) {
+      return handleCacheError('allFacet');
+    }
+    const [newCacheMap, response] = await resolvedSourceCache.allFacet(facet, params);
+    setCacheMap(newCacheMap.clone());
+    return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
   const find = useCallback(async (
@@ -266,21 +292,14 @@ export const PItemAdapter = <
     action,
     allAction,
     facet,
+    allFacet,
     find,
     set,
+    addActions,
+    addFacets,
+    addAllActions,
+    addAllFacets,
   };
-
-  if (addActions && contextValue) {
-    contextValue.actions = addActions(contextValue as PItemAdapterContextType<V, S>);
-  } else {
-    contextValue.actions = {};
-  }
-
-  if (addFacets && contextValue) {
-    contextValue.facets = addFacets(contextValue as PItemAdapterContextType<V, S>);
-  } else {
-    contextValue.facets = {};
-  }
 
   return createElement(
     context.Provider,

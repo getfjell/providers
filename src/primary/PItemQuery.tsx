@@ -10,19 +10,26 @@ import {
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import { PItemAdapterContext } from "./PItemAdapterContext";
-import { PItemContext, PItemContextType } from "./PItemContext";
+import { PItemContext } from "./PItemContext";
 import { PItemLoad } from "./PItemLoad";
+
+const logger = LibLogger.get('PItemQuery');
 
 export const PItemQuery = <V extends Item<S>, S extends string>({
   name,
   adapter,
-  addActions = () => ({}),
   children,
-  context, contextName, create, loading, notFound, optional = false, query }: {
+  context,
+  contextName,
+  create,
+  loading,
+  notFound,
+  optional = false,
+  query,
+}: {
     // TODO: I want this to be two separate properties.
     name: string;
     adapter: PItemAdapterContext<V, S>;
-    addActions?: (contextValues: PItemContextType<V, S>) => Record<string, (args?: any) => Promise<V | null>>;
     children: React.ReactNode;
     context: PItemContext<V, S>;
     contextName: string,
@@ -41,13 +48,9 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
 
   // Destructure the values we need to define functions.
   const {
-    pkTypes,
     one: oneItem,
     create: createItem,
   } = useMemo(() => PItemAdapter, [PItemAdapter]);
-
-  const logger = LibLogger.get('PItemQuery', ...pkTypes);
-
   // TODO: Same in CItemsProvider, this is a way to avoid needles rerender on a change to the instance of query
   const queryString = useMemo(() => JSON.stringify(query), [query]);
 
@@ -108,7 +111,6 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
     adapter,
     context,
     contextName,
-    addActions,
     children,
   });
 

@@ -12,7 +12,6 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     name,
     items = [],
     adapter,
-    addActions = () => ({}),
     addQueries = () => ({}),
     children,
     context,
@@ -24,8 +23,6 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     name: string;
     items?: V[];
     adapter: PItemAdapterContext<V, S>;
-    addActions?: (contextValues: PItemsContextType<V, S>) =>
-      Record<string, (...params: any) => Promise<any>>;
     addQueries?: (contextValues: PItemsContextType<V, S>) =>
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children: React.ReactNode;
@@ -57,7 +54,10 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     update: updateItem,
     remove: removeItem,
     allAction: allItemAction,
+    allFacet: allItemFacet,
     set: setItem,
+    addAllActions,
+    addAllFacets,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const logger = LibLogger.get('PItemsProvider', ...pkTypes);
@@ -108,7 +108,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     return result;
   }, [removeItem]);
 
-  const allAction = useCallback(async (action: string, body: any) => {
+  const allAction = useCallback(async (action: string, body: any = {}) => {
     logger.trace('allAction', { action, body });
     setIsUpdating(true);
     const result = await allItemAction(action, body) as V[] | null;
@@ -116,11 +116,42 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     return result;
   }, [allItemAction]);
 
+  const allFacet = useCallback(async (facet: string, params: any = {}) => {
+    logger.trace('allFacet', { facet, params });
+    setIsUpdating(true);
+    const result = await allItemFacet(facet, params) as any;
+    setIsUpdating(false);
+    return result;
+  }, [allItemFacet]);
+
+  const action = useCallback(async (key: PriKey<S>, action: string, body: any) => {
+    logger.trace('action', { key, action, body });
+    setIsUpdating(true);
+    const result = await adapterContext.action(key, action, body) as V;
+    setIsUpdating(false);
+    return result;
+  }, [adapterContext]);
+
+  const facet = useCallback(async (key: PriKey<S>, facet: string, params: any) => {
+    logger.trace('facet', { key, facet, params });
+    setIsUpdating(true);
+    const result = await adapterContext.facet(key, facet, params) as any;
+    setIsUpdating(false);
+    return result;
+  }, [adapterContext]);
+
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ) => {
     return adapterContext.find(finder, finderParams);
+  }, [adapterContext]);
+
+  const findOne = useCallback(async (
+    finder: string,
+    finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ) => {
+    return adapterContext.findOne(finder, finderParams);
   }, [adapterContext]);
 
   const set = useCallback(async (key: PriKey<S>, item: V) => {
@@ -143,12 +174,30 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     all: overrides?.all || all,
     one: overrides?.one || one,
     allAction,
+    allFacet,
     find,
+    findOne,
     set,
+    action,
+    facet,
   };
 
-  contextValue.actions = useMemo(() =>
-    addActions(contextValue as PItemsContextType<V, S>), [adapterContext, contextValue]);
+  if (addAllActions && contextValue) {
+    contextValue.allActions = addAllActions(contextValue);
+    logger.debug(`${name}: Custom actions added`, {
+      actionCount: contextValue.allActions ? Object.keys(contextValue.allActions).length : 0,
+      actionNames: contextValue.allActions ? Object.keys(contextValue.allActions) : []
+    });
+  };
+
+  if (addAllFacets && contextValue) {
+    contextValue.allFacets = addAllFacets(contextValue);
+    logger.debug(`${name}: Custom facets added`, {
+      facetCount: contextValue.allFacets ? Object.keys(contextValue.allFacets).length : 0,
+      facetNames: contextValue.allFacets ? Object.keys(contextValue.allFacets) : []
+    });
+  };
+
   contextValue.queries = useMemo(() =>
     addQueries(contextValue as PItemsContextType<V, S>), [adapterContext, contextValue]);
 
