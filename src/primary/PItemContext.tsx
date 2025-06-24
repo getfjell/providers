@@ -1,6 +1,7 @@
 /* eslint-disable no-undefined */
+import { ActionMethod, FacetMethod } from "@/AItemAdapterContext";
 import { AItemContextType } from "@/AItemContext";
-import { AllItemTypeArrays, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
+import { AllItemTypeArrays, Item, PriKey, TypesProperties } from "@fjell/core";
 import React from "react";
 
 export interface PItemContextType<
@@ -9,25 +10,29 @@ export interface PItemContextType<
 > extends AItemContextType<V, S> {
   name: string;
   key: PriKey<S>;
+  pkTypes: AllItemTypeArrays<S>;
+
+  actions?: Record<string, ActionMethod<V, S>>;
+  facets?: Record<string, FacetMethod<S>>;
+
   item: V | null;
-  parentItem: null;
   isLoading: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkTypes: AllItemTypeArrays<S>;
+
   remove: () => Promise<void>;
   update: (item: TypesProperties<V, S>) => Promise<V>;
+
   action: (
     actionName: string,
-    body?: any
+    body?: any,
   ) => Promise<V>;
   facet: (
     facetName: string,
-  ) => Promise<any | null>;
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ) => Promise<any>;
+
   set: (item: V) => Promise<V>;
-  actions?: Record<string, (body?: any) => Promise<V | null>>;
-  facets?: Record<string, (facetName: string) => Promise<any | null>>;
-  locations: LocKeyArray<S> | null;
 }
 
 export type PItemContext<

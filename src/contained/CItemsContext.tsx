@@ -1,4 +1,5 @@
 /* eslint-disable no-undefined */
+import { AllActionMethod, AllFacetMethod } from "@/AItemAdapterContext";
 import { AItemsContextType } from "@/AItemsContext";
 import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
 import React from "react";
@@ -13,29 +14,30 @@ export interface CItemsContextType<
   L5 extends string = never
 > extends AItemsContextType<V, S, L1, L2, L3, L4, L5> {
   name: string;
-  items: V[];
   parentItem: Item<L1, L2, L3, L4, L5> | null;
+  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
+  locations: LocKeyArray<L1, L2, L3, L4, L5> | null;
+
+  items: V[];
   isLoading: boolean;
   isCreating: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
-  pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
-  locations: LocKeyArray<L1, L2, L3, L4, L5> | null;
+
+  allActions?: Record<string, AllActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  allFacets?: Record<string, AllFacetMethod<L1, L2, L3, L4, L5>>;
+  finders?: Record<string, (...params: any[]) => Promise<V[] | V | null>>;
 
   create: (
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
   ) => Promise<V>;
   update: (
-    key: ComKey<S, L1, L2, L3, L4, L5>,
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
-  ) => Promise<V | null>;
-  remove: (key: ComKey<S, L1, L2, L3, L4, L5>) => Promise<void>;
+  ) => Promise<V>;
+  remove: (key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>) => Promise<void>;
   all: () => Promise<V[] | null>;
   one: () => Promise<V | null>;
-  allAction: (
-    action: string,
-    body: any,
-  ) => Promise<V[] | null>;
   find: (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -44,7 +46,27 @@ export interface CItemsContextType<
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: V,
   ) => Promise<V>;
-  actions?: Record<string, (...params: any[]) => Promise<any>>;
+
+  action: (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    action: string,
+    body?: any,
+  ) => Promise<V>;
+  facet: (
+    key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+    facet: string,
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ) => Promise<any>;
+
+  allAction: (
+    action: string,
+    body?: any,
+  ) => Promise<V[] | null>;
+  allFacet: (
+    facet: string,
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ) => Promise<any>;
+
   queries?: Record<string, (...params: any[]) => Promise<string | boolean | number | null>>;
 }
 

@@ -18,6 +18,7 @@ import { CItemAdapterContext } from "./CItemAdapterContext";
 import { CItemContext, CItemContextType } from "./CItemContext";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
+const logger = LibLogger.get('CItemLoad');
 
 export const CItemLoad = <
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -31,8 +32,6 @@ export const CItemLoad = <
     {
       name,
       adapter,
-      addActions = () => ({}),
-      addFacets = () => ({}),
       children,
       context,
       contextName,
@@ -42,17 +41,10 @@ export const CItemLoad = <
     }: {
     name: string;
     adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
-      Record<string, (...params: any[]) => Promise<V | null>>;
-    addFacets?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
-      Record<string, (...params: any[]) => Promise<V | null>>;
     children: React.ReactNode;
     context: CItemContext<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
-    create?: TypesProperties<V, S, L1, L2, L3, L4, L5>;
     ik: ComKey<S, L1, L2, L3, L4, L5> | null;
-    notFound?: React.ReactNode;
-    optional?: boolean;
     parent: AItemContext<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
     parentContextName: string;
   }
@@ -78,10 +70,12 @@ export const CItemLoad = <
     retrieve: retrieveItem,
     remove: removeItem,
     update: updateItem,
+    action: actionItem,
+    facet: facetItem,
     set: setItem,
+    addActions,
+    addFacets,
   } = useMemo(() => cItemAdapter, [cItemAdapter]);
-
-  const logger = LibLogger.get('CItemProvider', ...pkTypes);
 
   const parentItemAdapter = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
@@ -156,7 +150,7 @@ export const CItemLoad = <
     }
   }, [removeItem, itemKey]);
 
-  const update = useCallback(async (item: TypesProperties<V, S, L1, L2, L3, L4, L5>): Promise<V | null> => {
+  const update = useCallback(async (item: TypesProperties<V, S, L1, L2, L3, L4, L5>): Promise<V> => {
     // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       if (item) {
@@ -168,12 +162,12 @@ export const CItemLoad = <
       } else {
         setIsUpdating(false);
         setError(new Error('No item provided for update'));
-        return null;
+        throw new Error('No item provided for update');
       }
     } else {
       setIsUpdating(false);
       setError(new Error('No item key provided for update'));
-      return null;
+      throw new Error('No item key provided for update');
     }
   }, [updateItem, itemKey]);
 
@@ -191,29 +185,30 @@ export const CItemLoad = <
   const action = useCallback(async (
     actionName: string,
     body?: any,
-  ): Promise<V | null> => {
+  ): Promise<V> => {
     // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsUpdating(true);
       logger.trace('action', { itemKey: abbrevIK(itemKey), actionName, body });
-      const retItem = await cItemAdapter.action(itemKey, actionName, body) as V;
+      const retItem = await actionItem(itemKey, actionName, body) as V;
       setIsUpdating(false);
       return retItem;
     } else {
       setIsUpdating(false);
       setError(new Error('No item key provided for action'));
-      return null;
+      throw new Error('No item key provided for action');
     }
   }, [cItemAdapter, itemKey]);
 
   const facet = useCallback(async (
     facetName: string,
+    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<any | null> => {
     // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsUpdating(true);
       logger.trace('facet', { itemKey: abbrevIK(itemKey), facetName });
-      const response = await cItemAdapter.facet(itemKey, facetName) as any;
+      const response = await facetItem(itemKey, facetName, params) as any;
       setIsUpdating(false);
       return response;
     } else {
@@ -240,13 +235,39 @@ export const CItemLoad = <
     locations,
   };
 
+  logger.debug(`${name}: Context value created`, {
+    name: contextValue.name,
+    hasKey: !!contextValue.key,
+    hasItem: !!contextValue.item,
+    isLoading: contextValue.isLoading,
+    isUpdating: contextValue.isUpdating,
+    isRemoving: contextValue.isRemoving,
+    pkTypes: contextValue.pkTypes,
+    hasLocations: !!contextValue.locations
+  });
+
   if (addActions && contextValue) {
+    logger.debug(`${name}: Adding custom actions to context`);
     contextValue.actions = addActions(contextValue);
+    logger.debug(`${name}: Custom actions added`, {
+      actionCount: contextValue.actions ? Object.keys(contextValue.actions).length : 0,
+      actionNames: contextValue.actions ? Object.keys(contextValue.actions) : []
+    });
   }
 
   if (addFacets && contextValue) {
+    logger.debug(`${name}: Adding custom facets to context`);
     contextValue.facets = addFacets(contextValue);
+    logger.debug(`${name}: Custom facets added`, {
+      facetCount: contextValue.facets ? Object.keys(contextValue.facets).length : 0,
+      facetNames: contextValue.facets ? Object.keys(contextValue.facets) : []
+    });
   }
+
+  logger.debug(`${name}: Creating context provider element`, {
+    hasContext: !!context,
+    hasChildren: !!children
+  });
 
   return createElement(
     context.Provider,

@@ -11,7 +11,6 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
   {
     name,
     adapter,
-    addActions = () => ({}),
     addQueries = () => ({}),
     children,
     context,
@@ -22,8 +21,6 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
   }: {
     name: string;
     adapter: PItemAdapterContext<V, S>;
-    addActions?: (contextValues: PItemsContextType<V, S>) =>
-      Record<string, (...params: any) => Promise<any>>;
     addQueries?: (contextValues: PItemsContextType<V, S>) =>
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children: React.ReactNode;
@@ -56,7 +53,6 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
   return PItemsProvider<V, S>({
     name,
     adapter,
-    addActions,
     addQueries,
     children,
     context,

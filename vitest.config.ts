@@ -17,6 +17,7 @@ export default defineConfig({
       'tests/**/*.test.tsx',
       'tests/**/*.spec.tsx',
     ],
+    setupFiles: ['./vitest.setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -25,6 +26,11 @@ export default defineConfig({
         'node_modules/',
         'tests/',
         'src/index.ts',
+        '**/*.d.ts',
+        'dist/**',
+        'eslint.config.mjs',
+        'vite.config.ts',
+        'vitest.config.ts',
       ],
       thresholds: {
         global: {

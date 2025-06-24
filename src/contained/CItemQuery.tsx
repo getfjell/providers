@@ -14,10 +14,11 @@ import {
 import React, { useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 import { CItemAdapterContext } from "./CItemAdapterContext";
-import { CItemContext, CItemContextType } from "./CItemContext";
+import { CItemContext } from "./CItemContext";
 import { CItemLoad } from "./CItemLoad";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
+const logger = LibLogger.get('CItemQueryProvider');
 
 export const CItemQuery = <
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -31,8 +32,6 @@ export const CItemQuery = <
     {
       name,
       adapter,
-      addActions = () => ({}),
-      addFacets = () => ({}),
       children,
       context,
       contextName,
@@ -46,10 +45,6 @@ export const CItemQuery = <
     }: {
     name: string;
     adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
-      Record<string, (...params: any[]) => Promise<V | null>>;
-    addFacets?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) =>
-      Record<string, (...params: any[]) => Promise<V | null>>;
     children: React.ReactNode;
     context: CItemContext<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
@@ -75,12 +70,9 @@ export const CItemQuery = <
 
   // Destructure the values we need to define functions.
   const {
-    pkTypes,
     one: oneItem,
     create: createItem,
   } = useMemo(() => cItemAdapter, [cItemAdapter]);
-
-  const logger = LibLogger.get('CItemQueryProvider', ...pkTypes);
 
   const parentItemContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
@@ -159,8 +151,6 @@ export const CItemQuery = <
     adapter,
     context,
     contextName,
-    addActions,
-    addFacets,
     children,
   });
 

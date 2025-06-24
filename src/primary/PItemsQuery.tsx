@@ -8,11 +8,12 @@ import { PItemAdapterContext } from "./PItemAdapterContext";
 import { PItemsContext, PItemsContextType } from "./PItemsContext";
 import { PItemsProvider } from "./PItemsProvider";
 
+const logger = LibLogger.get('PItemsQuery');
+
 export const PItemsQuery = <V extends Item<S>, S extends string>(
   {
     name,
     adapter,
-    addActions = () => ({}),
     addQueries = () => ({}),
     children,
     context,
@@ -22,8 +23,6 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   }: {
     name: string;
     adapter: PItemAdapterContext<V, S>;
-    addActions?: (contextValues: PItemsContextType<V, S>) =>
-      Record<string, (...params: any) => Promise<any>>;
     addQueries?: (contextValues: PItemsContextType<V, S>) =>
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children: React.ReactNode;
@@ -41,13 +40,9 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   // Destructure the values we need to define functions.
   const {
     cacheMap,
-    pkTypes,
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
-
-  const logger = LibLogger.get('PItemsQuery', ...pkTypes);
-
   // TODO: Same in CItemsProvider, this is a way to avoid needles rerender on a change to the instance of query
   const queryString = useMemo(() => JSON.stringify(query), [query]);
 
@@ -84,7 +79,6 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   return PItemsProvider<V, S>({
     name,
     adapter,
-    addActions,
     addQueries,
     children,
     context,
