@@ -9,6 +9,8 @@ import LibLogger from "@/logger";
 import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
 import { CItemsContext, CItemsContextType } from "./CItemsContext";
 
+const logger = LibLogger.get('CItemsProvider');
+
 export const CItemsProvider = <
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -21,7 +23,6 @@ export const CItemsProvider = <
     {
       name,
       adapter,
-      addActions = () => ({}),
       addQueries = () => ({}),
       children = (<></>),
       context,
@@ -35,14 +36,6 @@ export const CItemsProvider = <
     }: {
     name: string;
     adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    // TODO: Put more structure on what an action *actually* is.  Should it return a string specifying the action
-    // along with the parameters that would be used as a body?
-    addActions?: (
-      adapter: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
-      locations: LocKeyArray<L1, L2, L3, L4, L5>,
-      parentItem: Item<L1, L2, L3, L4, L5, never>
-    ) =>
-      Record<string, (params: any) => Promise<any>>;
     // TODO: Ok, let's add a function called "Add Queries" that will allow us to run a query that returns
     // counts, booleans, or data
     addQueries?: (
@@ -83,11 +76,15 @@ export const CItemsProvider = <
     update: updateItem,
     remove: removeItem,
     allAction: allActionItem,
+    allFacet: allFacetItem,
+    action: actionItem,
+    facet: facetItem,
     set: setItem,
     find: findItem,
+    findOne: findOneItem,
+    addAllActions,
+    addAllFacets,
   } = useMemo(() => adapterContext, [adapterContext]);
-
-  const logger = LibLogger.get('CItemsProvider', ...pkTypes);
 
   const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
@@ -176,6 +173,63 @@ export const CItemsProvider = <
     }
   }, [allActionItem, parentLocations]);
 
+  const allFacet = useCallback(async (facet: string, params: any = {}) => {
+    // TODO: Probably need exception handling here
+    if (parentLocations) {
+      logger.info('allFacet', { facet, params, parentLocations: abbrevLKA(parentLocations as any) });
+      setIsUpdating(true);
+      const result = await allFacetItem(facet, params, parentLocations) as any;
+      setIsUpdating(false);
+      return result;
+    }
+  }, [allFacetItem, parentLocations]);
+
+  const action = useCallback(
+    async (
+      key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+      action: string,
+      body: any = {},
+    ): Promise<V> => {
+    // TODO: Probably need exception handling here
+      if (parentLocations) {
+        logger.info('action', { key, action, body, parentLocations: abbrevLKA(parentLocations as any) });
+        setIsUpdating(true);
+        const result = await actionItem(key, action, body, parentLocations) as V;
+        setIsUpdating(false);
+        return result;
+      } else {
+        throw new Error(`No parent locations present to query for action ${action} in ${name}`);
+      }
+    }, [actionItem, parentLocations]);
+
+  const facet = useCallback(
+    async (
+      key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
+      facet: string,
+      params: any = {},
+    ): Promise<any> => {
+    // TODO: Probably need exception handling here
+      if (parentLocations) {
+        logger.info('facet', { key, facet, params, parentLocations: abbrevLKA(parentLocations as any) });
+        setIsUpdating(true);
+        const result = await facetItem(key, facet, params, parentLocations) as any;
+        setIsUpdating(false);
+        return result;
+      }
+    }, [facetItem, parentLocations]);
+
+  const findOne = useCallback(
+    async (
+      finder: string,
+      finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    ): Promise<V> => {
+      if (parentLocations) {
+        return findOneItem(finder, finderParams, parentLocations);
+      } else {
+        throw new Error(`No parent locations present to query for findOne containeditem in ${name}`);
+      }
+    }, [adapterContext, parentLocations]);
+
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -211,22 +265,30 @@ export const CItemsProvider = <
     all: overrides?.all || all,
     one: overrides?.one || one,
     allAction,
+    allFacet,
+    action,
+    facet,
     find,
+    findOne,
     set,
   };
 
-  contextValue.actions = useMemo(
-    () => {
-      logger.debug('Adding Actions', { parentLocations: abbrevLKA(parentLocations as any), parentItem });
-      if (parentLocations && parentItem) {
-        logger.debug('Adding Actions for Locations and Item', {
-          parentLocations: abbrevLKA(parentLocations as any), parentItem
-        });
-        return addActions(adapterContext, parentLocations, parentItem);
-      }
-      return {};
-    },
-    [adapterContext, parentLocations, parentItem]);
+  if (addAllActions && contextValue) {
+    contextValue.allActions = addAllActions(contextValue);
+    logger.debug(`${name}: Custom actions added`, {
+      actionCount: contextValue.allActions ? Object.keys(contextValue.allActions).length : 0,
+      actionNames: contextValue.allActions ? Object.keys(contextValue.allActions) : []
+    });
+  };
+
+  if (addAllFacets && contextValue) {
+    contextValue.allFacets = addAllFacets(contextValue);
+    logger.debug(`${name}: Custom facets added`, {
+      facetCount: contextValue.allFacets ? Object.keys(contextValue.allFacets).length : 0,
+      facetNames: contextValue.allFacets ? Object.keys(contextValue.allFacets) : []
+    });
+  };
+
   contextValue.queries = useMemo(
     () => {
       logger.debug('Adding Queries', { parentLocations: abbrevLKA(parentLocations as any), parentItem });
