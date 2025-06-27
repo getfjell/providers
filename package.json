@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@fjell/cache": "^4.6.3",
+    "@fjell/client-api": "link:../fjell-client-api",
     "@fjell/core": "^4.4.3",
     "@fjell/logging": "^4.4.3",
     "@types/react": "^18.3.23",
@@ -58,7 +59,7 @@
     "vite-plugin-node": "^5.0.1",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.12.3",
+  "packageManager": "pnpm@10.12.4",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/getfjell/providers.git"

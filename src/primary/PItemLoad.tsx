@@ -7,12 +7,11 @@ import {
   Item,
   LocKeyArray,
   PriKey,
-  TypesProperties
 } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
-import { PItemAdapterContext } from "./PItemAdapterContext";
-import { PItemContext, PItemContextType } from "./PItemContext";
+import * as PItem from "./PItem";
+import * as PItemAdapter from "./PItemAdapter";
 
 const logger = LibLogger.get('PItemLoad');
 
@@ -29,9 +28,9 @@ export const PItemLoad = <
   }: {
   name: string;
   // TODO: I want this to be two separate properties.
-  adapter: PItemAdapterContext<V, S>;
+  adapter: PItemAdapter.Context<V, S>;
   children: React.ReactNode;
-  context: PItemContext<V, S>;
+  context: PItem.Context<V, S>;
   contextName: string;
   ik: PriKey<S> | null;
 }) => {
@@ -71,20 +70,7 @@ export const PItemLoad = <
     set: setItem,
     addActions,
     addFacets,
-  } = useMemo(() => {
-    logger.debug(`${name}: Destructuring PItemAdapter values`);
-    const result = PItemAdapter;
-    logger.debug(`${name}: PItemAdapter destructured`, {
-      hasCacheMap: !!result.cacheMap,
-      pkTypes: result.pkTypes,
-      hasRetrieve: !!result.retrieve,
-      hasRemove: !!result.remove,
-      hasUpdate: !!result.update,
-      hasAction: !!result.action,
-      hasSet: !!result.set
-    });
-    return result;
-  }, [PItemAdapter]);
+  } = PItemAdapter;
 
   const itemLogger = LibLogger.get('PItemLoad', ...pkTypes);
   logger.debug(`${name}: Item logger created with pkTypes`, { pkTypes });
@@ -227,7 +213,7 @@ export const PItemLoad = <
     }
   }, [removeItem, itemKey]);
 
-  const update = useCallback(async (item: TypesProperties<V, S>) => {
+  const update = useCallback(async (item: Partial<Item<S>>) => {
     itemLogger.trace("update", { item });
     logger.debug(`${name}: update() called`, {
       itemKey,
@@ -378,7 +364,7 @@ export const PItemLoad = <
     }
   }, [facetItem, itemKey]);
 
-  const contextValue: PItemContextType<V, S> = {
+  const contextValue: PItem.ContextType<V, S> = {
     name,
     key: itemKey as PriKey<S>,
     item,
@@ -405,23 +391,8 @@ export const PItemLoad = <
     hasLocations: !!contextValue.locations
   });
 
-  if (addActions && contextValue) {
-    logger.debug(`${name}: Adding custom actions to context`);
-    contextValue.actions = addActions(contextValue);
-    logger.debug(`${name}: Custom actions added`, {
-      actionCount: contextValue.actions ? Object.keys(contextValue.actions).length : 0,
-      actionNames: contextValue.actions ? Object.keys(contextValue.actions) : []
-    });
-  }
-
-  if (addFacets && contextValue) {
-    logger.debug(`${name}: Adding custom facets to context`);
-    contextValue.facets = addFacets(contextValue);
-    logger.debug(`${name}: Custom facets added`, {
-      facetCount: contextValue.facets ? Object.keys(contextValue.facets).length : 0,
-      facetNames: contextValue.facets ? Object.keys(contextValue.facets) : []
-    });
-  }
+  contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
+  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
 
   logger.debug(`${name}: Creating context provider element`, {
     hasContext: !!context,

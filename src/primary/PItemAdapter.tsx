@@ -1,23 +1,33 @@
 /* eslint-disable no-undefined */
-import { abbrevIK, Item, ItemQuery, PriKey, TypesProperties } from "@fjell/core";
+import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useMemo } from "react";
-import { PItemAdapterContext, PItemAdapterContextType } from "./PItemAdapterContext";
 
+import { AggregateConfig, Cache, CacheMap, createAggregator } from "@fjell/cache";
+import * as AItemAdapter from "../AItemAdapter";
+import * as AItem from "../AItem";
+import * as AItems from "../AItems";
 import LibLogger from '../logger';
-import { AggregateConfig, createAggregator } from "@fjell/cache";
-import { Cache } from "@fjell/cache";
-import { CacheMap } from "@fjell/cache";
-import { ActionMethod, AllActionMethod, AllFacetMethod, FacetMethod } from "@/AItemAdapterContext";
-import { PItemsContextType } from "./PItemsContext";
-import { PItemContextType } from "./PItemContext";
 
 const logger = LibLogger.get('PItemAdapter');
+
+export interface ContextType<
+    V extends Item<S>,
+    S extends string
+  > extends AItemAdapter.ContextType<V, S> {
+    name: string;
+    cacheMap: CacheMap<V, S>;
+    pkTypes: AllItemTypeArrays<S>;
+  }
+
+export type Context<V extends Item<S>, S extends string> =
+    React.Context<ContextType<V, S> | undefined>;
 
 export const usePItemAdapter = <
   V extends Item<S>,
   S extends string
->(context: PItemAdapterContext<V, S>, contextName: string): PItemAdapterContextType<V, S> => {
+>(context: Context<V, S>, contextName: string): ContextType<V, S> => {
   const contextInstance = React.useContext(context);
+
   if (contextInstance === undefined) {
     throw new Error(
       `This generic item adapter hook must be used within a ${contextName}`,
@@ -26,7 +36,7 @@ export const usePItemAdapter = <
   return contextInstance;
 };
 
-export const PItemAdapter = <
+export const Adapter = <
   V extends Item<S>,
   S extends string
 >({
@@ -43,13 +53,13 @@ export const PItemAdapter = <
   }: {
   name: string;
   cache: Cache<V, S>;
-  context: PItemAdapterContext<V, S>;
+  context: Context<V, S>;
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
-  addActions?: (contextValues: PItemContextType<V, S>) => Record<string, ActionMethod<V, S>>;
-  addFacets?: (contextValues: PItemContextType<V, S>) => Record<string, FacetMethod<S>>;
-  addAllActions?: (contextValues: PItemsContextType<V, S>) => Record<string, AllActionMethod<V, S>>;
-  addAllFacets?: (contextValues: PItemsContextType<V, S>) => Record<string, AllFacetMethod<S>>;
+  addActions?: (action: AItem.ActionMethod<V, S>) => Record<string, AItem.AddedActionMethod<V, S>>;
+  addFacets?: (facet: AItem.FacetMethod) => Record<string, AItem.AddedFacetMethod>;
+  addAllActions?: (allAction: AItems.AllActionMethod<V, S>) => Record<string, AItems.AddedAllActionMethod<V, S>>;
+  addAllFacets?: (allFacet: AItems.AllFacetMethod) => Record<string, AItems.AddedAllFacetMethod>;
   children: React.ReactNode;
 }) => {
 
@@ -135,7 +145,7 @@ export const PItemAdapter = <
   }, [resolvedSourceCache, handleCacheError]);
 
   const create = useCallback(async (
-    item: TypesProperties<V, S>,
+    item: Partial<Item<S>>,
   ): Promise<V> => {
     logger.trace('create', { item });
     if (!resolvedSourceCache) {
@@ -185,7 +195,7 @@ export const PItemAdapter = <
 
   const update = useCallback(async (
     key: PriKey<S>,
-    item: TypesProperties<V, S>,
+    item: Partial<Item<S>>,
   ): Promise<V> => {
     logger.trace('update', { key: abbrevIK(key), item });
     if (!resolvedSourceCache) {
@@ -278,7 +288,7 @@ export const PItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: Partial<PItemAdapterContextType<V, S>> = {
+  const contextValue: Partial<ContextType<V, S>> = {
     name,
     cacheMap,
     pkTypes,
@@ -304,7 +314,7 @@ export const PItemAdapter = <
   return createElement(
     context.Provider,
     {
-      value: contextValue as PItemAdapterContextType<V, S>,
+      value: contextValue as ContextType<V, S>,
     },
     children,
   );

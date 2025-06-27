@@ -1,13 +1,11 @@
-
-import { useAItem } from "@/AItemProvider";
-import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PriKey, TypesProperties } from "@fjell/core";
+import * as AItem from "../AItem";
+import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
-import { AItemContext } from "@/AItemContext";
 import LibLogger from "@/logger";
-import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
-import { CItemsContext, CItemsContextType } from "./CItemsContext";
+import * as CItemAdapter from "./CItemAdapter";
+import * as CItems from "./CItems";
 
 const logger = LibLogger.get('CItemsProvider');
 
@@ -23,7 +21,6 @@ export const CItemsProvider = <
     {
       name,
       adapter,
-      addQueries = () => ({}),
       children = (<></>),
       context,
       contextName,
@@ -35,19 +32,19 @@ export const CItemsProvider = <
       overrides,
     }: {
     name: string;
-    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+    adapter: CItemAdapter.Context<V, S, L1, L2, L3, L4, L5>;
     // TODO: Ok, let's add a function called "Add Queries" that will allow us to run a query that returns
     // counts, booleans, or data
     addQueries?: (
-      adapter: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
+      adapter: CItemAdapter.ContextType<V, S, L1, L2, L3, L4, L5>,
       locations: LocKeyArray<L1, L2, L3, L4, L5>,
       parentItem: Item<L1, L2, L3, L4, L5, never>
     ) =>
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
     children?: React.ReactNode;
-    context: CItemsContext<V, S, L1, L2, L3, L4, L5>;
+    context: CItems.Context<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
-    parent: AItemContext<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
+    parent: AItem.Context<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
     parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
     items?: V[] | null;
@@ -84,9 +81,9 @@ export const CItemsProvider = <
     findOne: findOneItem,
     addAllActions,
     addAllFacets,
-  } = useMemo(() => adapterContext, [adapterContext]);
+  } = adapterContext;
 
-  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
+  const parentContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     locations: parentLocations,
@@ -97,7 +94,7 @@ export const CItemsProvider = <
     setIsLoading(isLoadingParam);
   }, [isLoadingParam]);
 
-  const create = useCallback(async (item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => {
+  const create = useCallback(async (item: Partial<Item<S, L1, L2, L3, L4, L5>>) => {
     // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.debug(`${name}: create`, { item, parentLocations: abbrevLKA(parentLocations as any) });
@@ -112,7 +109,7 @@ export const CItemsProvider = <
   }, [createItem, parentLocations]);
 
   const update = useCallback(async (key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-    item: TypesProperties<V, S, L1, L2, L3, L4, L5>) => {
+    item: Partial<Item<S, L1, L2, L3, L4, L5>>) => {
     // TODO: Probably need exception handling here
     logger.debug(`${name}: update`, { key: abbrevIK(key), item });
     setIsUpdating(true);
@@ -173,7 +170,7 @@ export const CItemsProvider = <
     }
   }, [allActionItem, parentLocations]);
 
-  const allFacet = useCallback(async (facet: string, params: any = {}) => {
+  const allFacet = useCallback(async (facet: string, params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {}) => {
     // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.info('allFacet', { facet, params, parentLocations: abbrevLKA(parentLocations as any) });
@@ -206,7 +203,7 @@ export const CItemsProvider = <
     async (
       key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
       facet: string,
-      params: any = {},
+      params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {},
     ): Promise<any> => {
     // TODO: Probably need exception handling here
       if (parentLocations) {
@@ -222,13 +219,13 @@ export const CItemsProvider = <
     async (
       finder: string,
       finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-    ): Promise<V> => {
+    ): Promise<V | null> => {
       if (parentLocations) {
         return findOneItem(finder, finderParams, parentLocations);
       } else {
         throw new Error(`No parent locations present to query for findOne containeditem in ${name}`);
       }
-    }, [adapterContext, parentLocations]);
+    }, [findOneItem, parentLocations]);
 
   const find = useCallback(async (
     finder: string,
@@ -240,7 +237,7 @@ export const CItemsProvider = <
       logger.error(`${name}: No parent locations present to query for find containeditems`, { finder, finderParams });
       throw new Error(`No parent locations present to query for find containeditems in ${name}`);
     }
-  }, [adapterContext, parentLocations]);
+  }, [findItem, parentLocations]);
 
   const set = useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
@@ -249,7 +246,7 @@ export const CItemsProvider = <
     return setItem(key, item);
   }, [setItem, parentLocations]);
 
-  const contextValue: CItemsContextType<V, S, L1, L2, L3, L4, L5> = {
+  const contextValue: CItems.ContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
     items: items || [],
     parentItem: parentItem as Item<L1, L2, L3, L4, L5> | null,
@@ -258,7 +255,7 @@ export const CItemsProvider = <
     isUpdating,
     isRemoving,
     pkTypes,
-    locations: parentLocations,
+    locations: parentLocations as any,
     create,
     update,
     remove,
@@ -273,39 +270,13 @@ export const CItemsProvider = <
     set,
   };
 
-  if (addAllActions && contextValue) {
-    contextValue.allActions = addAllActions(contextValue);
-    logger.debug(`${name}: Custom actions added`, {
-      actionCount: contextValue.allActions ? Object.keys(contextValue.allActions).length : 0,
-      actionNames: contextValue.allActions ? Object.keys(contextValue.allActions) : []
-    });
-  };
-
-  if (addAllFacets && contextValue) {
-    contextValue.allFacets = addAllFacets(contextValue);
-    logger.debug(`${name}: Custom facets added`, {
-      facetCount: contextValue.allFacets ? Object.keys(contextValue.allFacets).length : 0,
-      facetNames: contextValue.allFacets ? Object.keys(contextValue.allFacets) : []
-    });
-  };
-
-  contextValue.queries = useMemo(
-    () => {
-      logger.debug('Adding Queries', { parentLocations: abbrevLKA(parentLocations as any), parentItem });
-      if (parentLocations && parentItem) {
-        logger.debug('Adding Queries for Locations and Item', {
-          parentLocations: abbrevLKA(parentLocations as any), parentItem
-        });
-        return addQueries(adapterContext, parentLocations, parentItem);
-      }
-      return {};
-    },
-    [adapterContext, parentLocations, parentItem]);
+  contextValue.allActions = useMemo(() => addAllActions && addAllActions(contextValue.allAction), [addAllActions, contextValue.allAction]);
+  contextValue.allFacets = useMemo(() => addAllFacets && addAllFacets(contextValue.allFacet), [addAllFacets, contextValue.allFacet]);
 
   return createElement(
     context.Provider,
     {
-      value: contextValue as CItemsContextType<V, S, L1, L2, L3, L4, L5>,
+      value: contextValue as CItems.ContextType<V, S, L1, L2, L3, L4, L5>,
     },
     (
       <>

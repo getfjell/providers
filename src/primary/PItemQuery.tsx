@@ -5,13 +5,12 @@ import {
   Item,
   ItemQuery,
   PriKey,
-  TypesProperties
 } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
-import { PItemAdapterContext } from "./PItemAdapterContext";
-import { PItemContext } from "./PItemContext";
 import { PItemLoad } from "./PItemLoad";
+import * as PItemAdapter from "./PItemAdapter";
+import * as PItem from "./PItem";
 
 const logger = LibLogger.get('PItemQuery');
 
@@ -29,11 +28,11 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
 }: {
     // TODO: I want this to be two separate properties.
     name: string;
-    adapter: PItemAdapterContext<V, S>;
+    adapter: PItemAdapter.Context<V, S>;
     children: React.ReactNode;
-    context: PItemContext<V, S>;
+    context: PItem.Context<V, S>;
     contextName: string,
-    create?: TypesProperties<V, S>;
+    create?: Partial<Item<S>> | null;
     loading?: React.ReactNode;
     notFound?: React.ReactNode;
     optional?: boolean;
