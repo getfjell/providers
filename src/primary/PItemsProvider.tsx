@@ -62,7 +62,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     addAllFacets,
   } = adapterContext;
 
-  const logger = LibLogger.get('PItemsProvider', ...pkTypes);
+  const logger = LibLogger.get('PItemsProvider', JSON.stringify(pkTypes));
 
   useEffect(() => {
     setIsLoading(isLoadingParam);
@@ -113,33 +113,45 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
   const allAction = useCallback(async (action: string, body: any = {}) => {
     logger.trace('allAction', { action, body });
     setIsUpdating(true);
-    const result = await allItemAction(action, body) as V[] | null;
-    setIsUpdating(false);
-    return result;
+    try {
+      const result = await allItemAction(action, body) as V[] | null;
+      return result;
+    } finally {
+      setIsUpdating(false);
+    }
   }, [allItemAction]);
 
   const allFacet = useCallback(async (facet: string, params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {}) => {
     logger.trace('allFacet', { facet, params });
     setIsUpdating(true);
-    const result = await allItemFacet(facet, params) as any;
-    setIsUpdating(false);
-    return result;
+    try {
+      const result = await allItemFacet(facet, params) as any;
+      return result;
+    } finally {
+      setIsUpdating(false);
+    }
   }, [allItemFacet]);
 
   const action = useCallback(async (key: PriKey<S>, action: string, body: any) => {
     logger.trace('action', { key, action, body });
     setIsUpdating(true);
-    const result = await actionItem(key, action, body) as V;
-    setIsUpdating(false);
-    return result;
+    try {
+      const result = await actionItem(key, action, body) as V;
+      return result;
+    } finally {
+      setIsUpdating(false);
+    }
   }, [actionItem]);
 
   const facet = useCallback(async (key: PriKey<S>, facet: string, params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {}) => {
     logger.trace('facet', { key, facet, params });
     setIsUpdating(true);
-    const result = await facetItem(key, facet, params) as any;
-    setIsUpdating(false);
-    return result;
+    try {
+      const result = await facetItem(key, facet, params) as any;
+      return result;
+    } finally {
+      setIsUpdating(false);
+    }
   }, [facetItem]);
 
   const find = useCallback(async (

@@ -42,6 +42,11 @@ export const PItemLoad = <
     ik
   });
 
+  const [error, setError] = React.useState<Error | null>(null);
+  if (error) {
+    throw error;
+  }
+
   const [itemKey, setItemKey] = React.useState<PriKey<S> | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isUpdating, setIsUpdating] = React.useState<boolean>(false);
@@ -140,13 +145,14 @@ export const PItemLoad = <
         setItemKey(ik as PriKey<S>);
         logger.debug(`${name}: itemKey state updated`, { newItemKey: ik });
       } else {
-        // TODO: If we get here log a debug message, but don't fail.
-        itemLogger.debug(`${name}: Key is either not a PriKey or a PK is not defined`, { ik });
+        const errorMessage = `${name}: Key is either not a PriKey or a PK is not defined`;
+        itemLogger.debug(errorMessage, { ik });
         logger.debug(`${name}: Invalid key or missing pk, setting loading to false`, {
           isPriKeyCheck: isPriKey(ik),
           hasPk: ik && typeof ik === 'object' && 'pk' in ik ? !!ik.pk : false
         });
         setIsLoading(false);
+        setError(new Error(errorMessage));
       }
     } else {
       itemLogger.debug(`${name}: No item key was provided, no item will be retrieved`, { ik });
@@ -175,6 +181,7 @@ export const PItemLoad = <
           });
         } catch (error) {
           logger.error(`${name}: Error during item retrieval`, { itemKey, error });
+          setError(error as Error);
         }
       })();
     } else {
@@ -198,12 +205,12 @@ export const PItemLoad = <
         logger.debug(`${name}: Calling removeItem`, { itemKey });
         const result = await removeItem(itemKey);
         logger.debug(`${name}: removeItem completed successfully`, { itemKey, result });
-        setIsRemoving(false);
-        logger.debug(`${name}: isRemoving set to false after successful removal`);
       } catch (error) {
         logger.error(`${name}: Error during item removal`, { itemKey, error });
-        setIsRemoving(false);
         throw error;
+      } finally {
+        setIsRemoving(false);
+        logger.debug(`${name}: isRemoving set to false after successful removal`);
       }
     } else {
       logger.debug(`${name}: Invalid itemKey for removal`, { itemKey });
@@ -234,13 +241,13 @@ export const PItemLoad = <
             hasResult: !!retItem,
             resultType: retItem ? typeof retItem : 'undefined'
           });
-          setIsUpdating(false);
-          logger.debug(`${name}: isUpdating set to false after successful update`);
           return retItem as V;
         } catch (error) {
           logger.error(`${name}: Error during item update`, { itemKey, item, error });
-          setIsUpdating(false);
           throw error;
+        } finally {
+          setIsUpdating(false);
+          logger.debug(`${name}: isUpdating set to false after successful update`);
         }
       } else {
         logger.debug(`${name}: No item provided for update`);
@@ -313,13 +320,13 @@ export const PItemLoad = <
           hasResult: !!retItem,
           resultType: retItem ? typeof retItem : 'undefined'
         });
-        setIsUpdating(false);
-        logger.debug(`${name}: isUpdating set to false after successful action`);
         return retItem as V;
       } catch (error) {
         logger.error(`${name}: Error during action execution`, { itemKey, actionName, body, error });
-        setIsUpdating(false);
         throw error;
+      } finally {
+        setIsUpdating(false);
+        logger.debug(`${name}: isUpdating set to false after successful action`);
       }
     } else {
       logger.debug(`${name}: Invalid itemKey for action`, { itemKey, actionName });
@@ -354,7 +361,6 @@ export const PItemLoad = <
         return response as any;
       } catch (error) {
         logger.error(`${name}: Error during facet retrieval`, { itemKey, facetName, error });
-        setIsUpdating(false);
         throw error;
       }
     } else {

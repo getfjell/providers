@@ -160,9 +160,12 @@ export const CItemsProvider = <
     if (parentLocations) {
       logger.info('allAction', { action, body, parentLocations: abbrevLKA(parentLocations as any) });
       setIsUpdating(true);
-      const result = await allActionItem(action, body, parentLocations) as V[] | null;
-      setIsUpdating(false);
-      return result;
+      try {
+        const result = await allActionItem(action, body, parentLocations) as V[] | null;
+        return result;
+      } finally {
+        setIsUpdating(false);
+      }
     } else {
       logger.error(`${name}: No parent locations present to query for allAction containeditems`,
         { action, body });
@@ -175,10 +178,16 @@ export const CItemsProvider = <
     if (parentLocations) {
       logger.info('allFacet', { facet, params, parentLocations: abbrevLKA(parentLocations as any) });
       setIsUpdating(true);
-      const result = await allFacetItem(facet, params, parentLocations) as any;
-      setIsUpdating(false);
-      return result;
+      try {
+        const result = await allFacetItem(facet, params, parentLocations) as any;
+        return result;
+      } finally {
+        setIsUpdating(false);
+      }
     }
+    const errorMessage = `${name}: No parent locations present to query for allFacet containeditems`;
+    logger.error(errorMessage, { facet, params });
+    throw new Error(errorMessage);
   }, [allFacetItem, parentLocations]);
 
   const action = useCallback(
@@ -191,9 +200,12 @@ export const CItemsProvider = <
       if (parentLocations) {
         logger.info('action', { key, action, body, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);
-        const result = await actionItem(key, action, body, parentLocations) as V;
-        setIsUpdating(false);
-        return result;
+        try {
+          const result = await actionItem(key, action, body, parentLocations) as V;
+          return result;
+        } finally {
+          setIsUpdating(false);
+        }
       } else {
         throw new Error(`No parent locations present to query for action ${action} in ${name}`);
       }
@@ -209,10 +221,16 @@ export const CItemsProvider = <
       if (parentLocations) {
         logger.info('facet', { key, facet, params, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);
-        const result = await facetItem(key, facet, params, parentLocations) as any;
-        setIsUpdating(false);
-        return result;
+        try {
+          const result = await facetItem(key, facet, params, parentLocations) as any;
+          return result;
+        } finally {
+          setIsUpdating(false);
+        }
       }
+      const errorMessage = `${name}: No parent locations present to query for facet ${facet}`;
+      logger.error(errorMessage, { key, facet, params });
+      throw new Error(errorMessage);
     }, [facetItem, parentLocations]);
 
   const findOne = useCallback(
