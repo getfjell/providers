@@ -2,17 +2,16 @@
 /// <reference types="vitest/globals" />
 import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
-import React from 'react';
+import * as React from 'react';
 import { describe, expect, it } from 'vitest';
-import { AItemsContextType } from "../src/AItemsContext";
-import { useAItems } from '../src/AItemsProvider';
+import { ContextType, useAItems } from "../src/AItems";
 import { vi } from 'vitest';
 
 // @vitest-environment jsdom
 
 type TestItem = Item<'test', 'container'>;
 
-const mockContextValue: AItemsContextType<TestItem, 'test', 'container'> = {
+const mockContextValue: ContextType<TestItem, 'test', 'container'> = {
   name: 'test',
   items: [],
   isLoading: false,
@@ -24,21 +23,27 @@ const mockContextValue: AItemsContextType<TestItem, 'test', 'container'> = {
   all: vi.fn(),
   one: vi.fn(),
   allAction: vi.fn(),
+  allFacet: vi.fn(),
   finders: {},
   actions: {},
   set: vi.fn(),
+  find: vi.fn(),
+  findOne: vi.fn(),
+  update: vi.fn(),
+  remove: vi.fn(),
+  action: vi.fn(),
+  facet: vi.fn(),
 };
 
-const TestContext = React.createContext<AItemsContextType<TestItem, 'test', 'container'> | undefined>(undefined);
+const TestContext = React.createContext<ContextType<TestItem, 'test', 'container'> | undefined>(undefined);
 TestContext.displayName = 'TestContext';
 
 describe('useAItemsProvider', () => {
   it('should return context value if used within a provider', () => {
-    const wrapper: React.FC<{ children: any }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={mockContextValue}>{children}</TestContext.Provider>
     );
 
-    // @ts-ignore
     const { result } = renderHook(() => useAItems(TestContext, "TestContext"), { wrapper });
     expect(result.current).toBe(mockContextValue);
   });

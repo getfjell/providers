@@ -1,14 +1,14 @@
 /* eslint-disable no-undefined */
 import { ComKey, Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
-import React, { ReactNode } from 'react';
+import * as React from 'react';
 import { describe, expect, it } from 'vitest';
-import { CItemContextType, useCItem } from '../../src/contained/CItemContext';
+import { ContextType, useCItem } from '../../src/contained/CItem';
 import { vi } from 'vitest';
 
 type TestItem = Item<'test', 'container'>;
 
-type TestItemProviderContextType = CItemContextType<TestItem, 'test', 'container'>;
+type TestItemProviderContextType = ContextType<TestItem, 'test', 'container'>;
 
 const TestContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
 
@@ -27,12 +27,13 @@ describe('useCItemProvider', () => {
       remove: vi.fn(),
       update: vi.fn(),
       action: vi.fn(),
+      facet: vi.fn(),
       actions: {},
       locations: null,
       set: vi.fn(),
     };
 
-    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 

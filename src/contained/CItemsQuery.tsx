@@ -1,13 +1,12 @@
 
-import { useAItem } from "@/AItemProvider";
-import { abbrevLKA, abbrevQuery, Item, ItemQuery, LocKeyArray } from "@fjell/core";
+import { abbrevLKA, abbrevQuery, Item, ItemQuery } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
-import { AItemContext } from "@/AItemContext";
 import LibLogger from "@/logger";
-import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
-import { CItemsContext } from "./CItemsContext";
+import * as AItem from "../AItem";
+import * as CItemAdapter from "./CItemAdapter";
+import * as CItems from "./CItems";
 import { CItemsProvider } from "./CItemsProvider";
 
 const logger = LibLogger.get('CItemsQuery');
@@ -24,7 +23,6 @@ export const CItemsQuery = <
     {
       name,
       adapter,
-      addQueries = () => ({}),
       children = (<></>),
       context,
       contextName,
@@ -34,18 +32,12 @@ export const CItemsQuery = <
       renderEach,
     }: {
     name: string;
-    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    addQueries?: (
-      adapter: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
-      locations: LocKeyArray<L1, L2, L3, L4, L5>,
-      parentItem: Item<L1, L2, L3, L4, L5, never>
-    ) =>
-      Record<string, (params: any) => Promise<string | boolean | number | null>>;
+    adapter: CItemAdapter.Context<V, S, L1, L2, L3, L4, L5>;
     children?: React.ReactNode;
-    context: CItemsContext<V, S, L1, L2, L3, L4, L5>;
+    context: CItems.Context<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
     query?: ItemQuery;
-    parent: AItemContext<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
+    parent: AItem.Context<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
     parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
   }
@@ -63,7 +55,7 @@ export const CItemsQuery = <
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
-  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
+  const parentContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     name: parentName,
@@ -152,7 +144,6 @@ export const CItemsQuery = <
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,
     adapter,
-    addQueries,
     children,
     context,
     contextName,

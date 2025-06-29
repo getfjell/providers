@@ -1,6 +1,5 @@
 /* eslint-disable no-undefined */
-import { AItemContext } from "@/AItemContext";
-import { useAItem } from "@/AItemProvider";
+import * as AItem from "../AItem";
 import LibLogger from "@/logger";
 import {
   abbrevLKA,
@@ -9,12 +8,11 @@ import {
   Item,
   ItemQuery,
   PriKey,
-  TypesProperties
 } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
-import { CItemAdapterContext } from "./CItemAdapterContext";
-import { CItemContext } from "./CItemContext";
+import * as CItemAdapter from "./CItemAdapter";
+import * as CItem from "./CItem";
 import { CItemLoad } from "./CItemLoad";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
@@ -44,15 +42,15 @@ export const CItemQuery = <
       query,
     }: {
     name: string;
-    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+    adapter: CItemAdapter.Context<V, S, L1, L2, L3, L4, L5>;
     children: React.ReactNode;
-    context: CItemContext<V, S, L1, L2, L3, L4, L5>;
+    context: CItem.Context<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
-    create?: TypesProperties<V, S, L1, L2, L3, L4, L5>;
+    create?: Partial<Item<S, L1, L2, L3, L4, L5>>;
     loading?: React.ReactNode;
     notFound?: React.ReactNode;
     optional?: boolean;
-    parent: AItemContext<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
+    parent: AItem.Context<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
     parentContextName: string;
     query?: ItemQuery;
   }
@@ -74,7 +72,7 @@ export const CItemQuery = <
     create: createItem,
   } = useMemo(() => cItemAdapter, [cItemAdapter]);
 
-  const parentItemContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
+  const parentItemContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     locations: parentLocations,

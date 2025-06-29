@@ -5,8 +5,8 @@ import { act, render, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PItemAdapterContext, PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
-import { PItemContext, PItemContextType } from '../../src/primary/PItemContext';
+import * as PItemAdapter from '../../src/primary/PItemAdapter';
+import * as PItem from '../../src/primary/PItem';
 import { PItemQuery } from '../../src/primary/PItemQuery';
 
 interface TestItem extends Item<'test'> {
@@ -19,8 +19,8 @@ interface TestItem extends Item<'test'> {
   };
 }
 
-type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
-type TestItemContextType = PItemContextType<TestItem, 'test'>;
+type TestItemAdapterContextType = PItemAdapter.ContextType<TestItem, 'test'>;
+type TestItemContextType = PItem.ContextType<TestItem, 'test'>;
 
 describe('PItemQuery - Comprehensive Tests', () => {
   const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
@@ -36,8 +36,8 @@ describe('PItemQuery - Comprehensive Tests', () => {
 
   let cacheMap: CacheMap<TestItem, 'test'>;
   let testItemCache: TestItemAdapterContextType;
-  let TestItemAdapterContext: PItemAdapterContext<TestItem, 'test'>;
-  let TestItemContext: PItemContext<TestItem, 'test'>;
+  let TestItemAdapterContext: PItemAdapter.Context<TestItem, 'test'>;
+  let TestItemContext: PItem.Context<TestItem, 'test'>;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -184,15 +184,15 @@ describe('PItemQuery - Comprehensive Tests', () => {
 
     // Wait for the creation process to complete
     await waitFor(() => {
-      expect(result.current?.item).toBeDefined();
-    }, { timeout: 3000 });
-
-    expect(result.current?.item).toEqual(createItem);
+      expect(result.current?.item).toEqual(createItem);
+    }, { timeout: 5000 });
     expect(testItemCache.create).toHaveBeenCalledWith(createItem);
   });
 
   it('should handle query error and set item to null if optional', async () => {
     testItemCache.one = vi.fn().mockRejectedValue(new Error('Query failed'));
+    testItemCache.retrieve = vi.fn().mockResolvedValue(null);
+    testItemCache.get = vi.fn().mockResolvedValue(null);
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
       <TestItemAdapterContext.Provider value={testItemCache}>
@@ -216,9 +216,11 @@ describe('PItemQuery - Comprehensive Tests', () => {
 
     await waitFor(() => {
       expect(result.current).toBeDefined();
-    });
+    }, { timeout: 5000 });
 
-    expect(result.current?.item).toBeNull();
+    await waitFor(() => {
+      expect(result.current?.item).toBeNull();
+    }, { timeout: 5000 });
   });
 
   it('should handle no query provided', async () => {

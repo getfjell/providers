@@ -4,9 +4,9 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
 import LibLogger from '@/logger';
-import { PItemAdapterContext } from "./PItemAdapterContext";
-import { PItemsContext, PItemsContextType } from "./PItemsContext";
 import { PItemsProvider } from "./PItemsProvider";
+import * as PItemAdapter from "./PItemAdapter";
+import * as PItems from "./PItems";
 
 const logger = LibLogger.get('PItemsQuery');
 
@@ -14,7 +14,6 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   {
     name,
     adapter,
-    addQueries = () => ({}),
     children,
     context,
     contextName,
@@ -22,11 +21,9 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     renderEach,
   }: {
     name: string;
-    adapter: PItemAdapterContext<V, S>;
-    addQueries?: (contextValues: PItemsContextType<V, S>) =>
-      Record<string, (...params: any) => Promise<string | boolean | number | null>>;
+    adapter: PItemAdapter.Context<V, S>;
     children: React.ReactNode;
-    context: PItemsContext<V, S>;
+    context: PItems.Context<V, S>;
     contextName: string;
     query?: ItemQuery;
     renderEach?: (item: V) => React.ReactNode;
@@ -79,7 +76,6 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   return PItemsProvider<V, S>({
     name,
     adapter,
-    addQueries,
     children,
     context,
     contextName,

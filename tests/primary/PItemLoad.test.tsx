@@ -1,12 +1,12 @@
 /* eslint-disable no-undefined */
-import { PItemAdapter } from '../../src/primary/PItemAdapter';
+import { Adapter } from '../../src/primary/PItemAdapter';
 import { PItemLoad } from '../../src/primary/PItemLoad';
 import { CacheMap } from '@fjell/cache';
 import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
-import { PItemAdapterContext, PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
-import { PItemContext, PItemContextType, usePItem } from '../../src/primary/PItemContext';
+import { Context as PItemAdapterContext, ContextType as PItemAdapterContextType } from '../../src/primary/PItemAdapter';
+import { Context, ContextType, usePItem } from '../../src/primary/PItem';
 import { Cache } from '@fjell/cache';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { vi } from 'vitest';
@@ -22,7 +22,7 @@ interface TestItem extends Item<'test'> {
 }
 
 type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
-type TestItemProviderContextType = PItemContextType<TestItem, 'test'>;
+type TestItemProviderContextType = ContextType<TestItem, 'test'>;
 type TestItemCache = Cache<TestItem, 'test'>;
 
 describe('PItemProvider', () => {
@@ -41,7 +41,7 @@ describe('PItemProvider', () => {
   let cacheMap: CacheMap<TestItem, 'test'>;
   let testItemCache: TestItemCache;
   let TestItemAdapterContext: PItemAdapterContext<TestItem, 'test'>;
-  let TestItemProviderContext: PItemContext<TestItem, 'test'>;
+  let TestItemProviderContext: Context<TestItem, 'test'>;
   let TestItemAdapter: React.FC<{ children: React.ReactNode }>;
   let TestItemProvider: React.FC<{
     ik: PriKey<'test'>,
@@ -81,7 +81,7 @@ describe('PItemProvider', () => {
         children: React.ReactNode;
       }
     ) => {
-      return React.createElement(PItemAdapter, {
+      return React.createElement(Adapter, {
         name: 'test',
         cache: testItemCache,
         context: TestItemAdapterContext,
@@ -362,7 +362,7 @@ describe('PItemProvider', () => {
         children: React.ReactNode;
       }
     ) => {
-      return React.createElement(PItemAdapter, {
+      return React.createElement(Adapter, {
         name: 'test',
         cache: freshTestItemCache,
         context: TestItemAdapterContext,

@@ -1,13 +1,18 @@
 import { CacheMap } from '@fjell/cache';
-import { Item } from '@fjell/core';
+import { Item, PriKey } from '@fjell/core';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
-import { PItemsContextType, usePItems } from '../../src/primary/PItemsContext';
+import * as PItems from '../../src/primary/PItems';
 import { PItemsProvider } from '../../src/primary/PItemsProvider';
 
 interface TestItem extends Item<'test'> {
+  key: PriKey<S>;
+  events: {
+    created: { at: Date, by: PriKey<S> };
+    updated: { at: Date, by: PriKey<S> };
+    deleted: { at: Date | null, by: PriKey<S> | null };
+  };
   name: string;
 }
 
@@ -17,7 +22,7 @@ const testItem: TestItem = {
   events: {
     created: { at: new Date(), by: { kt: 'test', pk: '1-1-1-1-1' } },
     updated: { at: new Date(), by: { kt: 'test', pk: '1-1-1-1-1' } },
-    deleted: { at: null }
+    deleted: { at: null, by: null }
   }
 };
 
@@ -80,7 +85,7 @@ describe('PItemsProvider', () => {
       </TestItemsAdapter>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
+    const { result } = renderHook(() => PItems.usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
 
     // Wait for cache initialization
     await waitFor(() => {
@@ -102,7 +107,7 @@ describe('PItemsProvider', () => {
       </TestItemsAdapter>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
+    const { result } = renderHook(() => PItems.usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
 
     // Wait for cache initialization
     await waitFor(() => {
@@ -129,7 +134,7 @@ describe('PItemsProvider', () => {
       </TestItemsAdapter>
     );
 
-    const { result } = renderHook(() => usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
+    const { result } = renderHook(() => PItems.usePItems(TestItemsProviderContext, 'TestItemsProviderContext'), { wrapper });
 
     // Wait for cache initialization
     await waitFor(() => {
