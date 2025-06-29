@@ -1,7 +1,6 @@
 /* eslint-disable no-undefined */
 import * as React from 'react';
-import { CItemAdapter, useCItemAdapter } from '../../src/contained/CItemAdapter';
-import { CItemAdapterContextType } from '../../src/contained/CItemAdapterContext';
+import { Adapter, ContextType, useCItemAdapter } from '../../src/contained/CItemAdapter';
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -21,7 +20,7 @@ interface TestItem extends Item<'test', 'container'> {
   };
 }
 
-type TestItemAdapterContextType = CItemAdapterContextType<TestItem, 'test', 'container'>;
+type TestItemAdapterContextType = ContextType<TestItem, 'test', 'container'>;
 type TestItemCache = Cache<TestItem, 'test', 'container'>;
 
 describe('CItemAdapter', () => {
@@ -70,7 +69,7 @@ describe('CItemAdapter', () => {
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
 
     TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <CItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -78,7 +77,7 @@ describe('CItemAdapter', () => {
         events={{}}
       >
         {children}
-      </CItemAdapter>
+      </Adapter>
     );
 
     useTestItemAdapter = () =>
@@ -278,7 +277,7 @@ describe('CItemAdapter', () => {
     } as unknown as AggregateConfig;
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
-      <CItemAdapter<TestItem, 'test', 'container'>
+      <Adapter<TestItem, 'test', 'container'>
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -286,7 +285,7 @@ describe('CItemAdapter', () => {
         events={events}
       >
         {children}
-      </CItemAdapter>
+      </Adapter>
     );
 
     const { result } = renderHook(() => useTestItemAdapter(), { wrapper });

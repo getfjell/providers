@@ -2,16 +2,14 @@
 import { Item } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
-
-import { PItemAdapterContext } from "./PItemAdapterContext";
-import { PItemsContext, PItemsContextType } from "./PItemsContext";
+import * as PItemAdapter from "./PItemAdapter";
+import * as PItems from "./PItems";
 import { PItemsProvider } from "./PItemsProvider";
 
 export const PItemsFind = <V extends Item<S>, S extends string>(
   {
     name,
     adapter,
-    addQueries = () => ({}),
     children,
     context,
     contextName,
@@ -20,11 +18,9 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
     renderEach,
   }: {
     name: string;
-    adapter: PItemAdapterContext<V, S>;
-    addQueries?: (contextValues: PItemsContextType<V, S>) =>
-      Record<string, (...params: any) => Promise<string | boolean | number | null>>;
+    adapter: PItemAdapter.Context<V, S>;
     children: React.ReactNode;
-    context: PItemsContext<V, S>;
+    context: PItems.Context<V, S>;
     contextName: string;
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
@@ -41,11 +37,16 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
   const finderParamsString = useMemo(() => JSON.stringify(finderParams), [finderParams]);
 
   useEffect(() => {
-    if (finder && finderParams) {
+    if (finder && finderParams && adapterContext) {
       (async () => {
-        const result = await adapterContext.find(finder, finderParams);
-        setItems(result as V[] | null);
-        setIsLoading(false);
+        if( adapterContext.find ) {
+          const result = await adapterContext.find(finder, finderParams);
+          setItems(result as V[] | null);
+          setIsLoading(false);
+        } else {
+          setItems(null);
+          setIsLoading(false);
+        }
       })();
     }
   }, [finder, finderParamsString]);
@@ -53,7 +54,6 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
   return PItemsProvider<V, S>({
     name,
     adapter,
-    addQueries,
     children,
     context,
     contextName,
