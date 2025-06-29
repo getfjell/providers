@@ -152,7 +152,8 @@ export const PItemLoad = <
           hasPk: ik && typeof ik === 'object' && 'pk' in ik ? !!ik.pk : false
         });
         setIsLoading(false);
-        setError(new Error(errorMessage));
+        // Don't set error for invalid keys, just handle gracefully
+        setItemKey(undefined);
       }
     } else {
       itemLogger.debug(`${name}: No item key was provided, no item will be retrieved`, { ik });
