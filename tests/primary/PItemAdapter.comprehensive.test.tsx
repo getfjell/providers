@@ -1,7 +1,6 @@
 /* eslint-disable no-undefined */
 import * as React from 'react';
-import { PItemAdapter } from '../../src/primary/PItemAdapter';
-import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
+import { Adapter, ContextType } from '../../src/primary/PItemAdapter';
 import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
@@ -20,7 +19,7 @@ interface TestItem extends Item<'test'> {
   };
 }
 
-type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
+type TestItemAdapterContextType = ContextType<TestItem, 'test'>;
 type TestItemCache = Cache<TestItem, 'test'>;
 
 describe('PItemAdapter - Core Operations', () => {
@@ -69,7 +68,7 @@ describe('PItemAdapter - Core Operations', () => {
 
   it('should get all items with query', async () => {
     const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -77,7 +76,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -106,7 +105,7 @@ describe('PItemAdapter - Core Operations', () => {
 
   it('should get one item with query', async () => {
     const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -114,7 +113,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -143,7 +142,7 @@ describe('PItemAdapter - Core Operations', () => {
 
   it('should retrieve an item', async () => {
     const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -151,7 +150,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -178,7 +177,7 @@ describe('PItemAdapter - Core Operations', () => {
 
   it('should set an item', async () => {
     const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -186,7 +185,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -213,7 +212,7 @@ describe('PItemAdapter - Core Operations', () => {
 
   it('should perform all action', async () => {
     const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -221,7 +220,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -248,7 +247,7 @@ describe('PItemAdapter - Core Operations', () => {
 
   it('should perform find operation', async () => {
     const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -256,7 +255,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -290,7 +289,7 @@ describe('PItemAdapter - Core Operations', () => {
     } as unknown as TestItemCache;
 
     const InvalidResultAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={invalidCache}
         context={TestItemContext}
@@ -298,7 +297,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -325,7 +324,7 @@ describe('PItemAdapter - Core Operations', () => {
     const asyncCache = Promise.resolve(testItemCache);
 
     const AsyncCacheAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={asyncCache as any}
         context={TestItemContext}
@@ -333,7 +332,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -361,7 +360,7 @@ describe('PItemAdapter - Core Operations', () => {
     const rejectedCache = Promise.reject(new Error('Cache initialization failed'));
 
     const FailedCacheAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={rejectedCache as any}
         context={TestItemContext}
@@ -369,7 +368,7 @@ describe('PItemAdapter - Core Operations', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (

@@ -1,22 +1,39 @@
 /* eslint-disable indent */
 /* eslint-disable no-undefined */
 import LibLogger from "@/logger";
+import { AggregateConfig, Cache, CacheMap, createAggregator } from "@fjell/cache";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
   ComKey,
   Item,
-  ItemQuery, LocKey, LocKeyArray, PriKey, TypesProperties
+  ItemQuery, LocKey, LocKeyArray, PriKey
 } from "@fjell/core";
 import * as React from "react";
-import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
-import { Cache } from "@fjell/cache";
-import { CacheMap } from "@fjell/cache";
-import { AggregateConfig, createAggregator } from "@fjell/cache";
-import { ActionMethod, AllActionMethod, AllFacetMethod, FacetMethod } from "@/AItemAdapterContext";
-import { CItemContextType } from "./CItemContext";
-import { CItemsContextType } from "./CItemsContext";
+import * as AItem from "../AItem";
+import * as AItemAdapter from "../AItemAdapter";
+import * as AItems from "../AItems";
 
 const logger = LibLogger.get('CItemAdapter');
+
+export type ContextType<
+  V extends Item<S, L1, L2, L3, L4, L5>,
+  S extends string,
+  L1 extends string,
+  L2 extends string = never,
+  L3 extends string = never,
+  L4 extends string = never,
+  L5 extends string = never
+> = AItemAdapter.ContextType<V, S, L1, L2, L3, L4, L5>;
+
+export type Context<
+  V extends Item<S, L1, L2, L3, L4, L5>,
+  S extends string,
+  L1 extends string,
+  L2 extends string = never,
+  L3 extends string = never,
+  L4 extends string = never,
+  L5 extends string = never
+> = React.Context<ContextType<V, S, L1, L2, L3, L4, L5> | undefined>;
 
 export const useCItemAdapter = <
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -26,8 +43,8 @@ export const useCItemAdapter = <
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
->(context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>, contextName: string):
-  CItemAdapterContextType<V, S, L1, L2, L3, L4, L5> => {
+>(context: Context<V, S, L1, L2, L3, L4, L5>, contextName: string):
+  ContextType<V, S, L1, L2, L3, L4, L5> => {
   const contextInstance = React.useContext(context);
   if (contextInstance === undefined) {
     throw new Error(
@@ -37,7 +54,7 @@ export const useCItemAdapter = <
   return contextInstance;
 };
 
-export const CItemAdapter = <
+export const Adapter = <
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
   L1 extends string,
@@ -59,13 +76,13 @@ export const CItemAdapter = <
 }: {
   name: string;
   cache: Cache<V, S, L1, L2, L3, L4, L5>;
-  context: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+  context: Context<V, S, L1, L2, L3, L4, L5>;
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
-  addActions?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, ActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addFacets?: (contextValues: CItemContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, FacetMethod<S, L1, L2, L3, L4, L5>>;
-  addAllActions?: (contextValues: CItemsContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, AllActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addAllFacets?: (contextValues: CItemsContextType<V, S, L1, L2, L3, L4, L5>) => Record<string, AllFacetMethod<L1, L2, L3, L4, L5>>;
+  addActions?: (action: AItem.ActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItem.AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  addFacets?: (facet: AItem.FacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItem.AddedFacetMethod<L1, L2, L3, L4, L5>>;
+  addAllActions?: (allAction: AItems.AllActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  addAllFacets?: (allFacet: AItems.AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllFacetMethod<L1, L2, L3, L4, L5>>;
   children: React.ReactNode;
 }) => {
 
@@ -150,7 +167,7 @@ export const CItemAdapter = <
   }, [resolvedSourceCache, handleCacheError]);
 
   const create = React.useCallback(async (
-    item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
+    item: Partial<Item<S, L1, L2, L3, L4, L5>>,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<V> => {
     logger.trace('create', {
@@ -204,7 +221,7 @@ export const CItemAdapter = <
 
   const update = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
-    item: TypesProperties<V, S, L1, L2, L3, L4, L5>,
+    item: Partial<Item<S, L1, L2, L3, L4, L5>>,
   ): Promise<V> => {
     logger.trace('update', { key: abbrevIK(key), item });
     if (!resolvedSourceCache) {
@@ -300,7 +317,7 @@ export const CItemAdapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: Partial<CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>> = {
+  const contextValue: Partial<ContextType<V, S, L1, L2, L3, L4, L5>> = {
     name,
     cacheMap,
     pkTypes,
@@ -326,7 +343,7 @@ export const CItemAdapter = <
   return React.createElement(
     context.Provider,
     {
-      value: contextValue as CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
+      value: contextValue as ContextType<V, S, L1, L2, L3, L4, L5>,
     },
     children,
   );

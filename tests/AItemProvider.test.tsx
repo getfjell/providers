@@ -1,15 +1,14 @@
 /* eslint-disable no-undefined */
 import { Item, PriKey } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
-import React, { ReactNode } from 'react';
+import * as React from 'react';
 import { describe, expect, it } from 'vitest';
-import { AItemContextType } from "../src/AItemContext";
-import { useAItem } from '../src/AItemProvider';
+import { ContextType, useAItem } from "../src/AItem";
 import { vi } from 'vitest';
 
 type TestItem = Item<'test'>;
 
-type TestItemProviderContextType = AItemContextType<TestItem, 'test'>;
+type TestItemProviderContextType = ContextType<TestItem, 'test'>;
 
 const TestContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
 
@@ -27,12 +26,13 @@ describe('useAItemProvider', () => {
       remove: vi.fn(),
       update: vi.fn(),
       action: vi.fn(),
+      facet: vi.fn(),
       actions: {},
       locations: null,
       set: vi.fn().mockResolvedValue({} as TestItem),
     };
 
-    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 

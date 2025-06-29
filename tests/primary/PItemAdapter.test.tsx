@@ -1,7 +1,6 @@
 /* eslint-disable no-undefined */
 import * as React from 'react';
-import { PItemAdapter } from '../../src/primary/PItemAdapter';
-import { PItemAdapterContextType } from '../../src/primary/PItemAdapterContext';
+import { Adapter, ContextType } from '../../src/primary/PItemAdapter';
 import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
@@ -20,7 +19,7 @@ interface TestItem extends Item<'test'> {
   };
 }
 
-type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
+type TestItemAdapterContextType = ContextType<TestItem, 'test'>;
 type TestItemCache = Cache<TestItem, 'test'>;
 
 describe('PItemAdapter', () => {
@@ -72,7 +71,7 @@ describe('PItemAdapter', () => {
 
     // Create adapter component
     TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={testItemCache}
         context={TestItemContext}
@@ -80,7 +79,7 @@ describe('PItemAdapter', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
   });
 
@@ -210,7 +209,7 @@ describe('PItemAdapter', () => {
 
   it('should handle undefined cache and throw error on operations', async () => {
     const UndefinedCacheAdapter = ({ children }: { children: React.ReactNode }) => (
-      <PItemAdapter
+      <Adapter
         name="test"
         cache={undefined as any}
         context={TestItemContext}
@@ -218,7 +217,7 @@ describe('PItemAdapter', () => {
         events={{}}
       >
         {children}
-      </PItemAdapter>
+      </Adapter>
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (

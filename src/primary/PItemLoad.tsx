@@ -7,12 +7,11 @@ import {
   Item,
   LocKeyArray,
   PriKey,
-  TypesProperties
 } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
-import { PItemAdapterContext } from "./PItemAdapterContext";
-import { PItemContext, PItemContextType } from "./PItemContext";
+import * as PItem from "./PItem";
+import * as PItemAdapter from "./PItemAdapter";
 
 const logger = LibLogger.get('PItemLoad');
 
@@ -29,9 +28,9 @@ export const PItemLoad = <
   }: {
   name: string;
   // TODO: I want this to be two separate properties.
-  adapter: PItemAdapterContext<V, S>;
+  adapter: PItemAdapter.Context<V, S>;
   children: React.ReactNode;
-  context: PItemContext<V, S>;
+  context: PItem.Context<V, S>;
   contextName: string;
   ik: PriKey<S> | null;
 }) => {
@@ -42,6 +41,11 @@ export const PItemLoad = <
     hasContext: !!context,
     ik
   });
+
+  const [error, setError] = React.useState<Error | null>(null);
+  if (error) {
+    throw error;
+  }
 
   const [itemKey, setItemKey] = React.useState<PriKey<S> | undefined>(undefined);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
@@ -71,20 +75,7 @@ export const PItemLoad = <
     set: setItem,
     addActions,
     addFacets,
-  } = useMemo(() => {
-    logger.debug(`${name}: Destructuring PItemAdapter values`);
-    const result = PItemAdapter;
-    logger.debug(`${name}: PItemAdapter destructured`, {
-      hasCacheMap: !!result.cacheMap,
-      pkTypes: result.pkTypes,
-      hasRetrieve: !!result.retrieve,
-      hasRemove: !!result.remove,
-      hasUpdate: !!result.update,
-      hasAction: !!result.action,
-      hasSet: !!result.set
-    });
-    return result;
-  }, [PItemAdapter]);
+  } = PItemAdapter;
 
   const itemLogger = LibLogger.get('PItemLoad', ...pkTypes);
   logger.debug(`${name}: Item logger created with pkTypes`, { pkTypes });
@@ -154,13 +145,15 @@ export const PItemLoad = <
         setItemKey(ik as PriKey<S>);
         logger.debug(`${name}: itemKey state updated`, { newItemKey: ik });
       } else {
-        // TODO: If we get here log a debug message, but don't fail.
-        itemLogger.debug(`${name}: Key is either not a PriKey or a PK is not defined`, { ik });
+        const errorMessage = `${name}: Key is either not a PriKey or a PK is not defined`;
+        itemLogger.debug(errorMessage, { ik });
         logger.debug(`${name}: Invalid key or missing pk, setting loading to false`, {
           isPriKeyCheck: isPriKey(ik),
           hasPk: ik && typeof ik === 'object' && 'pk' in ik ? !!ik.pk : false
         });
         setIsLoading(false);
+        // Don't set error for invalid keys, just handle gracefully
+        setItemKey(undefined);
       }
     } else {
       itemLogger.debug(`${name}: No item key was provided, no item will be retrieved`, { ik });
@@ -189,6 +182,7 @@ export const PItemLoad = <
           });
         } catch (error) {
           logger.error(`${name}: Error during item retrieval`, { itemKey, error });
+          setError(error as Error);
         }
       })();
     } else {
@@ -212,12 +206,12 @@ export const PItemLoad = <
         logger.debug(`${name}: Calling removeItem`, { itemKey });
         const result = await removeItem(itemKey);
         logger.debug(`${name}: removeItem completed successfully`, { itemKey, result });
-        setIsRemoving(false);
-        logger.debug(`${name}: isRemoving set to false after successful removal`);
       } catch (error) {
         logger.error(`${name}: Error during item removal`, { itemKey, error });
-        setIsRemoving(false);
         throw error;
+      } finally {
+        setIsRemoving(false);
+        logger.debug(`${name}: isRemoving set to false after successful removal`);
       }
     } else {
       logger.debug(`${name}: Invalid itemKey for removal`, { itemKey });
@@ -227,7 +221,7 @@ export const PItemLoad = <
     }
   }, [removeItem, itemKey]);
 
-  const update = useCallback(async (item: TypesProperties<V, S>) => {
+  const update = useCallback(async (item: Partial<Item<S>>) => {
     itemLogger.trace("update", { item });
     logger.debug(`${name}: update() called`, {
       itemKey,
@@ -248,13 +242,13 @@ export const PItemLoad = <
             hasResult: !!retItem,
             resultType: retItem ? typeof retItem : 'undefined'
           });
-          setIsUpdating(false);
-          logger.debug(`${name}: isUpdating set to false after successful update`);
           return retItem as V;
         } catch (error) {
           logger.error(`${name}: Error during item update`, { itemKey, item, error });
-          setIsUpdating(false);
           throw error;
+        } finally {
+          setIsUpdating(false);
+          logger.debug(`${name}: isUpdating set to false after successful update`);
         }
       } else {
         logger.debug(`${name}: No item provided for update`);
@@ -327,13 +321,13 @@ export const PItemLoad = <
           hasResult: !!retItem,
           resultType: retItem ? typeof retItem : 'undefined'
         });
-        setIsUpdating(false);
-        logger.debug(`${name}: isUpdating set to false after successful action`);
         return retItem as V;
       } catch (error) {
         logger.error(`${name}: Error during action execution`, { itemKey, actionName, body, error });
-        setIsUpdating(false);
         throw error;
+      } finally {
+        setIsUpdating(false);
+        logger.debug(`${name}: isUpdating set to false after successful action`);
       }
     } else {
       logger.debug(`${name}: Invalid itemKey for action`, { itemKey, actionName });
@@ -368,7 +362,6 @@ export const PItemLoad = <
         return response as any;
       } catch (error) {
         logger.error(`${name}: Error during facet retrieval`, { itemKey, facetName, error });
-        setIsUpdating(false);
         throw error;
       }
     } else {
@@ -378,7 +371,7 @@ export const PItemLoad = <
     }
   }, [facetItem, itemKey]);
 
-  const contextValue: PItemContextType<V, S> = {
+  const contextValue: PItem.ContextType<V, S> = {
     name,
     key: itemKey as PriKey<S>,
     item,
@@ -405,23 +398,8 @@ export const PItemLoad = <
     hasLocations: !!contextValue.locations
   });
 
-  if (addActions && contextValue) {
-    logger.debug(`${name}: Adding custom actions to context`);
-    contextValue.actions = addActions(contextValue);
-    logger.debug(`${name}: Custom actions added`, {
-      actionCount: contextValue.actions ? Object.keys(contextValue.actions).length : 0,
-      actionNames: contextValue.actions ? Object.keys(contextValue.actions) : []
-    });
-  }
-
-  if (addFacets && contextValue) {
-    logger.debug(`${name}: Adding custom facets to context`);
-    contextValue.facets = addFacets(contextValue);
-    logger.debug(`${name}: Custom facets added`, {
-      facetCount: contextValue.facets ? Object.keys(contextValue.facets).length : 0,
-      facetNames: contextValue.facets ? Object.keys(contextValue.facets) : []
-    });
-  }
+  contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
+  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
 
   logger.debug(`${name}: Creating context provider element`, {
     hasContext: !!context,
