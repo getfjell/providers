@@ -1,6 +1,5 @@
 /* eslint-disable no-undefined */
-import { AItemContext } from "@/AItemContext";
-import { useAItem } from "@/AItemProvider";
+import * as AItem from "../AItem";
 import LibLogger from "@/logger";
 import {
   abbrevIK,
@@ -10,12 +9,11 @@ import {
   isValidComKey,
   Item,
   LocKeyArray,
-  TypesProperties
 } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
-import { CItemAdapterContext } from "./CItemAdapterContext";
-import { CItemContext, CItemContextType } from "./CItemContext";
+import * as CItemAdapter from "./CItemAdapter";
+import * as CItem from "./CItem";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
 const logger = LibLogger.get('CItemLoad');
@@ -40,12 +38,12 @@ export const CItemLoad = <
       parentContextName,
     }: {
     name: string;
-    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
+    adapter: CItemAdapter.Context<V, S, L1, L2, L3, L4, L5>;
     children: React.ReactNode;
-    context: CItemContext<V, S, L1, L2, L3, L4, L5>;
+    context: CItem.Context<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
     ik: ComKey<S, L1, L2, L3, L4, L5> | null;
-    parent: AItemContext<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
+    parent: AItem.Context<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
     parentContextName: string;
   }
   ) => {
@@ -75,9 +73,9 @@ export const CItemLoad = <
     set: setItem,
     addActions,
     addFacets,
-  } = useMemo(() => cItemAdapter, [cItemAdapter]);
+  } = cItemAdapter;
 
-  const parentItemAdapter = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
+  const parentItemAdapter = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     item: parentItem,
@@ -116,9 +114,10 @@ export const CItemLoad = <
         logger.debug('Key has been provided', { ik });
         setItemKey(ik);
       } else {
-        logger.error('Key is not a ComKey', { ik });
+        const errorMessage = `${name}: Key is not a ComKey`;
+        logger.error(errorMessage, { ik });
         setIsLoading(false);
-        setError(new Error('Key is not a ComKey'));
+        setError(new Error(errorMessage));
       }
     } else {
       logger.debug('No item key was provided, no item will be retrieved', { ik });
@@ -145,12 +144,13 @@ export const CItemLoad = <
       await removeItem(itemKey);
       setIsRemoving(false);
     } else {
-      setIsRemoving(false);
-      setError(new Error('No item key provided for remove'));
+      const errorMessage = itemKey ? `${name}: Invalid item key provided for remove` : `${name}: No item key provided for remove`;
+      logger.error(errorMessage, { itemKey });
+      throw new Error(errorMessage);
     }
-  }, [removeItem, itemKey]);
+  }, [removeItem, itemKey, name]);
 
-  const update = useCallback(async (item: TypesProperties<V, S, L1, L2, L3, L4, L5>): Promise<V> => {
+  const update = useCallback(async (item: Partial<Item<S, L1, L2, L3, L4, L5>>): Promise<V> => {
     // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       if (item) {
@@ -160,16 +160,15 @@ export const CItemLoad = <
         setIsUpdating(false);
         return retItem;
       } else {
-        setIsUpdating(false);
-        setError(new Error('No item provided for update'));
-        throw new Error('No item provided for update');
+        const errorMessage = `${name}: No item provided for update`;
+        throw new Error(errorMessage);
       }
     } else {
-      setIsUpdating(false);
-      setError(new Error('No item key provided for update'));
-      throw new Error('No item key provided for update');
+      const errorMessage = itemKey ? `${name}: Invalid item key provided for update` : `${name}: No item key provided for update`;
+      logger.error(errorMessage, { itemKey });
+      throw new Error(errorMessage);
     }
-  }, [updateItem, itemKey]);
+  }, [updateItem, itemKey, name]);
 
   const set = useCallback(async (item: V): Promise<V> => {
     logger.trace("set", { item });
@@ -177,10 +176,11 @@ export const CItemLoad = <
       const retItem = await setItem(item.key, item);
       return retItem as V;
     } else {
-      logger.error(`${name}: Item key is required to set an item`);
-      throw new Error(`Item key is required to set an item in ${name}`);
+      const errorMessage = !item ? `${name}: No item provided to set` : `${name}: Invalid or missing key in item provided to set`;
+      logger.error(errorMessage, { item });
+      throw new Error(errorMessage);
     }
-  }, [setItem, itemKey]);
+  }, [setItem, name]);
 
   const action = useCallback(async (
     actionName: string,
@@ -194,11 +194,11 @@ export const CItemLoad = <
       setIsUpdating(false);
       return retItem;
     } else {
-      setIsUpdating(false);
-      setError(new Error('No item key provided for action'));
-      throw new Error('No item key provided for action');
+      const errorMessage = itemKey ? `${name}: Invalid item key provided for action '${actionName}'` : `${name}: No item key provided for action '${actionName}'`;
+      logger.error(errorMessage, { itemKey, actionName });
+      throw new Error(errorMessage);
     }
-  }, [cItemAdapter, itemKey]);
+  }, [actionItem, itemKey, name]);
 
   const facet = useCallback(async (
     facetName: string,
@@ -212,13 +212,13 @@ export const CItemLoad = <
       setIsUpdating(false);
       return response;
     } else {
-      setIsUpdating(false);
-      setError(new Error('No item key provided for action'));
-      return null;
+      const errorMessage = itemKey ? `${name}: Invalid item key provided for facet '${facetName}'` : `${name}: No item key provided for facet '${facetName}'`;
+      logger.error(errorMessage, { itemKey, facetName });
+      throw new Error(errorMessage);
     }
-  }, [cItemAdapter, itemKey]);
+  }, [facetItem, itemKey, name]);
 
-  const contextValue: CItemContextType<V, S, L1, L2, L3, L4, L5> = {
+  const contextValue: CItem.ContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
     key: itemKey as ComKey<S, L1, L2, L3, L4, L5>,
     item,
@@ -246,23 +246,8 @@ export const CItemLoad = <
     hasLocations: !!contextValue.locations
   });
 
-  if (addActions && contextValue) {
-    logger.debug(`${name}: Adding custom actions to context`);
-    contextValue.actions = addActions(contextValue);
-    logger.debug(`${name}: Custom actions added`, {
-      actionCount: contextValue.actions ? Object.keys(contextValue.actions).length : 0,
-      actionNames: contextValue.actions ? Object.keys(contextValue.actions) : []
-    });
-  }
-
-  if (addFacets && contextValue) {
-    logger.debug(`${name}: Adding custom facets to context`);
-    contextValue.facets = addFacets(contextValue);
-    logger.debug(`${name}: Custom facets added`, {
-      facetCount: contextValue.facets ? Object.keys(contextValue.facets).length : 0,
-      facetNames: contextValue.facets ? Object.keys(contextValue.facets) : []
-    });
-  }
+  contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
+  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
 
   logger.debug(`${name}: Creating context provider element`, {
     hasContext: !!context,

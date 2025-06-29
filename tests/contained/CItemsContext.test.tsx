@@ -1,13 +1,13 @@
 /* eslint-disable no-undefined */
 import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
-import React, { ReactNode } from 'react';
+import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { CItemsContextType, useCItems } from '../../src/contained/CItemsContext';
+import { ContextType, useCItems } from '../../src/contained/CItems';
 
 type TestItem = Item<'test', 'container'>;
 
-type TestItemsContextType = CItemsContextType<TestItem, 'test', 'container'>;
+type TestItemsContextType = ContextType<TestItem, 'test', 'container'>;
 
 const TestContext = React.createContext<TestItemsContextType | undefined>(undefined);
 
@@ -47,9 +47,10 @@ describe('CItemsContext', () => {
       facet: vi.fn(),
       allAction: vi.fn(),
       allFacet: vi.fn(),
+      finders: {},
     };
 
-    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 
@@ -86,9 +87,10 @@ describe('CItemsContext', () => {
       facet: vi.fn(),
       allAction: vi.fn(),
       allFacet: vi.fn(),
+      finders: {},
     };
 
-    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 
@@ -119,9 +121,10 @@ describe('CItemsContext', () => {
       facet: vi.fn(),
       allAction: vi.fn(),
       allFacet: vi.fn(),
+      finders: {},
     };
 
-    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 
@@ -162,9 +165,10 @@ describe('CItemsContext', () => {
       facet: vi.fn(),
       allAction: vi.fn(),
       allFacet: vi.fn(),
+      finders: {},
     };
 
-    const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
       <TestContext.Provider value={contextValue}>{children}</TestContext.Provider>
     );
 

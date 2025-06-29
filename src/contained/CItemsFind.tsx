@@ -1,12 +1,10 @@
-
-import { useAItem } from "@/AItemProvider";
-import { Item, ItemQuery, LocKeyArray } from "@fjell/core";
+import { Item, ItemQuery } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
+import * as AItem from "../AItem";
 import { useCItemAdapter } from "./CItemAdapter";
 
-import { AItemContext } from "@/AItemContext";
-import { CItemAdapterContext, CItemAdapterContextType } from "./CItemAdapterContext";
-import { CItemsContext } from "./CItemsContext";
+import * as CItemAdapter from "./CItemAdapter";
+import * as CItems from "./CItems";
 import { CItemsProvider } from "./CItemsProvider";
 
 export const CItemsFind = <
@@ -21,7 +19,6 @@ export const CItemsFind = <
     {
       name,
       adapter,
-      addQueries = () => ({}),
       children = (<></>),
       context,
       contextName,
@@ -32,20 +29,12 @@ export const CItemsFind = <
       finderParams = {},
     }: {
     name: string;
-    adapter: CItemAdapterContext<V, S, L1, L2, L3, L4, L5>;
-    // TODO: Put more structure on what an action *actually* is.  Should it return a string specifying the action
-    // along with the parameters that would be used as a body?
-    addQueries?: (
-      adapter: CItemAdapterContextType<V, S, L1, L2, L3, L4, L5>,
-      locations: LocKeyArray<L1, L2, L3, L4, L5>,
-      parentItem: Item<L1, L2, L3, L4, L5, never>
-    ) =>
-      Record<string, (params: any) => Promise<string | boolean | number | null>>;
+    adapter: CItemAdapter.Context<V, S, L1, L2, L3, L4, L5>;
     children?: React.ReactNode;
-    context: CItemsContext<V, S, L1, L2, L3, L4, L5>;
+    context: CItems.Context<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
     query?: ItemQuery;
-    parent: AItemContext<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
+    parent: AItem.Context<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
     parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
     finder: string,
@@ -58,7 +47,7 @@ export const CItemsFind = <
   // Since we pass this to the actions constructor, don't destructure it yet
   const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
-  const parentContext = useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
+  const parentContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
     locations: parentLocations,
@@ -68,7 +57,7 @@ export const CItemsFind = <
   const finderParamsString = useMemo(() => JSON.stringify(finderParams), [finderParams]);
 
   useEffect(() => {
-    if (finder && finderParams && parentLocations) {
+    if (finder && finderParams && parentLocations && adapterContext) {
       (async () => {
         const result = await adapterContext.find(finder, finderParams, parentLocations);
         setItems(result as V[] | null);
@@ -80,7 +69,6 @@ export const CItemsFind = <
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,
     adapter,
-    addQueries,
     children,
     context,
     contextName,
