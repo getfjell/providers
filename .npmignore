@@ -17,3 +17,9 @@ yarn.lock
 .github/
 .vscode/
 .yarn/
+.kodrdriv/
+src/
+eslint.config.mjs
+vite.config.ts
+vitest.config.js
+vitest.setup.ts
