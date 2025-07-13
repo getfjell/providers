@@ -187,8 +187,14 @@ export const Adapter = <
       return handleCacheError('retrieve');
     }
     const [newCacheMap, item] = await resolvedSourceCache.retrieve(key);
+    // Always update the cacheMap state to ensure React re-renders work properly
+    // Even if newCacheMap is null (when item was already cached), we need to
+    // trigger a state update so useMemo dependencies re-evaluate
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
+    } else {
+      // Force a state update by cloning the current cacheMap
+      setCacheMap(prev => prev.clone());
     }
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);

@@ -96,11 +96,7 @@ export const PItemLoad = <
         itemType: item ? typeof item : 'null'
       });
 
-      logger.debug(`${name}: Setting loading states to false after cache lookup`);
-      setIsLoading(false);
-      setIsUpdating(false);
-      setIsRemoving(false);
-
+      // Don't set loading states here - let the useEffect handle retrieval and loading state management
       logger.debug(`${name}: Returning cached item`, { item: !!item });
       return item as V | null;
     } else {
@@ -144,6 +140,44 @@ export const PItemLoad = <
         logger.debug(`${name}: Valid PriKey with pk, setting itemKey`, { ik });
         setItemKey(ik as PriKey<S>);
         logger.debug(`${name}: itemKey state updated`, { newItemKey: ik });
+
+        // Now handle the retrieval directly with the new key
+        const validItemKey = ik as PriKey<S>;
+        logger.debug(`${name}: Valid itemKey with pk, initiating retrieval`, { itemKey: validItemKey });
+
+        // Check if item is already in cache
+        const cachedItem = cacheMap && cacheMap.get(validItemKey) as V | null;
+
+        if (cachedItem) {
+          logger.debug(`${name}: Item found in cache, setting loading to false`, { itemKey: validItemKey });
+          setIsLoading(false);
+          setIsUpdating(false);
+          setIsRemoving(false);
+          return;
+        }
+
+        // Item not in cache, start retrieval
+        logger.debug(`${name}: Item not in cache, starting retrieval`, { itemKey: validItemKey });
+        setIsLoading(true);
+
+        (async () => {
+          itemLogger.debug(`${name}: useEffect[ik] - starting retrieval`, { itemKey: validItemKey });
+          logger.debug(`${name}: Starting async item retrieval`, { itemKey: validItemKey });
+
+          try {
+            const result = await retrieveItem(validItemKey);
+            logger.debug(`${name}: Item retrieval completed`, {
+              itemKey: validItemKey,
+              retrievalResult: !!result,
+              resultType: result ? typeof result : 'undefined'
+            });
+            setIsLoading(false);
+          } catch (error) {
+            logger.error(`${name}: Error during item retrieval`, { itemKey: validItemKey, error });
+            setIsLoading(false);
+            setError(error as Error);
+          }
+        })();
       } else {
         const errorMessage = `${name}: Key is either not a PriKey or a PK is not defined`;
         itemLogger.debug(errorMessage, { ik });
@@ -159,40 +193,9 @@ export const PItemLoad = <
       itemLogger.debug(`${name}: No item key was provided, no item will be retrieved`, { ik });
       logger.debug(`${name}: No ik provided, setting loading to false`);
       setIsLoading(false);
+      setItemKey(undefined);
     }
-  }, [ik]);
-
-  useEffect(() => {
-    logger.debug(`${name}: useEffect[itemKey] triggered`, { itemKey });
-
-    // TODO: We check to see not only that the itemKey is defined, but that the PK is defined if it is a PriKey
-    if (itemKey && isValidPriKey(itemKey) && itemKey.pk) {
-      logger.debug(`${name}: Valid itemKey with pk, initiating retrieval`, { itemKey });
-
-      (async () => {
-        itemLogger.debug(`${name}: useEffect[itemKey]`, { itemKey });
-        logger.debug(`${name}: Starting async item retrieval`, { itemKey });
-
-        try {
-          const result = await retrieveItem(itemKey);
-          logger.debug(`${name}: Item retrieval completed`, {
-            itemKey,
-            retrievalResult: !!result,
-            resultType: result ? typeof result : 'undefined'
-          });
-        } catch (error) {
-          logger.error(`${name}: Error during item retrieval`, { itemKey, error });
-          setError(error as Error);
-        }
-      })();
-    } else {
-      logger.debug(`${name}: Skipping retrieval - invalid itemKey or missing pk`, {
-        itemKey,
-        isValid: itemKey ? isValidPriKey(itemKey) : false,
-        hasPk: itemKey && 'pk' in itemKey ? !!itemKey.pk : false
-      });
-    }
-  }, [itemKey]);
+  }, [ik, cacheMap, retrieveItem]);
 
   const remove = useCallback(async () => {
     itemLogger.trace("remove");
