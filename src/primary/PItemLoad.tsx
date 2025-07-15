@@ -2,7 +2,6 @@
 import LibLogger from "@/logger";
 import {
   ikToLKA,
-  isPriKey,
   isValidPriKey,
   Item,
   LocKeyArray,
@@ -45,10 +44,10 @@ export const PItemLoad = <
     providedItem
   });
 
-  const [error, setError] = React.useState<Error | null>(null);
-  if (error) {
-    throw error;
-  }
+  // const [error, setError] = React.useState<Error | null>(null);
+  // if (error) {
+  //   throw error;
+  // }
 
   // Validate that both ik and item are not provided at the same time
   if (ik !== undefined && providedItem !== undefined) {
@@ -57,8 +56,8 @@ export const PItemLoad = <
     throw new Error(errorMessage);
   }
 
-  const [itemKey, setItemKey] = React.useState<PriKey<S> | undefined>(undefined);
-  const [isLoading, setIsLoading] = React.useState<boolean>(providedItem !== undefined ? false : true);
+  const [itemKey, setItemKey] = React.useState<PriKey<S> | undefined>(ik ?? undefined);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [isUpdating, setIsUpdating] = React.useState<boolean>(false);
   const [isRemoving, setIsRemoving] = React.useState<boolean>(false);
 
@@ -87,50 +86,17 @@ export const PItemLoad = <
     addFacets,
   } = PItemAdapter;
 
-  const itemLogger = LibLogger.get('PItemLoad', ...pkTypes);
+  const itemLogger = LibLogger.get('PItemLoad', ...(pkTypes || []));
   logger.debug(`${name}: Item logger created with pkTypes`, { pkTypes });
 
   const item: V | null = useMemo(() => {
-    logger.debug(`${name}: Computing item memoization`, { itemKey, hasCacheMap: !!cacheMap, providedItem });
-
-    // If a providedItem is supplied, use it directly and skip cache retrieval
-    if (providedItem !== undefined) {
-      logger.debug(`${name}: Using provided item directly`, { providedItem });
-      setIsLoading(false);
-      setIsUpdating(false);
-      setIsRemoving(false);
+    if (providedItem) {
       return providedItem;
     }
-
-    let item: V | null = null;
-    // We only make a call to the cache if the key is valid.  If we don't do this we end up driving up errors
-    // And here's the explanation, there are cases where you don't have a valid key, and a null result is expected
-    // if we don't catch this here, what we end up with is making a request to the server we know will fail.
     if (itemKey && isValidPriKey(itemKey)) {
-      logger.debug(`${name}: Valid item key found, checking cache`, { itemKey });
-      item = cacheMap && cacheMap.get(itemKey as PriKey<S>) as V | null;
-      logger.debug(`${name}: Cache lookup result`, {
-        itemKey,
-        foundInCache: !!item,
-        itemType: item ? typeof item : 'null'
-      });
-
-      // Don't set loading states here - let the useEffect handle retrieval and loading state management
-      logger.debug(`${name}: Returning cached item`, { item: !!item });
-      return item as V | null;
-    } else {
-      logger.debug(`${name}: Invalid or missing item key, returning null`, {
-        itemKey,
-        isValid: itemKey ? isValidPriKey(itemKey) : false
-      });
-
-      logger.debug(`${name}: Setting loading states to false after invalid key`);
-      setIsLoading(false);
-      setIsUpdating(false);
-      setIsRemoving(false);
-
-      return null;
+      return (cacheMap?.get(itemKey as PriKey<S>) as V) || null;
     }
+    return null;
   }, [itemKey, cacheMap, providedItem]);
 
   const locations: LocKeyArray<S> | null = useMemo(() => {
@@ -148,98 +114,45 @@ export const PItemLoad = <
   }, [item])
 
   useEffect(() => {
-    itemLogger.trace('useEffect[ik]', { ik, providedItem });
     logger.debug(`${name}: useEffect[ik] triggered`, { ik, providedItem });
 
-    // If a providedItem is supplied, extract the key from it and skip cache retrieval
-    if (providedItem !== undefined) {
-      if (providedItem && providedItem.key) {
-        logger.debug(`${name}: Using key from provided item`, { itemKey: providedItem.key });
-        setItemKey(providedItem.key as PriKey<S>);
-      } else {
-        logger.debug(`${name}: Provided item is null or has no key`);
-        setItemKey(undefined);
-      }
+    if (providedItem) {
+      setItemKey(providedItem.key as PriKey<S>);
+      setIsLoading(false);
       return;
     }
 
-    if (ik) {
-      logger.debug(`${name}: ik provided, checking if it's a valid PriKey`, { ik });
-      // TODO: We don't just check to see if the key is a PriKey, we check to see if the PK is defined
-      if (isPriKey(ik) && ik.pk) {
-        itemLogger.debug(`${name}: Key has been provided`, { ik });
-        logger.debug(`${name}: Valid PriKey with pk, setting itemKey`, { ik });
-        setItemKey(ik as PriKey<S>);
-        logger.debug(`${name}: itemKey state updated`, { newItemKey: ik });
+    if (ik && isValidPriKey(ik)) {
+      setItemKey(ik);
+      const cachedItem = cacheMap?.get(ik);
 
-        // Now handle the retrieval directly with the new key
-        const validItemKey = ik as PriKey<S>;
-        logger.debug(`${name}: Valid itemKey with pk, initiating retrieval`, { itemKey: validItemKey });
-
-        // Check if item is already in cache
-        const cachedItem = cacheMap && cacheMap.get(validItemKey) as V | null;
-
-        if (cachedItem) {
-          logger.debug(`${name}: Item found in cache, setting loading to false`, { itemKey: validItemKey });
-          setIsLoading(false);
-          setIsUpdating(false);
-          setIsRemoving(false);
-          return;
-        }
-
-        // Item not in cache, start retrieval
-        logger.debug(`${name}: Item not in cache, starting retrieval`, { itemKey: validItemKey });
-        setIsLoading(true);
-
-        (async () => {
-          itemLogger.debug(`${name}: useEffect[ik] - starting retrieval`, { itemKey: validItemKey });
-          logger.debug(`${name}: Starting async item retrieval`, { itemKey: validItemKey });
-
-          try {
-            const result = await retrieveItem(validItemKey);
-            logger.debug(`${name}: Item retrieval completed`, {
-              itemKey: validItemKey,
-              retrievalResult: !!result,
-              resultType: result ? typeof result : 'undefined'
-            });
+      if (!cachedItem) {
+        setIsLoading(true); // Set loading to true ONLY when we are about to fetch
+        retrieveItem(ik)
+          .finally(() => {
             setIsLoading(false);
-          } catch (error) {
-            logger.error(`${name}: Error during item retrieval`, { itemKey: validItemKey, error });
-            setIsLoading(false);
-            setError(error as Error);
-          }
-        })();
+          });
       } else {
-        const errorMessage = `${name}: Key is either not a PriKey or a PK is not defined`;
-        itemLogger.debug(errorMessage, { ik });
-        logger.debug(`${name}: Invalid key or missing pk, setting loading to false`, {
-          isPriKeyCheck: isPriKey(ik),
-          hasPk: ik && typeof ik === 'object' && 'pk' in ik ? !!ik.pk : false
-        });
         setIsLoading(false);
-        // Don't set error for invalid keys, just handle gracefully
-        setItemKey(undefined);
       }
     } else {
-      itemLogger.debug(`${name}: No item key was provided, no item will be retrieved`, { ik });
-      logger.debug(`${name}: No ik provided, setting loading to false`);
-      setIsLoading(false);
       setItemKey(undefined);
+      setIsLoading(false);
     }
-  }, [ik, cacheMap, retrieveItem, providedItem]);
+  }, [ik, providedItem, cacheMap, retrieveItem]); // Removing cacheMap and retrieveItem from deps
 
   const remove = useCallback(async () => {
-    itemLogger.trace("remove");
-    logger.debug(`${name}: remove() called`, { itemKey, isValidKey: itemKey ? isValidPriKey(itemKey) : false });
+    logger.debug(`${name}: remove() called`, {
+      itemKey,
+      isValidKey: itemKey ? isValidPriKey(itemKey) : false
+    });
 
     if (itemKey && isValidPriKey(itemKey)) {
-      logger.debug(`${name}: Valid key for removal, setting isRemoving to true`, { itemKey });
+      logger.debug(`${name}: Valid key for remove, setting isRemoving to true`, { itemKey });
       setIsRemoving(true);
-
       try {
-        logger.debug(`${name}: Calling removeItem`, { itemKey });
-        const result = await removeItem(itemKey);
-        logger.debug(`${name}: removeItem completed successfully`, { itemKey, result });
+        await removeItem(itemKey);
+        logger.debug(`${name}: removeItem completed successfully`, { itemKey });
       } catch (error) {
         logger.error(`${name}: Error during item removal`, { itemKey, error });
         throw error;
@@ -248,47 +161,38 @@ export const PItemLoad = <
         logger.debug(`${name}: isRemoving set to false after successful removal`);
       }
     } else {
-      logger.debug(`${name}: Invalid itemKey for removal`, { itemKey });
-      setIsRemoving(false);
+      logger.debug(`${name}: Invalid itemKey for remove`, { itemKey });
       itemLogger.error(`${name}: Item key is required to remove an item`);
       throw new Error(`Item key is required to remove an item in ${name}`);
     }
   }, [removeItem, itemKey]);
 
-  const update = useCallback(async (item: Partial<Item<S>>) => {
-    itemLogger.trace("update", { item });
+  const update = useCallback(async (
+    updateData: Partial<Item<S>>,
+  ) => {
     logger.debug(`${name}: update() called`, {
       itemKey,
-      hasItem: !!item,
-      isValidKey: itemKey ? isValidPriKey(itemKey) : false
+      isValidKey: itemKey ? isValidPriKey(itemKey) : false,
+      hasUpdateData: !!updateData
     });
 
     if (itemKey && isValidPriKey(itemKey)) {
-      if (item) {
-        logger.debug(`${name}: Valid key and item for update, setting isUpdating to true`, { itemKey });
-        setIsUpdating(true);
-
-        try {
-          logger.debug(`${name}: Calling updateItem`, { itemKey, item });
-          const retItem = await updateItem(itemKey, item);
-          logger.debug(`${name}: updateItem completed successfully`, {
-            itemKey,
-            hasResult: !!retItem,
-            resultType: retItem ? typeof retItem : 'undefined'
-          });
-          return retItem as V;
-        } catch (error) {
-          logger.error(`${name}: Error during item update`, { itemKey, item, error });
-          throw error;
-        } finally {
-          setIsUpdating(false);
-          logger.debug(`${name}: isUpdating set to false after successful update`);
-        }
-      } else {
-        logger.debug(`${name}: No item provided for update`);
+      logger.debug(`${name}: Valid key for update, setting isUpdating to true`, { itemKey });
+      setIsUpdating(true);
+      try {
+        const retItem = await updateItem(itemKey, updateData);
+        logger.debug(`${name}: updateItem completed successfully`, {
+          itemKey,
+          hasResult: !!retItem,
+          resultType: retItem ? typeof retItem : 'undefined'
+        });
+        return retItem;
+      } catch (error) {
+        logger.error(`${name}: Error during item update`, { itemKey, updateData, error });
+        throw error;
+      } finally {
         setIsUpdating(false);
-        itemLogger.error(`${name}: Non-null Item is required to update an item`);
-        throw new Error(`Non-null Item is required to update an item in ${name}`);
+        logger.debug(`${name}: isUpdating set to false after successful update`);
       }
     } else {
       logger.debug(`${name}: Invalid itemKey for update`, { itemKey });
@@ -297,75 +201,38 @@ export const PItemLoad = <
     }
   }, [updateItem, itemKey]);
 
-  const set = useCallback(async (item: V): Promise<V> => {
-    itemLogger.trace("set", { item });
+  const set = useCallback(async (
+    item: V
+  ) => {
     logger.debug(`${name}: set() called`, {
-      hasItem: !!item,
-      itemKey: item ? item.key : undefined,
-      isValidItemKey: item ? isValidPriKey(item.key) : false
+      itemKey: item.key,
     });
-
-    if (item && isValidPriKey(item.key)) {
+    if (item && item.key) {
+      setIsUpdating(true);
       try {
-        logger.debug(`${name}: Valid item and key for set operation`, { itemKey: item.key });
-        const retItem = await setItem(item.key, item);
-        logger.debug(`${name}: setItem completed successfully`, {
-          itemKey: item.key,
-          hasResult: !!retItem,
-          resultType: retItem ? typeof retItem : 'undefined'
-        });
-        return retItem as V;
-      } catch (error) {
-        logger.error(`${name}: Error during item set`, { itemKey: item.key, item, error });
-        throw error;
+        const retItem = await setItem(item.key as PriKey<S>, item);
+        return retItem;
+      } finally {
+        setIsUpdating(false);
       }
     } else {
-      logger.debug(`${name}: Invalid item or key for set operation`, {
-        hasItem: !!item,
-        itemKey: item ? item.key : undefined
-      });
       itemLogger.error(`${name}: Item key is required to set an item`);
       throw new Error(`Item key is required to set an item in ${name}`);
     }
-  }, [setItem, itemKey]);
+  }, [setItem]);
 
   const action = useCallback(async (
     actionName: string,
     body?: any,
   ) => {
-    itemLogger.trace("action", { actionName, body });
-    logger.debug(`${name}: action() called`, {
-      actionName,
-      hasBody: body !== undefined,
-      bodyType: typeof body,
-      itemKey,
-      isValidKey: itemKey ? isValidPriKey(itemKey) : false
-    });
-
     if (itemKey && isValidPriKey(itemKey)) {
-      logger.debug(`${name}: Valid key for action, setting isUpdating to true`, { itemKey, actionName });
       setIsUpdating(true);
-
       try {
-        logger.debug(`${name}: Calling actionItem`, { itemKey, actionName, body });
-        const retItem = await actionItem(itemKey, actionName, body);
-        logger.debug(`${name}: actionItem completed successfully`, {
-          itemKey,
-          actionName,
-          hasResult: !!retItem,
-          resultType: retItem ? typeof retItem : 'undefined'
-        });
-        return retItem as V;
-      } catch (error) {
-        logger.error(`${name}: Error during action execution`, { itemKey, actionName, body, error });
-        throw error;
+        return await actionItem(itemKey, actionName, body) as V;
       } finally {
         setIsUpdating(false);
-        logger.debug(`${name}: isUpdating set to false after successful action`);
       }
     } else {
-      logger.debug(`${name}: Invalid itemKey for action`, { itemKey, actionName });
-      setIsUpdating(false);
       itemLogger.error(`${name}: Item key is required to perform an action`);
       throw new Error(`Item key is required to perform an action in ${name}`);
     }
@@ -375,31 +242,14 @@ export const PItemLoad = <
     facetName: string,
     params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {},
   ) => {
-    itemLogger.trace("facet", { facetName });
-    logger.debug(`${name}: facet() called`, {
-      facetName,
-      itemKey,
-      isValidKey: itemKey ? isValidPriKey(itemKey) : false
-    });
-
     if (itemKey && isValidPriKey(itemKey)) {
-
       try {
-        logger.debug(`${name}: Calling facetItem`, { itemKey, facetName });
-        const response = await facetItem(itemKey, facetName, params);
-        logger.debug(`${name}: facetItem completed successfully`, {
-          itemKey,
-          facetName,
-          hasResult: !!response,
-          resultType: response ? typeof response : 'undefined'
-        });
-        return response as any;
+        return await facetItem(itemKey, facetName, params) as any;
       } catch (error) {
         logger.error(`${name}: Error during facet retrieval`, { itemKey, facetName, error });
         throw error;
       }
     } else {
-      logger.debug(`${name}: Invalid itemKey for facet`, { itemKey, facetName });
       itemLogger.error(`${name}: Item key is required to retrieve a facet`);
       throw new Error(`Item key is required to retrieve a facet in ${name}`);
     }
@@ -421,24 +271,8 @@ export const PItemLoad = <
     locations,
   };
 
-  logger.debug(`${name}: Context value created`, {
-    name: contextValue.name,
-    hasKey: !!contextValue.key,
-    hasItem: !!contextValue.item,
-    isLoading: contextValue.isLoading,
-    isUpdating: contextValue.isUpdating,
-    isRemoving: contextValue.isRemoving,
-    pkTypes: contextValue.pkTypes,
-    hasLocations: !!contextValue.locations
-  });
-
   contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
   contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
-
-  logger.debug(`${name}: Creating context provider element`, {
-    hasContext: !!context,
-    hasChildren: !!children
-  });
 
   return createElement(
     context.Provider,
