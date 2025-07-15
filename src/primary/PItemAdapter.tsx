@@ -128,7 +128,9 @@ export const Adapter = <
       return null;
     }
     const [newCacheMap, items] = result;
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return items as V[] | null;
   }, [resolvedSourceCache, handleCacheError, name]);
 
@@ -140,7 +142,9 @@ export const Adapter = <
       return handleCacheError('one');
     }
     const [newCacheMap, item] = await resolvedSourceCache.one(query);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -152,7 +156,9 @@ export const Adapter = <
       return handleCacheError('create');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.create(item);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -164,7 +170,9 @@ export const Adapter = <
       return handleCacheError('get');
     }
     const [newCacheMap, item] = await resolvedSourceCache.get(key);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -176,7 +184,9 @@ export const Adapter = <
       return handleCacheError('remove');
     }
     const newCacheMap = await resolvedSourceCache.remove(key);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
   }, [resolvedSourceCache, handleCacheError]);
 
   const retrieve = useCallback(async (
@@ -187,14 +197,17 @@ export const Adapter = <
       return handleCacheError('retrieve');
     }
     const [newCacheMap, item] = await resolvedSourceCache.retrieve(key);
-    // Always update the cacheMap state to ensure React re-renders work properly
-    // Even if newCacheMap is null (when item was already cached), we need to
-    // trigger a state update so useMemo dependencies re-evaluate
+    // Update the cacheMap state if there's a new cache map from the underlying cache
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
-    } else {
-      // Force a state update by cloning the current cacheMap
-      setCacheMap(prev => prev.clone());
+    } else if (item) {
+      // If newCacheMap is null but we have an item, it means the item was already cached
+      // in the underlying cache but might not be in our React state cacheMap, so update it
+      setCacheMap(prevCacheMap => {
+        const newMap = prevCacheMap.clone();
+        newMap.set(key, item);
+        return newMap;
+      });
     }
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
@@ -208,7 +221,9 @@ export const Adapter = <
       return handleCacheError('update');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.update(key, item);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -222,7 +237,9 @@ export const Adapter = <
       return handleCacheError('action');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.action(key, action, body);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -235,7 +252,9 @@ export const Adapter = <
       return handleCacheError('allAction');
     }
     const [newCacheMap, newItems] = await resolvedSourceCache.allAction(action, body);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -251,7 +270,9 @@ export const Adapter = <
     const [newCacheMap, response] = params !== undefined
       ? await resolvedSourceCache.facet(key, facet, params)
       : await resolvedSourceCache.facet(key, facet);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return response as any | null;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -264,7 +285,9 @@ export const Adapter = <
       return handleCacheError('allFacet');
     }
     const [newCacheMap, response] = await resolvedSourceCache.allFacet(facet, params);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -277,7 +300,9 @@ export const Adapter = <
       return handleCacheError('find');
     }
     const [newCacheMap, newItems] = await resolvedSourceCache.find(finder, finderParams);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -290,7 +315,9 @@ export const Adapter = <
       return handleCacheError('set');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.set(key, item);
-    setCacheMap(newCacheMap.clone());
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 

@@ -24,7 +24,8 @@ export const PItemLoad = <
     children,
     context,
     contextName,
-    ik
+    ik,
+    item: providedItem
   }: {
   name: string;
   // TODO: I want this to be two separate properties.
@@ -32,14 +33,16 @@ export const PItemLoad = <
   children: React.ReactNode;
   context: PItem.Context<V, S>;
   contextName: string;
-  ik: PriKey<S> | null;
+  ik?: PriKey<S> | null;
+  item?: V | null;
 }) => {
   logger.debug(`${name}: Component initialized with props`, {
     name,
     hasAdapter: !!adapter,
     hasChildren: !!children,
     hasContext: !!context,
-    ik
+    ik,
+    providedItem
   });
 
   const [error, setError] = React.useState<Error | null>(null);
@@ -47,8 +50,15 @@ export const PItemLoad = <
     throw error;
   }
 
+  // Validate that both ik and item are not provided at the same time
+  if (ik !== undefined && providedItem !== undefined) {
+    const errorMessage = `${name}: Cannot provide both 'ik' and 'item' parameters. Please provide only one.`;
+    logger.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
   const [itemKey, setItemKey] = React.useState<PriKey<S> | undefined>(undefined);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [isLoading, setIsLoading] = React.useState<boolean>(providedItem !== undefined ? false : true);
   const [isUpdating, setIsUpdating] = React.useState<boolean>(false);
   const [isRemoving, setIsRemoving] = React.useState<boolean>(false);
 
@@ -81,7 +91,16 @@ export const PItemLoad = <
   logger.debug(`${name}: Item logger created with pkTypes`, { pkTypes });
 
   const item: V | null = useMemo(() => {
-    logger.debug(`${name}: Computing item memoization`, { itemKey, hasCacheMap: !!cacheMap });
+    logger.debug(`${name}: Computing item memoization`, { itemKey, hasCacheMap: !!cacheMap, providedItem });
+
+    // If a providedItem is supplied, use it directly and skip cache retrieval
+    if (providedItem !== undefined) {
+      logger.debug(`${name}: Using provided item directly`, { providedItem });
+      setIsLoading(false);
+      setIsUpdating(false);
+      setIsRemoving(false);
+      return providedItem;
+    }
 
     let item: V | null = null;
     // We only make a call to the cache if the key is valid.  If we don't do this we end up driving up errors
@@ -112,7 +131,7 @@ export const PItemLoad = <
 
       return null;
     }
-  }, [itemKey, cacheMap]);
+  }, [itemKey, cacheMap, providedItem]);
 
   const locations: LocKeyArray<S> | null = useMemo(() => {
     logger.debug(`${name}: Computing locations memoization`, { hasItem: !!item });
@@ -129,8 +148,20 @@ export const PItemLoad = <
   }, [item])
 
   useEffect(() => {
-    itemLogger.trace('useEffect[ik]', { ik });
-    logger.debug(`${name}: useEffect[ik] triggered`, { ik, previousIk: undefined });
+    itemLogger.trace('useEffect[ik]', { ik, providedItem });
+    logger.debug(`${name}: useEffect[ik] triggered`, { ik, providedItem });
+
+    // If a providedItem is supplied, extract the key from it and skip cache retrieval
+    if (providedItem !== undefined) {
+      if (providedItem && providedItem.key) {
+        logger.debug(`${name}: Using key from provided item`, { itemKey: providedItem.key });
+        setItemKey(providedItem.key as PriKey<S>);
+      } else {
+        logger.debug(`${name}: Provided item is null or has no key`);
+        setItemKey(undefined);
+      }
+      return;
+    }
 
     if (ik) {
       logger.debug(`${name}: ik provided, checking if it's a valid PriKey`, { ik });
@@ -195,7 +226,7 @@ export const PItemLoad = <
       setIsLoading(false);
       setItemKey(undefined);
     }
-  }, [ik, cacheMap, retrieveItem]);
+  }, [ik, cacheMap, retrieveItem, providedItem]);
 
   const remove = useCallback(async () => {
     itemLogger.trace("remove");
