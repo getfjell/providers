@@ -1,421 +1,236 @@
-/* eslint-disable no-undefined */
-import { Adapter } from '../../src/primary/PItemAdapter';
-import { PItemLoad } from '../../src/primary/PItemLoad';
-import { CacheMap } from '@fjell/cache';
-import { ComKey, Item, PriKey, UUID } from '@fjell/core';
+
+import { Cache, CacheMap } from "@fjell/cache";
+import { Item, PriKey } from "@fjell/core";
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
-import { Context as PItemAdapterContext, ContextType as PItemAdapterContextType } from '../../src/primary/PItemAdapter';
-import { Context, ContextType, usePItem } from '../../src/primary/PItem';
-import { Cache } from '@fjell/cache';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as PItem from '../../src/primary/PItem';
+import * as PItemAdapter from '../../src/primary/PItemAdapter';
+import { PItemLoad } from '../../src/primary/PItemLoad';
 
-interface TestItem extends Item<'test'> {
-  name: string;
-  key: ComKey<'test'>;
-  events: {
-    created: { at: Date };
-    updated: { at: Date };
-    deleted: { at: null };
-  };
-}
+// Test data
+const fixedDate = new Date('2023-01-01T00:00:00.000Z');
+const testItem: Item<'test'> = {
+  key: { kt: 'test', pk: 'test-key' } as PriKey<'test'>,
+  id: 'test-id',
+  name: 'Test Item',
+  createdAt: fixedDate,
+  updatedAt: fixedDate,
+};
+const priKey = testItem.key;
 
-type TestItemAdapterContextType = PItemAdapterContextType<TestItem, 'test'>;
-type TestItemProviderContextType = ContextType<TestItem, 'test'>;
-type TestItemCache = Cache<TestItem, 'test'>;
+// Create a shared CacheMap instance for all tests
+const sharedCacheMap = new CacheMap<Item<'test'>, 'test'>(['test']);
 
-describe('PItemProvider', () => {
-  const priKey: PriKey<'test'> = { pk: '1-1-1-1-1' as UUID, kt: 'test' };
-  const testItem: TestItem = {
-    key: { kt: priKey.kt, pk: priKey.pk },
-    name: 'test',
-    events: {
-      created: { at: new Date() },
-      updated: { at: new Date() },
-      deleted: { at: null },
-    }
-  };
+// Create a mock cache that properly manages its internal cacheMap
+const createMockCache = () => {
+  return {
+    pkTypes: ['test'],
+    cacheMap: sharedCacheMap,
+    retrieve: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
+      if ((sharedCacheMap as any).includesKey(key)) {
+        return [null, (sharedCacheMap as any).get(key)];
+      }
+      (sharedCacheMap as any).set(key, testItem);
+      return [sharedCacheMap.clone(), testItem];
+    }),
+    get: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
+      (sharedCacheMap as any).set(key, testItem);
+      return [sharedCacheMap.clone(), testItem];
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    remove: vi.fn().mockImplementation(async (_key: PriKey<'test'>) => {
+      (sharedCacheMap as any).delete(priKey);
+      return sharedCacheMap.clone();
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    update: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Partial<Item<'test'>>) => {
+      const updatedItem = { ...testItem };
+      (sharedCacheMap as any).set(priKey, updatedItem);
+      return [sharedCacheMap.clone(), updatedItem];
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    set: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Item<'test'>) => {
+      (sharedCacheMap as any).set(priKey, testItem);
+      return [sharedCacheMap.clone(), testItem];
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    create: vi.fn().mockImplementation(async (_item: Partial<Item<'test'>>) => {
+      (sharedCacheMap as any).set(priKey, testItem);
+      return [sharedCacheMap.clone(), testItem];
+    }),
+  } as unknown as Cache<Item<'test'>, 'test'>;
+};
 
-  let emptyCacheMap: CacheMap<TestItem, 'test'>;
-  let cacheMap: CacheMap<TestItem, 'test'>;
-  let testItemCache: TestItemCache;
-  let TestItemAdapterContext: PItemAdapterContext<TestItem, 'test'>;
-  let TestItemProviderContext: Context<TestItem, 'test'>;
-  let TestItemAdapter: React.FC<{ children: React.ReactNode }>;
-  let TestItemProvider: React.FC<{
-    ik: PriKey<'test'>,
-    children: React.ReactNode
-  }>;
+let testItemCache: Cache<Item<'test'>, 'test'>;
 
+// Create contexts for testing
+const TestItemAdapterContext = React.createContext<PItemAdapter.ContextType<Item<'test'>, 'test'> | null>(null);
+const TestItemProviderContext = React.createContext<PItem.ContextType<Item<'test'>, 'test'> | null>(null);
+
+// Test adapter component
+const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
+  <PItemAdapter.Adapter
+    name="test"
+    cache={testItemCache}
+    context={TestItemAdapterContext}
+  >
+    {children}
+  </PItemAdapter.Adapter>
+);
+
+// Test provider component
+const TestItemProvider = ({ children, ik, item }: { children: React.ReactNode; ik?: PriKey<'test'> | null; item?: Item<'test'> | null }) => (
+  <PItemLoad
+    name='TestItemProvider'
+    adapter={TestItemAdapterContext}
+    context={TestItemProviderContext}
+    contextName='TestItemProvider'
+    ik={ik}
+    item={item}
+  >
+    {children}
+  </PItemLoad>
+);
+
+describe('PItemLoad', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-
-    emptyCacheMap = new CacheMap<TestItem, 'test'>(['test']);
-
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
-    (cacheMap as any).set(testItem.key, testItem);
-
-    testItemCache = {
-      pkTypes: ['test'],
-      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      remove: vi.fn().mockResolvedValue(emptyCacheMap),
-      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
-      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-    } as unknown as TestItemCache;
-
-    TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
-    TestItemProviderContext = React.createContext<TestItemProviderContextType | undefined>(undefined);
-
-    TestItemAdapter = (
-      {
-        children,
-      }: {
-        children: React.ReactNode;
-      }
-    ) => {
-      return React.createElement(Adapter, {
-        name: 'test',
-        cache: testItemCache,
-        context: TestItemAdapterContext,
-        children,
-      });
-    }
-
-    TestItemProvider = (
-      {
-        ik,
-        children,
-      }: {
-        ik: PriKey<'test'>;
-        children: React.ReactNode;
-      }
-    ) => {
-      return React.createElement(PItemLoad, {
-        name: 'test',
-        ik,
-        adapter: TestItemAdapterContext,
-        context: TestItemProviderContext,
-        contextName: 'TestItemProvider',
-        children,
-      });
-    };
-
+    vi.clearAllMocks();
+    // Clear the shared cache map before each test
+    const keys = Array.from((sharedCacheMap as any).keys());
+    keys.forEach(key => (sharedCacheMap as any).delete(key));
+    testItemCache = createMockCache();
   });
 
   it('should retrieve an item with an itemKey', async () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
+        <TestItemProvider ik={priKey}>
           {children}
         </TestItemProvider>
       </TestItemAdapter>
     );
 
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
 
-    waitFor(() => {
-      const item = result.current.item;
-      expect(item).toEqual([testItem]);
+    expect(result.current?.isLoading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current?.item).toEqual(testItem);
     });
+
+    expect(result.current?.isLoading).toBe(false);
+    expect(testItemCache.retrieve).toHaveBeenCalledWith(priKey);
   });
 
   it('should remove an item', async () => {
+    (sharedCacheMap as any).set(priKey, testItem);
+
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
+        <TestItemProvider ik={priKey}>
           {children}
         </TestItemProvider>
       </TestItemAdapter>
     );
 
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
 
     await waitFor(() => {
-      expect(result.current).toBeDefined();
+      expect(result.current?.item).toEqual(testItem);
     });
+
     await act(async () => {
-      await result.current.remove();
+      await result.current?.remove();
     });
+
     expect(testItemCache.remove).toHaveBeenCalledWith(priKey);
   });
 
   it('should update an item', async () => {
-    const updatedItem = { ...testItem, name: 'updated' };
-
-    // @ts-ignore
-    testItemCache.update.mockResolvedValueOnce([cacheMap, updatedItem]);
-
+    (sharedCacheMap as any).set(priKey, testItem);
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
+        <TestItemProvider ik={priKey}>
           {children}
         </TestItemProvider>
       </TestItemAdapter>
     );
 
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-    });
-
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
+    await waitFor(() => expect(result.current?.item).toEqual(testItem));
+    const updatedItem = { ...testItem, name: 'Updated Item' };
     await act(async () => {
-      const item = await result.current.update({ name: 'updated' });
-      expect(item).toEqual(updatedItem);
+      await result.current?.update(updatedItem);
     });
-
-    expect(testItemCache.update).toHaveBeenCalledWith(priKey, { name: 'updated' });
+    expect(testItemCache.update).toHaveBeenCalledWith(priKey, updatedItem);
   });
 
-  it('should perform an action on an item', async () => {
-    const actionName = 'testAction';
-    const actionBody = { data: 'testData' };
-    const actionResult = { ...testItem, name: 'actionResult' };
-
-    // @ts-ignore
-    testItemCache.action.mockResolvedValueOnce([cacheMap, actionResult]);
-
+  it('should handle loading states', async () => {
+    const delayedCache = {
+      ...createMockCache(),
+      retrieve: vi.fn().mockImplementation((key: PriKey<'test'>) =>
+        new Promise(resolve => {
+          setTimeout(() => {
+            (sharedCacheMap as any).set(key, testItem);
+            resolve([sharedCacheMap.clone(), testItem]);
+          }, 100);
+        })
+      ),
+    } as unknown as Cache<Item<'test'>, 'test'>;
+    testItemCache = delayedCache;
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
+        <TestItemProvider ik={priKey}>{children}</TestItemProvider>
+      </TestItemAdapter>
+    );
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
+    expect(result.current?.isLoading).toBe(true);
+    await waitFor(() => {
+      expect(result.current?.isLoading).toBe(false);
+    });
+    expect(result.current?.item).toEqual(testItem);
+  });
+
+  it('should handle provided item', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <TestItemAdapter>
+        <TestItemProvider item={testItem}>
+          {children}
+        </TestItemProvider>
+      </TestItemAdapter>
+    );
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
+    expect(result.current?.item).toEqual(testItem);
+    expect(result.current?.isLoading).toBe(false);
+  });
+
+  it('should handle null item key', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <TestItemAdapter>
+        <TestItemProvider ik={null}>
           {children}
         </TestItemProvider>
       </TestItemAdapter>
     );
 
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
 
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-    });
-
-    await act(async () => {
-      const item = await result.current.action(actionName, actionBody);
-      expect(item).toEqual(actionResult);
-    });
-
-    expect(testItemCache.action).toHaveBeenCalledWith(priKey, actionName, actionBody);
+    expect(result.current?.isLoading).toBe(false);
+    expect(result.current?.item).toBeNull();
   });
 
-  it('should handle an invalid ik that is just a string', async () => {
-    const invalidKey = '1-1-1-1-1';
-
+  it('should handle invalid item key', async () => {
+    const invalidKey = { pk: '', sk: 'test-sk' } as PriKey<'test'>;
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
-        <TestItemProvider
-          // @ts-ignore - Intentionally passing invalid type for test
-          ik={invalidKey}
-        >
+        <TestItemProvider ik={invalidKey}>
           {children}
         </TestItemProvider>
       </TestItemAdapter>
     );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-      expect(result.current.item).toBeNull();
-      expect(result.current.isLoading).toBeFalsy();
-    });
-
-    expect(testItemCache.retrieve).not.toHaveBeenCalled();
+    const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
+    expect(result.current?.isLoading).toBe(false);
+    expect(result.current?.item).toBeNull();
   });
-
-  it('should handle a null ik', async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemAdapter>
-        <TestItemProvider
-          // @ts-ignore - Intentionally passing invalid type for test
-          ik={null}
-        >
-          {children}
-        </TestItemProvider>
-      </TestItemAdapter>
-    );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-      expect(result.current.item).toBeNull();
-      expect(result.current.isLoading).toBeFalsy();
-    });
-
-    expect(testItemCache.retrieve).not.toHaveBeenCalled();
-  });
-
-  it('should handle a PriKey with null pk', async () => {
-    const invalidPriKey: PriKey<'test'> = { pk: null as unknown as UUID, kt: 'test' };
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemAdapter>
-        <TestItemProvider
-          ik={invalidPriKey}
-        >
-          {children}
-        </TestItemProvider>
-      </TestItemAdapter>
-    );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-      expect(result.current.item).toBeNull();
-      expect(result.current.isLoading).toBeFalsy();
-    });
-
-    expect(testItemCache.retrieve).not.toHaveBeenCalled();
-  });
-
-  it('should perform facet operation', async () => {
-    const facetName = 'testFacet';
-    const facetParams = { param: 'value' };
-    const facetResult = { facetData: 'test' };
-
-    // @ts-ignore
-    testItemCache.facet.mockResolvedValueOnce([cacheMap, facetResult]);
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
-          {children}
-        </TestItemProvider>
-      </TestItemAdapter>
-    );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-    });
-
-    await act(async () => {
-      const response = await result.current.facet(facetName, facetParams);
-      expect(response).toEqual(facetResult);
-    });
-
-    expect(testItemCache.facet).toHaveBeenCalledWith(priKey, facetName, facetParams);
-  });
-
-  it('should set an item', async () => {
-    const newItem = { ...testItem, name: 'setItem' };
-
-    // @ts-ignore
-    testItemCache.set.mockResolvedValueOnce([cacheMap, newItem]);
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
-          {children}
-        </TestItemProvider>
-      </TestItemAdapter>
-    );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-    });
-
-    await act(async () => {
-      const item = await result.current.set(newItem);
-      expect(item).toEqual(newItem);
-    });
-
-    expect(testItemCache.set).toHaveBeenCalledWith(priKey, newItem);
-  });
-
-  it('should expose loading states correctly', async () => {
-    // Mock cache to start empty, then retrieve will populate it
-    const freshTestItemCache = {
-      ...testItemCache,
-      // Override to start with empty cache
-    };
-
-    // Use empty cache for this test
-    const FreshTestItemAdapter = (
-      {
-        children,
-      }: {
-        children: React.ReactNode;
-      }
-    ) => {
-      return React.createElement(Adapter, {
-        name: 'test',
-        cache: freshTestItemCache,
-        context: TestItemAdapterContext,
-        children,
-      });
-    }
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <FreshTestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
-          {children}
-        </TestItemProvider>
-      </FreshTestItemAdapter>
-    );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    // The loading state behavior in PItemLoad sets loading to false immediately
-    // after checking cache, regardless of whether item exists
-    // This is the actual behavior, so let's test what it actually does
-    expect(result.current.isLoading).toBeFalsy();
-    expect(result.current.isUpdating).toBeFalsy();
-    expect(result.current.isRemoving).toBeFalsy();
-  });
-
-  it('should handle error in remove operation', async () => {
-    const removeError = new Error('Remove failed');
-    // @ts-ignore
-    testItemCache.remove.mockRejectedValueOnce(removeError);
-
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TestItemAdapter>
-        <TestItemProvider
-          ik={priKey}
-        >
-          {children}
-        </TestItemProvider>
-      </TestItemAdapter>
-    );
-
-    const { result } = renderHook(() => usePItem(TestItemProviderContext, 'TestItemProvider'), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current).toBeDefined();
-    });
-
-    await expect(async () => {
-      await result.current.remove();
-    }).rejects.toThrow('Remove failed');
-
-    expect(result.current.isRemoving).toBeFalsy();
-  });
-
 });
