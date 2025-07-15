@@ -34,6 +34,7 @@ export const CItemLoad = <
       context,
       contextName,
       ik,
+      item: providedItem,
       parent,
       parentContextName,
     }: {
@@ -42,7 +43,8 @@ export const CItemLoad = <
     children: React.ReactNode;
     context: CItem.Context<V, S, L1, L2, L3, L4, L5>;
     contextName: string;
-    ik: ComKey<S, L1, L2, L3, L4, L5> | null;
+    ik?: ComKey<S, L1, L2, L3, L4, L5> | null;
+    item?: V | null;
     parent: AItem.Context<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>;
     parentContextName: string;
   }
@@ -53,8 +55,15 @@ export const CItemLoad = <
     throw error;
   }
 
+  // Validate that both ik and item are not provided at the same time
+  if (ik !== undefined && providedItem !== undefined) {
+    const errorMessage = `${name}: Cannot provide both 'ik' and 'item' parameters. Please provide only one.`;
+    logger.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
   const [itemKey, setItemKey] = React.useState<ComKey<S, L1, L2, L3, L4, L5> | undefined>(undefined);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [isLoading, setIsLoading] = React.useState<boolean>(providedItem !== undefined ? false : true);
   const [isUpdating, setIsUpdating] = React.useState<boolean>(false);
   const [isRemoving, setIsRemoving] = React.useState<boolean>(false);
 
@@ -82,6 +91,15 @@ export const CItemLoad = <
   } = useMemo(() => parentItemAdapter, [parentItemAdapter]);
 
   const item: V | null = useMemo(() => {
+    // If a providedItem is supplied, use it directly and skip cache retrieval
+    if (providedItem !== undefined) {
+      logger.debug('Using provided item directly', { providedItem });
+      setIsLoading(false);
+      setIsUpdating(false);
+      setIsRemoving(false);
+      return providedItem;
+    }
+
     // We only call the cache if the key is valid.  If we don't do this we end up driving up errors
     // And here's the explanation, there are cases where you don't have a valid key, and a null result is expected
     // if we don't do this we end up with making a request to the server we know will fail.
@@ -97,7 +115,7 @@ export const CItemLoad = <
       setIsRemoving(false);
       return null;
     }
-  }, [itemKey, cacheMap]);
+  }, [itemKey, cacheMap, providedItem]);
 
   const locations: LocKeyArray<S, L1, L2, L3, L4> | null = useMemo(() => {
     if (item) {
@@ -108,7 +126,20 @@ export const CItemLoad = <
   }, [item])
 
   useEffect(() => {
-    logger.trace('useEffect[ik]', { ik });
+    logger.trace('useEffect[ik]', { ik, providedItem });
+
+    // If a providedItem is supplied, extract the key from it and skip cache retrieval
+    if (providedItem !== undefined) {
+      if (providedItem && providedItem.key) {
+        logger.debug('Using key from provided item', { itemKey: providedItem.key });
+        setItemKey(providedItem.key as ComKey<S, L1, L2, L3, L4, L5>);
+      } else {
+        logger.debug('Provided item is null or has no key');
+        setItemKey(undefined);
+      }
+      return;
+    }
+
     if (ik) {
       if (isComKey(ik)) {
         logger.debug('Key has been provided', { ik });
@@ -123,9 +154,15 @@ export const CItemLoad = <
       logger.debug('No item key was provided, no item will be retrieved', { ik });
       setIsLoading(false);
     }
-  }, [ik]);
+  }, [ik, providedItem]);
 
   useEffect(() => {
+    // If a providedItem is supplied, skip cache retrieval
+    if (providedItem !== undefined) {
+      logger.debug('Skipping cache retrieval due to provided item');
+      return;
+    }
+
     // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       (async () => {
@@ -134,7 +171,7 @@ export const CItemLoad = <
         setIsLoading(false);
       })();
     }
-  }, [itemKey]);
+  }, [itemKey, providedItem]);
 
   const remove = useCallback(async () => {
     // TODO: Probably need exception handling here
