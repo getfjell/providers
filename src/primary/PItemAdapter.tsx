@@ -70,10 +70,27 @@ export const Adapter = <
     }
   }, [cache, name]);
 
-  const pkTypes = useMemo(() => cache?.pkTypes, [cache]);
+  const pkTypes = useMemo(() => {
+    // Handle the case where cache might be a Promise (async initialization)
+    if (!cache || typeof (cache as any).then === 'function') {
+      return undefined;
+    }
+    return cache.coordinate?.kta;
+  }, [cache]);
 
   const [cacheMap, setCacheMap] =
-    React.useState<CacheMap<V, S>>(new CacheMap<V, S>(pkTypes));
+    React.useState<CacheMap<V, S>>(() => {
+      // Use a placeholder type when pkTypes is not available yet
+      const defaultTypes = (pkTypes || ['placeholder' as S]) as AllItemTypeArrays<S>;
+      return new CacheMap<V, S>(defaultTypes);
+    });
+
+  // Update CacheMap when pkTypes becomes available
+  React.useEffect(() => {
+    if (pkTypes) {
+      setCacheMap(new CacheMap<V, S>(pkTypes));
+    }
+  }, [pkTypes]);
 
   const sourceCache = useMemo(() => {
     if (!cache) {
@@ -122,7 +139,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('all');
     }
-    const result = await resolvedSourceCache.all(query);
+    const result = await resolvedSourceCache.operations.all(query);
     if (!Array.isArray(result)) {
       logger.error('Invalid result from cache.all() in %s', name);
       return null;
@@ -141,7 +158,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('one');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.one(query);
+    const [newCacheMap, item] = await resolvedSourceCache.operations.one(query);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -155,7 +172,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('create');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.create(item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.create(item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -169,7 +186,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('get');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.get(key);
+    const [newCacheMap, item] = await resolvedSourceCache.operations.get(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -183,7 +200,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('remove');
     }
-    const newCacheMap = await resolvedSourceCache.remove(key);
+    const newCacheMap = await resolvedSourceCache.operations.remove(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -196,7 +213,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('retrieve');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.retrieve(key);
+    const [newCacheMap, item] = await resolvedSourceCache.operations.retrieve(key);
     // Update the cacheMap state if there's a new cache map from the underlying cache
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
@@ -220,7 +237,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('update');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.update(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.update(key, item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -236,7 +253,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('action');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.action(key, action, body);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.action(key, action, body);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -251,7 +268,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('allAction');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.allAction(action, body);
+    const [newCacheMap, newItems] = await resolvedSourceCache.operations.allAction(action, body);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -268,8 +285,8 @@ export const Adapter = <
       return handleCacheError('facet');
     }
     const [newCacheMap, response] = params !== undefined
-      ? await resolvedSourceCache.facet(key, facet, params)
-      : await resolvedSourceCache.facet(key, facet);
+      ? await resolvedSourceCache.operations.facet(key, facet, params)
+      : await resolvedSourceCache.operations.facet(key, facet);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -284,7 +301,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('allFacet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.allFacet(facet, params);
+    const [newCacheMap, response] = await resolvedSourceCache.operations.allFacet(facet, params);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -299,11 +316,26 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('find');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.find(finder, finderParams);
+    const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
     return newItems as V[];
+  }, [resolvedSourceCache, handleCacheError]);
+
+  const findOne = useCallback(async (
+    finder: string,
+    finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+  ): Promise<V | null> => {
+    logger.trace('findOne', { finder, finderParams });
+    if (!resolvedSourceCache) {
+      return handleCacheError('findOne');
+    }
+    const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams);
+    if (newCacheMap) {
+      setCacheMap(newCacheMap.clone());
+    }
+    return newItems && newItems.length > 0 ? (newItems[0] as V) : null;
   }, [resolvedSourceCache, handleCacheError]);
 
   const set = useCallback(async (
@@ -314,17 +346,17 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('set');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.set(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.set(key, item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: Partial<ContextType<V, S>> = {
+  const contextValue: ContextType<V, S> = {
     name,
     cacheMap,
-    pkTypes,
+    pkTypes: pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>),
     all,
     one,
     create,
@@ -337,6 +369,7 @@ export const Adapter = <
     facet,
     allFacet,
     find,
+    findOne,
     set,
     addActions,
     addFacets,
@@ -347,7 +380,7 @@ export const Adapter = <
   return createElement(
     context.Provider,
     {
-      value: contextValue as ContextType<V, S>,
+      value: contextValue,
     },
     children,
   );

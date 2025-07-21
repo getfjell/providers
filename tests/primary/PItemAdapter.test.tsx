@@ -48,22 +48,26 @@ describe('PItemAdapter', () => {
 
     // Create mock cache with all required methods
     testItemCache = {
-      pkTypes: ['test'],
-      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      remove: vi.fn().mockResolvedValue(cacheMap),
-      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
-      allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
-      reset: vi.fn().mockResolvedValue([cacheMap]),
+      coordinate: { kta: ['test'] },
+      registry: {},
+      api: {},
       cacheMap: cacheMap,
+      operations: {
+        all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        one: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        create: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        get: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        remove: vi.fn().mockResolvedValue(cacheMap),
+        retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        update: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        action: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        set: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
+        allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
+        reset: vi.fn().mockResolvedValue([cacheMap]),
+      }
     } as unknown as TestItemCache;
 
     // Create context
@@ -104,8 +108,8 @@ describe('PItemAdapter', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.get).toHaveBeenCalledTimes(1);
-    expect(testItemCache.get).toHaveBeenCalledWith(testItem.key);
+    expect(testItemCache.operations.get).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.get).toHaveBeenCalledWith(testItem.key);
   });
 
   it('should create an item', async () => {
@@ -129,8 +133,8 @@ describe('PItemAdapter', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.create).toHaveBeenCalledTimes(1);
-    expect(testItemCache.create).toHaveBeenCalledWith(testItem);
+    expect(testItemCache.operations.create).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.create).toHaveBeenCalledWith(testItem);
   });
 
   it('should update an item', async () => {
@@ -154,8 +158,8 @@ describe('PItemAdapter', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.update).toHaveBeenCalledTimes(1);
-    expect(testItemCache.update).toHaveBeenCalledWith(testItem.key, testItem);
+    expect(testItemCache.operations.update).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.update).toHaveBeenCalledWith(testItem.key, testItem);
   });
 
   it('should remove an item', async () => {
@@ -178,8 +182,8 @@ describe('PItemAdapter', () => {
       await result.current.remove(testItem.key);
     });
 
-    expect(testItemCache.remove).toHaveBeenCalledTimes(1);
-    expect(testItemCache.remove).toHaveBeenCalledWith(testItem.key);
+    expect(testItemCache.operations.remove).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.remove).toHaveBeenCalledWith(testItem.key);
   });
 
   it('should perform an action', async () => {
@@ -203,8 +207,8 @@ describe('PItemAdapter', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.action).toHaveBeenCalledTimes(1);
-    expect(testItemCache.action).toHaveBeenCalledWith(testItem.key, 'testAction', { data: 'test' });
+    expect(testItemCache.operations.action).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.action).toHaveBeenCalledWith(testItem.key, 'testAction', { data: 'test' });
   });
 
   it('should handle undefined cache and throw error on operations', async () => {
@@ -259,7 +263,7 @@ describe('PItemAdapter', () => {
       expect(facetResult).toEqual({ facetData: 'test' });
     });
 
-    expect(testItemCache.facet).toHaveBeenCalledWith(testItem.key, 'testFacet');
+    expect(testItemCache.operations.facet).toHaveBeenCalledWith(testItem.key, 'testFacet');
   });
 
   it('should perform all facet operation', async () => {
@@ -284,6 +288,6 @@ describe('PItemAdapter', () => {
       expect(facetResult).toEqual({ allFacetData: 'test' });
     });
 
-    expect(testItemCache.allFacet).toHaveBeenCalledWith('testAllFacet', params);
+    expect(testItemCache.operations.allFacet).toHaveBeenCalledWith('testAllFacet', params);
   });
 });

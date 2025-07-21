@@ -93,7 +93,7 @@ export const Adapter = <
     }
   }, [cache, name]);
 
-  const pkTypes = React.useMemo(() => cache?.pkTypes, [cache]);
+  const pkTypes = React.useMemo(() => cache?.coordinate.kta, [cache]);
 
   const [cacheMap, setCacheMap] =
     React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(pkTypes));
@@ -138,14 +138,14 @@ export const Adapter = <
   ): Promise<V[]> => {
     logger.trace('all', {
       query: query && abbrevQuery(query),
-      cache: cache?.pkTypes,
+      cache: cache?.coordinate.kta,
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
     });
     if (!resolvedSourceCache) {
       return handleCacheError('all');
     }
     logger.debug('Fetching Items from sourceCache.all');
-    const [newCacheMap, items] = await resolvedSourceCache.all(query, locations);
+    const [newCacheMap, items] = await resolvedSourceCache.operations.all(query, locations);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -163,7 +163,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('one');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.one(query, locations);
+    const [newCacheMap, item] = await resolvedSourceCache.operations.one(query, locations);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -181,7 +181,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('create');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.create(item, locations);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.create(item, locations);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -195,7 +195,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('get');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.get(key);
+    const [newCacheMap, item] = await resolvedSourceCache.operations.get(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -209,7 +209,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('remove');
     }
-    const newCacheMap = await resolvedSourceCache.remove(key);
+    const newCacheMap = await resolvedSourceCache.operations.remove(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -222,7 +222,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('retrieve');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.retrieve(key);
+    const [newCacheMap, item] = await resolvedSourceCache.operations.retrieve(key);
     // Update the cacheMap state if there's a new cache map from the underlying cache
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
@@ -246,7 +246,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('update');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.update(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.update(key, item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -262,7 +262,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('action');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.action(key, action, body);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.action(key, action, body);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -282,7 +282,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('allAction');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.allAction(action, body, locations);
+    const [newCacheMap, newItems] = await resolvedSourceCache.operations.allAction(action, body, locations);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -297,7 +297,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('facet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.facet(key, facet);
+    const [newCacheMap, response] = await resolvedSourceCache.operations.facet(key, facet);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -312,7 +312,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('allFacet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.allFacet(facet, params);
+    const [newCacheMap, response] = await resolvedSourceCache.operations.allFacet(facet, params);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -328,7 +328,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('find');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.find(finder, finderParams, locations);
+    const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams, locations);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -343,7 +343,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('set');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.set(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache.operations.set(key, item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }

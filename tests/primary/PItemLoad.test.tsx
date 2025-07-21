@@ -25,40 +25,44 @@ const sharedCacheMap = new CacheMap<Item<'test'>, 'test'>(['test']);
 // Create a mock cache that properly manages its internal cacheMap
 const createMockCache = () => {
   return {
-    pkTypes: ['test'],
+    coordinate: { kta: ['test'] },
+    registry: {},
+    api: {},
     cacheMap: sharedCacheMap,
-    retrieve: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
-      if ((sharedCacheMap as any).includesKey(key)) {
-        return [null, (sharedCacheMap as any).get(key)];
-      }
-      (sharedCacheMap as any).set(key, testItem);
-      return [sharedCacheMap.clone(), testItem];
-    }),
-    get: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
-      (sharedCacheMap as any).set(key, testItem);
-      return [sharedCacheMap.clone(), testItem];
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    remove: vi.fn().mockImplementation(async (_key: PriKey<'test'>) => {
-      (sharedCacheMap as any).delete(priKey);
-      return sharedCacheMap.clone();
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    update: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Partial<Item<'test'>>) => {
-      const updatedItem = { ...testItem };
-      (sharedCacheMap as any).set(priKey, updatedItem);
-      return [sharedCacheMap.clone(), updatedItem];
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    set: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Item<'test'>) => {
-      (sharedCacheMap as any).set(priKey, testItem);
-      return [sharedCacheMap.clone(), testItem];
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    create: vi.fn().mockImplementation(async (_item: Partial<Item<'test'>>) => {
-      (sharedCacheMap as any).set(priKey, testItem);
-      return [sharedCacheMap.clone(), testItem];
-    }),
+    operations: {
+      retrieve: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
+        if ((sharedCacheMap as any).includesKey(key)) {
+          return [null, (sharedCacheMap as any).get(key)];
+        }
+        (sharedCacheMap as any).set(key, testItem);
+        return [sharedCacheMap.clone(), testItem];
+      }),
+      get: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
+        (sharedCacheMap as any).set(key, testItem);
+        return [sharedCacheMap.clone(), testItem];
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      remove: vi.fn().mockImplementation(async (_key: PriKey<'test'>) => {
+        (sharedCacheMap as any).delete(priKey);
+        return sharedCacheMap.clone();
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      update: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Partial<Item<'test'>>) => {
+        const updatedItem = { ...testItem };
+        (sharedCacheMap as any).set(priKey, updatedItem);
+        return [sharedCacheMap.clone(), updatedItem];
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      set: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Item<'test'>) => {
+        (sharedCacheMap as any).set(priKey, testItem);
+        return [sharedCacheMap.clone(), testItem];
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      create: vi.fn().mockImplementation(async (_item: Partial<Item<'test'>>) => {
+        (sharedCacheMap as any).set(priKey, testItem);
+        return [sharedCacheMap.clone(), testItem];
+      }),
+    }
   } as unknown as Cache<Item<'test'>, 'test'>;
 };
 
@@ -120,7 +124,7 @@ describe('PItemLoad', () => {
     });
 
     expect(result.current?.isLoading).toBe(false);
-    expect(testItemCache.retrieve).toHaveBeenCalledWith(priKey);
+    expect(testItemCache.operations.retrieve).toHaveBeenCalledWith(priKey);
   });
 
   it('should remove an item', async () => {
@@ -144,7 +148,7 @@ describe('PItemLoad', () => {
       await result.current?.remove();
     });
 
-    expect(testItemCache.remove).toHaveBeenCalledWith(priKey);
+    expect(testItemCache.operations.remove).toHaveBeenCalledWith(priKey);
   });
 
   it('should update an item', async () => {
@@ -163,20 +167,23 @@ describe('PItemLoad', () => {
     await act(async () => {
       await result.current?.update(updatedItem);
     });
-    expect(testItemCache.update).toHaveBeenCalledWith(priKey, updatedItem);
+    expect(testItemCache.operations.update).toHaveBeenCalledWith(priKey, updatedItem);
   });
 
   it('should handle loading states', async () => {
     const delayedCache = {
       ...createMockCache(),
-      retrieve: vi.fn().mockImplementation((key: PriKey<'test'>) =>
-        new Promise(resolve => {
-          setTimeout(() => {
-            (sharedCacheMap as any).set(key, testItem);
-            resolve([sharedCacheMap.clone(), testItem]);
-          }, 100);
-        })
-      ),
+      operations: {
+        ...createMockCache().operations,
+        retrieve: vi.fn().mockImplementation((key: PriKey<'test'>) =>
+          new Promise(resolve => {
+            setTimeout(() => {
+              (sharedCacheMap as any).set(key, testItem);
+              resolve([sharedCacheMap.clone(), testItem]);
+            }, 100);
+          })
+        ),
+      }
     } as unknown as Cache<Item<'test'>, 'test'>;
     testItemCache = delayedCache;
     const wrapper = ({ children }: { children: React.ReactNode }) => (
