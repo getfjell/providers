@@ -26,8 +26,8 @@
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "dependencies": {
-    "@fjell/cache": "^4.6.7",
-    "@fjell/client-api": "^4.4.6",
+    "@fjell/cache": "^4.6.11",
+    "@fjell/client-api": "^4.4.7",
     "@fjell/core": "^4.4.7",
     "@fjell/logging": "^4.4.7",
     "@types/react": "^19.1.8",
@@ -49,7 +49,7 @@
     "eslint": "^9.31.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
-    "vite": "^7.0.4",
+    "vite": "^7.0.5",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-node": "^7.0.0",
     "vitest": "^3.2.4"
