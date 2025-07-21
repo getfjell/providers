@@ -1,4 +1,4 @@
-import { Item, PriKey } from "@fjell/core";
+import { AllItemTypeArrays, Item, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
@@ -176,7 +176,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
 
   const contextValue: PItems.ContextType<V, S> = {
     name,
-    pkTypes,
+    pkTypes: pkTypes as AllItemTypeArrays<S>,
     items,
     isLoading,
     isCreating,

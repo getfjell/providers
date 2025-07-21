@@ -1,6 +1,7 @@
 /* eslint-disable no-undefined */
 import LibLogger from "@/logger";
 import {
+  AllItemTypeArrays,
   ikToLKA,
   isValidPriKey,
   Item,
@@ -262,7 +263,7 @@ export const PItemLoad = <
     isLoading,
     isUpdating,
     isRemoving,
-    pkTypes,
+    pkTypes: pkTypes as AllItemTypeArrays<S>,
     remove,
     update,
     action,

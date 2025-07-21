@@ -50,20 +50,24 @@ describe('CItemAdapter', () => {
     (cacheMap as any).set(itemKey, testItem);
 
     testItemCache = {
-      pkTypes: ['test', 'container'],
-      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      remove: vi.fn().mockResolvedValue(cacheMap),
-      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      reset: vi.fn().mockResolvedValue([cacheMap]),
+      coordinate: { kta: ['test', 'container'] },
+      registry: {},
+      api: {},
       cacheMap: cacheMap,
+      operations: {
+        all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        one: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        create: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        get: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        remove: vi.fn().mockResolvedValue(cacheMap),
+        retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        update: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        action: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        set: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        reset: vi.fn().mockResolvedValue([cacheMap]),
+      }
     } as unknown as TestItemCache;
 
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -110,7 +114,7 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.all({}, locKeyArray);
     });
-    expect(testItemCache.all).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.all).toHaveBeenCalledTimes(1);
   });
 
   it('should fetch one item', async () => {
@@ -127,7 +131,7 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.one({}, locKeyArray);
     });
-    expect(testItemCache.one).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.one).toHaveBeenCalledTimes(1);
   });
 
   it('should create an item', async () => {
@@ -144,8 +148,8 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.create({ name: 'new test' }, locKeyArray);
     });
-    expect(testItemCache.create).toHaveBeenCalledTimes(1);
-    expect(testItemCache.create).toHaveBeenCalledWith({ name: 'new test' }, locKeyArray);
+    expect(testItemCache.operations.create).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.create).toHaveBeenCalledWith({ name: 'new test' }, locKeyArray);
   });
 
   it('should get an item by key', async () => {
@@ -162,8 +166,8 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.get(itemKey);
     });
-    expect(testItemCache.get).toHaveBeenCalledTimes(1);
-    expect(testItemCache.get).toHaveBeenCalledWith(itemKey);
+    expect(testItemCache.operations.get).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.get).toHaveBeenCalledWith(itemKey);
   });
 
   it('should remove an item by key', async () => {
@@ -180,7 +184,7 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.remove(itemKey);
     });
-    expect(testItemCache.remove).toHaveBeenCalledWith(itemKey);
+    expect(testItemCache.operations.remove).toHaveBeenCalledWith(itemKey);
   });
 
   it('should retrieve an item by key', async () => {
@@ -197,8 +201,8 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.retrieve(itemKey);
     });
-    expect(testItemCache.retrieve).toHaveBeenCalledTimes(1);
-    expect(testItemCache.retrieve).toHaveBeenCalledWith(itemKey);
+    expect(testItemCache.operations.retrieve).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.retrieve).toHaveBeenCalledWith(itemKey);
   });
 
   it('should update an item', async () => {
@@ -215,8 +219,8 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.update(itemKey, { name: 'updated test' });
     });
-    expect(testItemCache.update).toHaveBeenCalledTimes(1);
-    expect(testItemCache.update).toHaveBeenCalledWith(itemKey, { name: 'updated test' });
+    expect(testItemCache.operations.update).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.update).toHaveBeenCalledWith(itemKey, { name: 'updated test' });
   });
 
   it('should perform an action on an item', async () => {
@@ -233,8 +237,8 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.action(itemKey, 'someAction', { data: 'test' });
     });
-    expect(testItemCache.action).toHaveBeenCalledTimes(1);
-    expect(testItemCache.action).toHaveBeenCalledWith(itemKey, 'someAction', { data: 'test' });
+    expect(testItemCache.operations.action).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.action).toHaveBeenCalledWith(itemKey, 'someAction', { data: 'test' });
   });
 
   it('should perform an action on all items', async () => {
@@ -251,8 +255,8 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.allAction('someAction', { data: 'test' }, locKeyArray);
     });
-    expect(testItemCache.allAction).toHaveBeenCalledTimes(1);
-    expect(testItemCache.allAction).toHaveBeenCalledWith('someAction', { data: 'test' }, locKeyArray);
+    expect(testItemCache.operations.allAction).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.allAction).toHaveBeenCalledWith('someAction', { data: 'test' }, locKeyArray);
   });
 
   it('should throw error when used outside of provider', () => {
@@ -309,7 +313,7 @@ describe('CItemAdapter', () => {
     await act(async () => {
       await result.current.set(itemKey, testItem);
     });
-    expect(testItemCache.set).toHaveBeenCalledTimes(1);
-    expect(testItemCache.set).toHaveBeenCalledWith(itemKey, testItem);
+    expect(testItemCache.operations.set).toHaveBeenCalledTimes(1);
+    expect(testItemCache.operations.set).toHaveBeenCalledWith(itemKey, testItem);
   });
 });
