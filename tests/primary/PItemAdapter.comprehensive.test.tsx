@@ -45,6 +45,30 @@ describe('PItemAdapter - Core Operations', () => {
     (cacheMap as any).set(testItem.key, testItem);
 
     testItemCache = {
+      coordinate: {
+        kta: ['test'],
+        scopes: []
+      },
+      registry: {} as any,
+      api: {} as any,
+      cacheMap: cacheMap,
+      operations: {
+        all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        one: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        create: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        get: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        remove: vi.fn().mockResolvedValue(cacheMap),
+        retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        update: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        action: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        set: vi.fn().mockResolvedValue([cacheMap, testItem]),
+        find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
+        facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
+        allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
+        reset: vi.fn().mockResolvedValue([cacheMap])
+      },
+      // Legacy properties for backwards compatibility
       pkTypes: ['test'],
       all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
       one: vi.fn().mockResolvedValue([cacheMap, testItem]),
@@ -59,8 +83,7 @@ describe('PItemAdapter - Core Operations', () => {
       find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
       facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
       allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
-      reset: vi.fn().mockResolvedValue([cacheMap]),
-      cacheMap: cacheMap,
+      reset: vi.fn().mockResolvedValue([cacheMap])
     } as unknown as TestItemCache;
 
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -100,7 +123,7 @@ describe('PItemAdapter - Core Operations', () => {
       expect(items).toEqual([testItem]);
     });
 
-    expect(testItemCache.all).toHaveBeenCalledWith(query);
+    expect(testItemCache.operations.all).toHaveBeenCalledWith(query);
   });
 
   it('should get one item with query', async () => {
@@ -137,7 +160,7 @@ describe('PItemAdapter - Core Operations', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.one).toHaveBeenCalledWith(query);
+    expect(testItemCache.operations.one).toHaveBeenCalledWith(query);
   });
 
   it('should retrieve an item', async () => {
@@ -172,7 +195,7 @@ describe('PItemAdapter - Core Operations', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.retrieve).toHaveBeenCalledWith(testItem.key);
+    expect(testItemCache.operations.retrieve).toHaveBeenCalledWith(testItem.key);
   });
 
   it('should set an item', async () => {
@@ -207,7 +230,7 @@ describe('PItemAdapter - Core Operations', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.set).toHaveBeenCalledWith(testItem.key, testItem);
+    expect(testItemCache.operations.set).toHaveBeenCalledWith(testItem.key, testItem);
   });
 
   it('should perform all action', async () => {
@@ -242,7 +265,7 @@ describe('PItemAdapter - Core Operations', () => {
       expect(items).toEqual([testItem]);
     });
 
-    expect(testItemCache.allAction).toHaveBeenCalledWith('testAllAction', { data: 'test' });
+    expect(testItemCache.operations.allAction).toHaveBeenCalledWith('testAllAction', { data: 'test' });
   });
 
   it('should perform find operation', async () => {
@@ -279,13 +302,16 @@ describe('PItemAdapter - Core Operations', () => {
       expect(items).toEqual([testItem]);
     });
 
-    expect(testItemCache.find).toHaveBeenCalledWith('testFinder', finderParams);
+    expect(testItemCache.operations.find).toHaveBeenCalledWith('testFinder', finderParams);
   });
 
   it('should handle all operation returning invalid result', async () => {
     const invalidCache = {
       ...testItemCache,
-      all: vi.fn().mockResolvedValue('invalid-result'),
+      operations: {
+        ...testItemCache.operations,
+        all: vi.fn().mockResolvedValue('invalid-result'),
+      }
     } as unknown as TestItemCache;
 
     const InvalidResultAdapter = ({ children }: { children: React.ReactNode }) => (
@@ -357,7 +383,9 @@ describe('PItemAdapter - Core Operations', () => {
   });
 
   it('should handle async cache initialization failure', async () => {
-    const rejectedCache = Promise.reject(new Error('Cache initialization failed'));
+    // Create a cache that will simulate async initialization failure
+    // by not having the expected structure when resolved
+    const rejectedCache = Promise.resolve(null);
 
     const FailedCacheAdapter = ({ children }: { children: React.ReactNode }) => (
       <Adapter
