@@ -12,8 +12,8 @@ importers:
         specifier: ^4.6.11
         version: 4.6.11
       '@fjell/client-api':
-        specifier: ^4.4.7
-        version: 4.4.7
+        specifier: ^4.4.9
+        version: 4.4.9
       '@fjell/core':
         specifier: ^4.4.7
         version: 4.4.7
@@ -827,6 +827,9 @@ packages:
 
   '@fjell/client-api@4.4.7':
     resolution: {integrity: sha512-8mEgjCepOWgizERQfKaUs1NjaKHlZ9h+SOBhn7sRqSTND4tVphK9kmN1+s61O5lIrpDYMmOhVMGEeIIWE+ezew==}
+
+  '@fjell/client-api@4.4.9':
+    resolution: {integrity: sha512-vSXS4uB2Tu83/Fx0EROaIJHm955ZGlC0PLJKXCjU+aeWCpNNMtqfuc8JsJ8eXP9vzH4TLLmiqYPMuPXAJcqjnQ==}
 
   '@fjell/core@4.4.7':
     resolution: {integrity: sha512-urHgEX6uLrbZKiYjhOJx6WZ7dylBvsAxoIfyhA+WE8JasiqFWUzg2YNX5DNOYsqruTe6FSM1dQ/dbHqz/wAFbQ==}
@@ -3278,13 +3281,21 @@ snapshots:
 
   '@fjell/cache@4.6.11':
     dependencies:
-      '@fjell/client-api': 4.4.7
+      '@fjell/client-api': 4.4.9
       '@fjell/core': 4.4.7
       '@fjell/http-api': 4.4.5
       '@fjell/logging': 4.4.7
       '@fjell/registry': 4.4.11
 
   '@fjell/client-api@4.4.7':
+    dependencies:
+      '@fjell/core': 4.4.7
+      '@fjell/http-api': 4.4.5
+      '@fjell/logging': 4.4.7
+      '@fjell/registry': 4.4.11
+      deepmerge: 4.3.1
+
+  '@fjell/client-api@4.4.9':
     dependencies:
       '@fjell/core': 4.4.7
       '@fjell/http-api': 4.4.5

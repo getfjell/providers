@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@fjell/cache": "^4.6.11",
-    "@fjell/client-api": "^4.4.7",
+    "@fjell/client-api": "^4.4.9",
     "@fjell/core": "^4.4.7",
     "@fjell/logging": "^4.4.7",
     "@types/react": "^19.1.8",
