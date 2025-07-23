@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
 import LibLogger from "@/logger";
-import * as AItem from "../AItem";
+import * as AItem from "@/AItem";
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItems from "./CItems";
 import { CItemsProvider } from "./CItemsProvider";
