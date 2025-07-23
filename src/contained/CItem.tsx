@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import * as AItem from "../AItem";
+import * as AItem from "@/AItem";
 
 import { Item } from "@fjell/core";
 import * as React from "react";
@@ -43,4 +43,3 @@ export const useCItem = <
   }
   return contextInstance;
 };
-
