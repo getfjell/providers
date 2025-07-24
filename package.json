@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.5.16",
+  "version": "4.5.17",
   "license": "Apache-2.0",
   "keywords": [
     "react-providers",
@@ -30,11 +30,11 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.6.16",
+    "@fjell/cache": "^4.6.17",
     "@fjell/client-api": "^4.4.14",
-    "@fjell/core": "^4.4.18",
+    "@fjell/core": "^4.4.21",
     "@fjell/docs-template": "link:../fjell-docs-template",
-    "@fjell/logging": "^4.4.19",
+    "@fjell/logging": "^4.4.25",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "react": "19.1.0",
