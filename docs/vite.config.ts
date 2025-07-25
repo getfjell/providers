@@ -1,16 +1,6 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { createDocsViteConfig } from '@fjell/docs-template/config'
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  base: '/providers/',
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    sourcemap: true
-  },
-  server: {
-    port: 3004
-  }
+export default createDocsViteConfig({
+  basePath: '/providers/',
+  port: 3004
 })
