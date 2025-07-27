@@ -20,7 +20,7 @@ Fjell Providers offers a comprehensive set of React providers and hooks that mak
 ```bash
 npm install @fjell/providers
 # or
-pnpm add @fjell/providers
+npm install @fjell/providers
 # or
 yarn add @fjell/providers
 ```

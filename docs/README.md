@@ -6,16 +6,16 @@ This directory contains the documentation site for Fjell Providers, built using 
 
 ```bash
 # Start development server
-pnpm run dev
+npm run dev
 
 # Build for production
-pnpm run build
+npm run build
 
 # Preview production build
-pnpm run preview
+npm run preview
 
 # Run tests
-pnpm run test
+npm run test
 ```
 
 ## Configuration
