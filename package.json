@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.5.23",
+  "version": "4.5.24",
   "license": "Apache-2.0",
   "keywords": [
     "react-providers",
@@ -21,7 +21,7 @@
     "build": "node build.js",
     "dev": "node build.js --watch",
     "lint": "eslint . --ext .ts --fix",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist",
     "test": "npm run lint && vitest run --coverage",
     "prepublishOnly": "npm run clean && npm run build",
     "docs:dev": "cd docs && npm run dev",
@@ -54,7 +54,6 @@
     "esbuild": "^0.25.8",
     "eslint": "^9.32.0",
     "jsdom": "^26.1.0",
-    "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
