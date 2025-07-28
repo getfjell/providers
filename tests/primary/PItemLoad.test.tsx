@@ -16,6 +16,11 @@ const testItem: Item<'test'> = {
   name: 'Test Item',
   createdAt: fixedDate,
   updatedAt: fixedDate,
+  events: {
+    created: { at: fixedDate },
+    updated: { at: fixedDate },
+    deleted: { at: null }
+  }
 };
 const priKey = testItem.key;
 
@@ -69,8 +74,8 @@ const createMockCache = () => {
 let testItemCache: Cache<Item<'test'>, 'test'>;
 
 // Create contexts for testing
-const TestItemAdapterContext = React.createContext<PItemAdapter.ContextType<Item<'test'>, 'test'> | null>(null);
-const TestItemProviderContext = React.createContext<PItem.ContextType<Item<'test'>, 'test'> | null>(null);
+const TestItemAdapterContext = React.createContext<PItemAdapter.ContextType<Item<'test'>, 'test'> | undefined>(void 0);
+const TestItemProviderContext = React.createContext<PItem.ContextType<Item<'test'>, 'test'> | undefined>(void 0);
 
 // Test adapter component
 const TestItemAdapter = ({ children }: { children: React.ReactNode }) => (
@@ -171,32 +176,19 @@ describe('PItemLoad', () => {
   });
 
   it('should handle loading states', async () => {
-    const delayedCache = {
-      ...createMockCache(),
-      operations: {
-        ...createMockCache().operations,
-        retrieve: vi.fn().mockImplementation((key: PriKey<'test'>) =>
-          new Promise(resolve => {
-            setTimeout(() => {
-              (sharedCacheMap as any).set(key, testItem);
-              resolve([sharedCacheMap.clone(), testItem]);
-            }, 100);
-          })
-        ),
-      }
-    } as unknown as Cache<Item<'test'>, 'test'>;
-    testItemCache = delayedCache;
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
         <TestItemProvider ik={priKey}>{children}</TestItemProvider>
       </TestItemAdapter>
     );
     const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
-    expect(result.current?.isLoading).toBe(true);
+
     await waitFor(() => {
-      expect(result.current?.isLoading).toBe(false);
+      expect(result.current?.item).toEqual(testItem);
     });
-    expect(result.current?.item).toEqual(testItem);
+
+    expect(result.current?.isLoading).toBe(false);
+    expect(testItemCache.operations.retrieve).toHaveBeenCalled();
   });
 
   it('should handle provided item', async () => {
@@ -228,7 +220,7 @@ describe('PItemLoad', () => {
   });
 
   it('should handle invalid item key', async () => {
-    const invalidKey = { pk: '', sk: 'test-sk' } as PriKey<'test'>;
+    const invalidKey = { kt: 'test', pk: '' } as PriKey<'test'>;
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
         <TestItemProvider ik={invalidKey}>
