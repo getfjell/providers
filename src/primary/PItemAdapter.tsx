@@ -3,10 +3,10 @@ import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/cor
 import React, { createElement, useCallback, useMemo } from "react";
 
 import { AggregateConfig, Cache, CacheMap, createAggregator } from "@fjell/cache";
-import * as AItemAdapter from "@/AItemAdapter";
-import * as AItem from "@/AItem";
-import * as AItems from "@/AItems";
-import LibLogger from '@/logger';
+import * as AItemAdapter from "../AItemAdapter";
+import * as AItem from "../AItem";
+import * as AItems from "../AItems";
+import LibLogger from '../logger';
 
 const logger = LibLogger.get('PItemAdapter');
 

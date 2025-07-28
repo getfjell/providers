@@ -3,7 +3,7 @@ import { Item, ItemQuery } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
-import LibLogger from '@/logger';
+import LibLogger from '../logger';
 import { PItemsProvider } from "./PItemsProvider";
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItems from "./PItems";
