@@ -1,6 +1,6 @@
 import { Item, ItemQuery } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
-import * as AItem from "@/AItem";
+import * as AItem from "../AItem";
 import { useCItemAdapter } from "./CItemAdapter";
 
 import * as CItemAdapter from "./CItemAdapter";

@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 /* eslint-disable no-undefined */
-import LibLogger from "@/logger";
+import LibLogger from "../logger";
 import { AggregateConfig, Cache, CacheMap, createAggregator } from "@fjell/cache";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
@@ -9,9 +9,9 @@ import {
   ItemQuery, LocKey, LocKeyArray, PriKey
 } from "@fjell/core";
 import * as React from "react";
-import * as AItem from "@/AItem";
-import * as AItemAdapter from "@/AItemAdapter";
-import * as AItems from "@/AItems";
+import * as AItem from "../AItem";
+import * as AItemAdapter from "../AItemAdapter";
+import * as AItems from "../AItems";
 
 const logger = LibLogger.get('CItemAdapter');
 

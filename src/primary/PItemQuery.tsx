@@ -1,5 +1,5 @@
 
-import LibLogger from "@/logger";
+import LibLogger from "../logger";
 import {
   abbrevQuery,
   Item,

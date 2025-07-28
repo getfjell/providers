@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import LibLogger from "@/logger";
+import LibLogger from "../logger";
 import {
   AllItemTypeArrays,
   ikToLKA,
