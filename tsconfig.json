@@ -5,24 +5,29 @@
     "sourceMap": true,
     "outDir": "dist",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
+    "preserveConstEnums": false,
+    "preserveSymlinks": false,
+    "resolveJsonModule": true,
     "declaration": true,
+    "declarationMap": true,
     "target": "es2022",
     "module": "es2022",
     "moduleResolution": "bundler",
     "jsx": "react"
   },
+  "ts-node": {
+    "esm": true
+  },
   "include": [
     "./src/**/*.ts",
+    "./src/**/*.tsx",
     "./tests/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "metro.config.js"
+    "metro.config.js",
+    "dist"
   ]
 }
