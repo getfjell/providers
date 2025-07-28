@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
-import * as AItem from "@/AItem";
-import LibLogger from "@/logger";
+import * as AItem from "../AItem";
+import LibLogger from "../logger";
 import {
   abbrevLKA,
   abbrevQuery,
