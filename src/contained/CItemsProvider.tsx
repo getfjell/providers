@@ -28,6 +28,7 @@ export const CItemsProvider = <
       parentContextName,
       renderEach,
       items = [],
+      facetResults = {},
       isLoadingParam = false,
       overrides,
     }: {
@@ -48,6 +49,7 @@ export const CItemsProvider = <
     parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
     items?: V[] | null;
+    facetResults?: Record<string, any>;
     isLoadingParam?: boolean;
     overrides?: {
       all?: () => Promise<V[] | null>;
@@ -85,10 +87,8 @@ export const CItemsProvider = <
 
   const parentContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
-  const {
-    locations: parentLocations,
-    item: parentItem,
-  } = useMemo(() => parentContext, [parentContext]);
+  const parentLocations = parentContext.locations;
+  const parentItem = parentContext.item;
 
   useEffect(() => {
     setIsLoading(isLoadingParam);
@@ -267,6 +267,7 @@ export const CItemsProvider = <
   const contextValue: CItems.ContextType<V, S, L1, L2, L3, L4, L5> = {
     name,
     items: items || [],
+    facetResults: facetResults || {},
     parentItem: parentItem as Item<L1, L2, L3, L4, L5> | null,
     isLoading,
     isCreating,
