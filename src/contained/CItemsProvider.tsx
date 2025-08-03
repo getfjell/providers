@@ -95,13 +95,18 @@ export const CItemsProvider = <
   }, [isLoadingParam]);
 
   const create = useCallback(async (item: Partial<Item<S, L1, L2, L3, L4, L5>>) => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.debug(`${name}: create`, { item, parentLocations: abbrevLKA(parentLocations as any) });
       setIsCreating(true);
-      const result = await createItem(item, parentLocations) as V;
-      setIsCreating(false);
-      return result;
+      try {
+        const result = await createItem(item, parentLocations) as V;
+        return result;
+      } catch (error) {
+        logger.error(`${name}: Error creating item`, error);
+        throw error;
+      } finally {
+        setIsCreating(false);
+      }
     } else {
       logger.error(`${name}: No parent locations present to create containeditem`, { item });
       throw new Error(`No parent locations present to create containeditem in ${name}`);
@@ -110,31 +115,46 @@ export const CItemsProvider = <
 
   const update = useCallback(async (key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: Partial<Item<S, L1, L2, L3, L4, L5>>) => {
-    // TODO: Probably need exception handling here
     logger.debug(`${name}: update`, { key: abbrevIK(key), item });
     setIsUpdating(true);
-    const result = await updateItem(key, item) as V;
-    setIsUpdating(false);
-    return result;
+    try {
+      const result = await updateItem(key, item) as V;
+      return result;
+    } catch (error) {
+      logger.error(`${name}: Error updating item`, error);
+      throw error;
+    } finally {
+      setIsUpdating(false);
+    }
   }, [updateItem, parentLocations]);
 
   const remove = useCallback(async (key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>) => {
-    // TODO: Probably need exception handling here
     logger.debug(`${name}: remove`, { key: abbrevIK(key) });
     setIsRemoving(true);
-    const result = await removeItem(key);
-    setIsRemoving(false);
-    return result;
+    try {
+      const result = await removeItem(key);
+      return result;
+    } catch (error) {
+      logger.error(`${name}: Error removing item`, error);
+      throw error;
+    } finally {
+      setIsRemoving(false);
+    }
   }, [removeItem, parentLocations]);
 
   const all = useCallback(async () => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.debug(`${name}: all`, { query: {}, parentLocations: abbrevLKA(parentLocations as any) });
       setIsLoading(true);
-      const result = await allItems({}, parentLocations) as V[] | null;
-      setIsLoading(false);
-      return result;
+      try {
+        const result = await allItems({}, parentLocations) as V[] | null;
+        return result;
+      } catch (error) {
+        logger.error(`${name}: Error getting all items`, error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       logger.error(`${name}: No parent locations present to query for all containeditems`);
       throw new Error(`No parent locations present to query for all containeditems in ${name}`);
@@ -142,13 +162,18 @@ export const CItemsProvider = <
   }, [allItems, parentLocations]);
 
   const one = useCallback(async () => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.trace('one', { query: {}, parentLocations: abbrevLKA(parentLocations as any) });
       setIsLoading(true);
-      const result = await oneItem({}, parentLocations) as V | null;
-      setIsLoading(false);
-      return result;
+      try {
+        const result = await oneItem({}, parentLocations) as V | null;
+        return result;
+      } catch (error) {
+        logger.error(`${name}: Error getting one item`, error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       logger.error(`${name}: No parent locations present to query for one containeditem`);
       throw new Error(`No parent locations present to query for one containeditem in ${name}`);
@@ -156,13 +181,15 @@ export const CItemsProvider = <
   }, [oneItem, parentLocations]);
 
   const allAction = useCallback(async (action: string, body: any = {}) => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.info('allAction', { action, body, parentLocations: abbrevLKA(parentLocations as any) });
       setIsUpdating(true);
       try {
         const result = await allActionItem(action, body, parentLocations) as V[] | null;
         return result;
+      } catch (error) {
+        logger.error(`${name}: Error in allAction`, error);
+        throw error;
       } finally {
         setIsUpdating(false);
       }
@@ -174,7 +201,6 @@ export const CItemsProvider = <
   }, [allActionItem, parentLocations]);
 
   const allFacet = useCallback(async (facet: string, params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {}) => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.info('allFacet', { facet, params, parentLocations: abbrevLKA(parentLocations as any) });
       setIsUpdating(true);
@@ -196,7 +222,6 @@ export const CItemsProvider = <
       action: string,
       body: any = {},
     ): Promise<V> => {
-    // TODO: Probably need exception handling here
       if (parentLocations) {
         logger.info('action', { key, action, body, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);
@@ -217,7 +242,6 @@ export const CItemsProvider = <
       facet: string,
       params: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>> = {},
     ): Promise<any> => {
-    // TODO: Probably need exception handling here
       if (parentLocations) {
         logger.info('facet', { key, facet, params, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);

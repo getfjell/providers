@@ -2,6 +2,7 @@ import { Item, ItemQuery } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import * as AItem from "../AItem";
 import { useCItemAdapter } from "./CItemAdapter";
+import { createStableHash } from '../utils';
 
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItems from "./CItems";
@@ -67,8 +68,7 @@ export const CItemsFacet = <
     locations: parentLocations,
   } = useMemo(() => parentContext, [parentContext]);
 
-  // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the params have changed.
-  const facetParamsString = useMemo(() => JSON.stringify(facetParams), [facetParams]);
+  const facetParamsString = useMemo(() => createStableHash(facetParams), [facetParams]);
 
   useEffect(() => {
     if (facet && facetParams && parentLocations && adapterContextInstance) {

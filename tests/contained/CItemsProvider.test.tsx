@@ -92,6 +92,7 @@ describe('CItemsProvider', () => {
       isRemoving: false,
       actions: {},
       facets: {},
+      facetResults: {},
       remove: vi.fn(),
       update: vi.fn(),
       set: vi.fn(),

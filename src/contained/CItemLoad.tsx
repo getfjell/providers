@@ -14,6 +14,7 @@ import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItem from "./CItem";
+import { useAsyncError } from "../useAsyncError";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
 const logger = LibLogger.get('CItemLoad');
@@ -50,10 +51,7 @@ export const CItemLoad = <
   }
   ) => {
 
-  const [error, setError] = React.useState<Error | null>(null);
-  if (error) {
-    throw error;
-  }
+  const { throwAsyncError } = useAsyncError();
 
   // Validate that both ik and item are not provided at the same time
   if (ik !== undefined && providedItem !== undefined) {
@@ -148,7 +146,7 @@ export const CItemLoad = <
         const errorMessage = `${name}: Key is not a ComKey`;
         logger.error(errorMessage, { ik });
         setIsLoading(false);
-        setError(new Error(errorMessage));
+        throwAsyncError(new Error(errorMessage));
       }
     } else {
       logger.debug('No item key was provided, no item will be retrieved', { ik });
@@ -163,23 +161,33 @@ export const CItemLoad = <
       return;
     }
 
-    // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       (async () => {
-        logger.trace('useEffect[itemKey]', { itemKey: abbrevIK(itemKey) });
-        await retrieveItem(itemKey);
-        setIsLoading(false);
+        try {
+          logger.trace('useEffect[itemKey]', { itemKey: abbrevIK(itemKey) });
+          await retrieveItem(itemKey);
+          setIsLoading(false);
+        } catch (error) {
+          logger.error(`${name}: Error retrieving item`, error);
+          setIsLoading(false);
+          throwAsyncError(error as Error);
+        }
       })();
     }
   }, [itemKey, providedItem]);
 
   const remove = useCallback(async () => {
-    // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsRemoving(true);
-      logger.trace('remove', { ik: abbrevIK(itemKey) });
-      await removeItem(itemKey);
-      setIsRemoving(false);
+      try {
+        logger.trace('remove', { ik: abbrevIK(itemKey) });
+        await removeItem(itemKey);
+      } catch (error) {
+        logger.error(`${name}: Error removing item`, error);
+        throw error;
+      } finally {
+        setIsRemoving(false);
+      }
     } else {
       const errorMessage = itemKey ? `${name}: Invalid item key provided for remove` : `${name}: No item key provided for remove`;
       logger.error(errorMessage, { itemKey });
@@ -188,14 +196,19 @@ export const CItemLoad = <
   }, [removeItem, itemKey, name]);
 
   const update = useCallback(async (item: Partial<Item<S, L1, L2, L3, L4, L5>>): Promise<V> => {
-    // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       if (item) {
         setIsUpdating(true);
-        logger.trace('update', { itemKey: abbrevIK(itemKey), item });
-        const retItem = await updateItem(itemKey, item) as V;
-        setIsUpdating(false);
-        return retItem;
+        try {
+          logger.trace('update', { itemKey: abbrevIK(itemKey), item });
+          const retItem = await updateItem(itemKey, item) as V;
+          return retItem;
+        } catch (error) {
+          logger.error(`${name}: Error updating item`, error);
+          throw error;
+        } finally {
+          setIsUpdating(false);
+        }
       } else {
         const errorMessage = `${name}: No item provided for update`;
         throw new Error(errorMessage);
@@ -223,13 +236,18 @@ export const CItemLoad = <
     actionName: string,
     body?: any,
   ): Promise<V> => {
-    // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsUpdating(true);
-      logger.trace('action', { itemKey: abbrevIK(itemKey), actionName, body });
-      const retItem = await actionItem(itemKey, actionName, body) as V;
-      setIsUpdating(false);
-      return retItem;
+      try {
+        logger.trace('action', { itemKey: abbrevIK(itemKey), actionName, body });
+        const retItem = await actionItem(itemKey, actionName, body) as V;
+        return retItem;
+      } catch (error) {
+        logger.error(`${name}: Error executing action '${actionName}'`, error);
+        throw error;
+      } finally {
+        setIsUpdating(false);
+      }
     } else {
       const errorMessage = itemKey ? `${name}: Invalid item key provided for action '${actionName}'` : `${name}: No item key provided for action '${actionName}'`;
       logger.error(errorMessage, { itemKey, actionName });
@@ -241,13 +259,18 @@ export const CItemLoad = <
     facetName: string,
     params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<any | null> => {
-    // TODO: Probably need exception handling here
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsUpdating(true);
-      logger.trace('facet', { itemKey: abbrevIK(itemKey), facetName });
-      const response = await facetItem(itemKey, facetName, params) as any;
-      setIsUpdating(false);
-      return response;
+      try {
+        logger.trace('facet', { itemKey: abbrevIK(itemKey), facetName });
+        const response = await facetItem(itemKey, facetName, params) as any;
+        return response;
+      } catch (error) {
+        logger.error(`${name}: Error executing facet '${facetName}'`, error);
+        throw error;
+      } finally {
+        setIsUpdating(false);
+      }
     } else {
       const errorMessage = itemKey ? `${name}: Invalid item key provided for facet '${facetName}'` : `${name}: No item key provided for facet '${facetName}'`;
       logger.error(errorMessage, { itemKey, facetName });

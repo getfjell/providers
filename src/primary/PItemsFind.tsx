@@ -2,6 +2,7 @@
 import { Item } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
+import { createStableHash } from '../utils';
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItems from "./PItems";
 import { PItemsProvider } from "./PItemsProvider";
@@ -33,8 +34,7 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
   // Since we pass this to the actions constructor, don't destructure it yet
   const adapterContext = usePItemAdapter<V, S>(adapter, contextName);
 
-  // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the params have changed.
-  const finderParamsString = useMemo(() => JSON.stringify(finderParams), [finderParams]);
+  const finderParamsString = useMemo(() => createStableHash(finderParams), [finderParams]);
 
   useEffect(() => {
     if (finder && finderParams && adapterContext) {
