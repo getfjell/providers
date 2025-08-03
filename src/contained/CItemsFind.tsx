@@ -59,9 +59,15 @@ export const CItemsFind = <
   useEffect(() => {
     if (finder && finderParams && parentLocations && adapterContext) {
       (async () => {
-        const result = await adapterContext.find(finder, finderParams, parentLocations);
-        setItems(result as V[] | null);
-        setIsLoading(false);
+        try {
+          const result = await adapterContext.find(finder, finderParams, parentLocations);
+          setItems(result as V[] | null);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Find operation failed:', error);
+          setItems(null);
+          setIsLoading(false);
+        }
       })();
     }
   }, [finder, finderParamsString, parentLocations]);

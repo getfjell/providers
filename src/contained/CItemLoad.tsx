@@ -270,6 +270,7 @@ export const CItemLoad = <
     facet,
     set,
     locations,
+    facetResults: {},
   };
 
   logger.debug(`${name}: Context value created`, {
