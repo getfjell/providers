@@ -19,3 +19,5 @@ export * from "./primary/PItemsFacet";
 export * from "./primary/PItemsFind";
 export * from "./primary/PItemsProvider";
 export * from "./primary/PItemsQuery";
+export * from "./useAsyncError";
+export * from "./utils";

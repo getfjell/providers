@@ -1,6 +1,7 @@
 import { Item } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
+import { createStableHash } from '../utils';
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItem from "./PItem";
 
@@ -36,8 +37,7 @@ export const PItemFacet = <V extends Item<S>, S extends string>(
   // Get the item context
   const itemContextValue = PItem.usePItem<V, S>(itemContext, contextName);
 
-  // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the params have changed.
-  const facetParamsString = useMemo(() => JSON.stringify(facetParams), [facetParams]);
+  const facetParamsString = useMemo(() => createStableHash(facetParams), [facetParams]);
 
   useEffect(() => {
     if (facet && facetParams && itemContextValue && itemContextValue.key && adapterContextInstance) {
