@@ -1,6 +1,7 @@
 import { Item } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
+import { createStableHash } from '../utils';
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItem from "./CItem";
 
@@ -44,8 +45,7 @@ export const CItemFacet = <
   // Get the item context
   const itemContextValue = CItem.useCItem<V, S, L1, L2, L3, L4, L5>(itemContext, contextName);
 
-  // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the params have changed.
-  const facetParamsString = useMemo(() => JSON.stringify(facetParams), [facetParams]);
+  const facetParamsString = useMemo(() => createStableHash(facetParams), [facetParams]);
 
   useEffect(() => {
     if (facet && facetParams && itemContextValue && itemContextValue.key && adapterContextInstance) {
