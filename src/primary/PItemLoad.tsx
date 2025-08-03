@@ -270,6 +270,7 @@ export const PItemLoad = <
     facet,
     set,
     locations,
+    facetResults: {},
   };
 
   contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
