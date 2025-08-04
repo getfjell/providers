@@ -21,7 +21,7 @@ vi.mock('../../src/logger', () => ({
 
 // Mock the CItemsProvider
 vi.mock('../../src/contained/CItemsProvider', () => ({
-  CItemsProvider: vi.fn((_props) => React.createElement('div', { 'data-testid': 'citems-provider' }, 'CItemsProvider')),
+  CItemsProvider: vi.fn(() => React.createElement('div', { 'data-testid': 'citems-provider' }, 'CItemsProvider')),
 }));
 
 // Mock the hooks - use vi.hoisted to ensure these are available in mocks
