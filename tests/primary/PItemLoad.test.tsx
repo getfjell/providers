@@ -47,23 +47,23 @@ const createMockCache = () => {
         return [sharedCacheMap.clone(), testItem];
       }),
 
-      remove: vi.fn().mockImplementation(async (_key: PriKey<'test'>) => {
+      remove: vi.fn().mockImplementation(async () => {
         (sharedCacheMap as any).delete(priKey);
         return sharedCacheMap.clone();
       }),
 
-      update: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Partial<Item<'test'>>) => {
+      update: vi.fn().mockImplementation(async () => {
         const updatedItem = { ...testItem };
         (sharedCacheMap as any).set(priKey, updatedItem);
         return [sharedCacheMap.clone(), updatedItem];
       }),
 
-      set: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Item<'test'>) => {
+      set: vi.fn().mockImplementation(async () => {
         (sharedCacheMap as any).set(priKey, testItem);
         return [sharedCacheMap.clone(), testItem];
       }),
 
-      create: vi.fn().mockImplementation(async (_item: Partial<Item<'test'>>) => {
+      create: vi.fn().mockImplementation(async () => {
         (sharedCacheMap as any).set(priKey, testItem);
         return [sharedCacheMap.clone(), testItem];
       }),
