@@ -73,9 +73,16 @@ export const CItemsFacet = <
   useEffect(() => {
     if (facet && facetParams && parentLocations && adapterContextInstance) {
       (async () => {
-        const result = await adapterContextInstance.allFacet(facet, facetParams, parentLocations);
-        setResult(result);
-        setIsLoading(false);
+        try {
+          const result = await adapterContextInstance.allFacet(facet, facetParams, parentLocations);
+          setResult(result);
+          setIsLoading(false);
+        } catch (error) {
+          // Handle facet errors gracefully
+          console.error(`[@fjell/providers] [CItemsFacet] Failed to execute facet "${facet}" with params`, facetParams, ':', error);
+          setResult(null);
+          // Keep loading state as true when there's an error - the operation is incomplete
+        }
       })();
     }
   }, [facet, facetParamsString, parentLocations]);
