@@ -408,4 +408,274 @@ describe('CItemQuery', () => {
     expect(TestComponent).toBeDefined();
     expect(typeof TestComponent).toBe('function');
   });
+
+  it('should show custom notFound component when optional and item not found', async () => {
+    mockAdapter.one = vi.fn().mockResolvedValue(null);
+    const customNotFound = <div data-testid="custom-not-found">Custom Not Found</div>;
+
+    render(
+      <TestWrapper notFound={customNotFound} optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('test-child')).toBeTruthy();
+    });
+  });
+
+  it('should attempt query and handle oneItem failure gracefully', async () => {
+    mockAdapter.one = vi.fn().mockRejectedValue(new Error('Database error'));
+
+    render(
+      <TestWrapper optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('test-child')).toBeTruthy();
+    });
+
+    expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
+  });
+
+  it('should handle query string memoization correctly', async () => {
+    const query1 = { name: 'test' };
+    const query2 = { name: 'test' }; // Same content, different object
+
+    const { rerender } = render(
+      <TestWrapper query={query1}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.one).toHaveBeenCalledTimes(1);
+    });
+
+    // Rerender with same query content but different object reference
+    rerender(
+      <TestWrapper query={query2}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    // Should not call one again since JSON.stringify would be the same
+    await waitFor(() => {
+      expect(mockAdapter.one).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('should handle null query without calling one', async () => {
+    render(
+      <TestWrapper query={null as any} optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('test-child')).toBeTruthy();
+    });
+
+    expect(mockAdapter.one).not.toHaveBeenCalled();
+  });
+
+  it('should handle empty object query', async () => {
+    render(
+      <TestWrapper query={{}}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('test-child')).toBeTruthy();
+    });
+
+    expect(mockAdapter.one).toHaveBeenCalledWith({}, locKeyArray);
+  });
+
+  it('should call create when oneItem returns null', async () => {
+    mockAdapter.one = vi.fn().mockResolvedValue(null);
+    const createData = { name: 'new test' };
+
+    render(
+      <TestWrapper create={createData} optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+    });
+  });
+
+  it('should call create method when oneItem returns null', async () => {
+    mockAdapter.one = vi.fn().mockResolvedValue(null);
+    const createData = { name: 'new test' };
+
+    render(
+      <TestWrapper create={createData} optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+    });
+
+    expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
+  });
+
+  it('should call create after oneItem failure when create provided', async () => {
+    mockAdapter.one = vi.fn().mockRejectedValue(new Error('Not found'));
+    const createData = { name: 'new test' };
+
+    render(
+      <TestWrapper create={createData} optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+    });
+
+    expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
+  });
+
+  it('should properly reset query running state on successful query', async () => {
+    render(
+      <TestWrapper>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    // Should start with loading
+    expect(screen.getByTestId('loading')).toBeTruthy();
+
+    // Should transition to children after query completes
+    await waitFor(() => {
+      expect(screen.getByTestId('test-child')).toBeTruthy();
+    });
+
+    expect(screen.queryByTestId('loading')).toBeNull();
+  });
+
+  it('should handle adapter context changes', async () => {
+    const newAdapter = {
+      ...mockAdapter,
+      name: 'newAdapter',
+      one: vi.fn().mockResolvedValue(testItem),
+    };
+
+    const { rerender } = render(
+      <TestWrapper>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.one).toHaveBeenCalled();
+    });
+
+    // Change the adapter context
+    rerender(
+      <mockParentContext.Provider value={mockParentAdapter}>
+        <mockContext.Provider value={newAdapter}>
+          <CItemQuery
+            name="TestItem"
+            adapter={mockContext}
+            children={<div data-testid="test-child">Test Child</div>}
+            context={mockContext}
+            contextName="TestItemContext"
+            query={defaultQuery}
+            parent={mockParentContext}
+            parentContextName="ParentContext"
+          />
+        </mockContext.Provider>
+      </mockParentContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(newAdapter.one).toHaveBeenCalled();
+    });
+  });
+
+  it('should handle parent context value changes', async () => {
+    const newParentAdapter = {
+      ...mockParentAdapter,
+      locations: [{ lk: '9-9-9-9-9' as UUID, kt: 'container' as const }],
+    };
+
+    const { rerender } = render(
+      <TestWrapper>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
+    });
+
+    rerender(
+      <mockParentContext.Provider value={newParentAdapter}>
+        <mockContext.Provider value={mockAdapter}>
+          <CItemQuery
+            name="TestItem"
+            adapter={mockContext}
+            children={<div data-testid="test-child">Test Child</div>}
+            context={mockContext}
+            contextName="TestItemContext"
+            query={defaultQuery}
+            parent={mockParentContext}
+            parentContextName="ParentContext"
+          />
+        </mockContext.Provider>
+      </mockParentContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, newParentAdapter.locations);
+    });
+  });
+
+  it('should handle edge case where oneItem returns undefined', async () => {
+    mockAdapter.one = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <TestWrapper optional={true}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('test-child')).toBeTruthy();
+    });
+
+    expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
+  });
+
+  it('should handle very complex query objects', async () => {
+    const complexQuery = {
+      name: 'test',
+      nested: {
+        deep: {
+          value: 'complex',
+          array: [1, 2, 3],
+          date: new Date('2023-01-01'),
+        }
+      }
+    };
+
+    render(
+      <TestWrapper query={complexQuery}>
+        <div data-testid="test-child">Test Child</div>
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(mockAdapter.one).toHaveBeenCalledWith(complexQuery, locKeyArray);
+    });
+  });
 });
