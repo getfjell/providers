@@ -2,32 +2,35 @@
 /* eslint-disable no-undefined */
 import { ComKey, Item, ItemQuery, LocKeyArray, UUID } from '@fjell/core';
 import * as React from 'react';
+import { act, render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CItemsQuery } from '../../src/contained/CItemsQuery';
 import { CItemsContextType } from '../../src/contained/CItemsContext';
 import { AItemContextType } from '../../src/AItemContext';
 
-// Mock the logger
-vi.mock('../../src/logger', () => ({
-  default: {
-    get: vi.fn(() => ({
-      debug: vi.fn(),
-      trace: vi.fn(),
-      warning: vi.fn(),
-      default: vi.fn(),
-    })),
+// Mock the hooks and logger - use vi.hoisted to ensure these are available in mocks
+const { mockUseCItemAdapter, mockUseAItem, mockCItemsProvider, mockLogger } = vi.hoisted(() => ({
+  mockUseCItemAdapter: vi.fn(),
+  mockUseAItem: vi.fn(),
+  mockCItemsProvider: vi.fn(),
+  mockLogger: {
+    debug: vi.fn(),
+    trace: vi.fn(),
+    warning: vi.fn(),
+    default: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
-// Mock the CItemsProvider
-vi.mock('../../src/contained/CItemsProvider', () => ({
-  CItemsProvider: vi.fn(() => React.createElement('div', { 'data-testid': 'citems-provider' }, 'CItemsProvider')),
+vi.mock('../../src/logger', () => ({
+  default: {
+    get: vi.fn(() => mockLogger),
+  },
 }));
 
-// Mock the hooks - use vi.hoisted to ensure these are available in mocks
-const { mockUseCItemAdapter, mockUseAItem } = vi.hoisted(() => ({
-  mockUseCItemAdapter: vi.fn(),
-  mockUseAItem: vi.fn(),
+// Mock CItemsProvider to capture props passed to it
+vi.mock('../../src/contained/CItemsProvider', () => ({
+  CItemsProvider: mockCItemsProvider,
 }));
 
 vi.mock('../../src/contained/CItemAdapter', () => ({
@@ -36,6 +39,11 @@ vi.mock('../../src/contained/CItemAdapter', () => ({
 
 vi.mock('../../src/AItem', () => ({
   useAItem: mockUseAItem,
+}));
+
+// Mock the utils module
+vi.mock('../../src/utils', () => ({
+  createStableHash: vi.fn((obj) => JSON.stringify(obj)),
 }));
 
 type TestItem = Item<'test', 'container'>;
@@ -94,6 +102,9 @@ describe('CItemsQuery', () => {
     mockUseCItemAdapter.mockReturnValue(mockAdapterContext);
     mockUseAItem.mockReturnValue(mockParentContext);
     mockCacheMap.queryIn.mockReturnValue([testItem]);
+    mockCItemsProvider.mockImplementation(({ children }) =>
+      React.createElement('div', { 'data-testid': 'citems-provider' }, children)
+    );
   });
 
   it('should render with basic props', () => {
@@ -313,5 +324,701 @@ describe('CItemsQuery', () => {
     });
 
     expect(TestComponent).toBeDefined();
+  });
+
+  // Enhanced integration tests with actual rendering
+  describe('Integration Tests with Rendering', () => {
+    it('should render and call CItemsProvider with correct props', () => {
+      const TestWrapper = () => {
+        const result = CItemsQuery({
+          ...defaultProps,
+          children: React.createElement('div', { 'data-testid': 'test-children' }, 'Test Children'),
+        });
+        return result;
+      };
+
+      render(<TestWrapper />);
+
+      // Check the last call after loading state has settled
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          name: 'TestItemsQuery',
+          adapter: TestContext,
+          contextName: 'TestItemsContext',
+          parent: ParentContext,
+          parentContextName: 'ParentContext',
+          items: [testItem],
+          isLoadingParam: false,
+          overrides: expect.objectContaining({
+            all: expect.any(Function),
+            one: expect.any(Function),
+          }),
+        })
+      );
+    });
+
+    it('should pass renderEach function to CItemsProvider', () => {
+      const renderEach = vi.fn((item: TestItem) =>
+        React.createElement('div', { key: item.key.pk }, `Item: ${item.key.pk}`)
+      );
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          renderEach,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Check the last call after loading state has settled
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          renderEach,
+        })
+      );
+    });
+
+    it('should handle loading state changes during component lifecycle', () => {
+      const loadingStates: boolean[] = [];
+
+      mockCItemsProvider.mockImplementation(({ isLoadingParam }) => {
+        loadingStates.push(isLoadingParam);
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Should capture the loading state changes
+      expect(loadingStates.length).toBeGreaterThan(0);
+    });
+  });
+
+  // Callback execution tests
+  describe('Callback Execution', () => {
+    it('should execute all callback successfully with parent locations', async () => {
+      const query: ItemQuery = { name: 'test' };
+      const expectedResult = [testItem];
+      mockAdapterContext.all.mockResolvedValue(expectedResult);
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides }) => {
+        capturedCallbacks = overrides;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the captured all callback
+      const result = await capturedCallbacks.all();
+
+      expect(result).toEqual(expectedResult);
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(query, parentLocations);
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('all'),
+        expect.objectContaining({
+          query: expect.any(String),
+          parentLocations: expect.any(String),
+        })
+      );
+    });
+
+    it('should execute one callback successfully with parent locations', async () => {
+      const query: ItemQuery = { name: 'test' };
+      mockAdapterContext.one.mockResolvedValue(testItem);
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides }) => {
+        capturedCallbacks = overrides;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the captured one callback
+      const result = await capturedCallbacks.one();
+
+      expect(result).toEqual(testItem);
+      expect(mockAdapterContext.one).toHaveBeenCalledWith(query, parentLocations);
+    });
+
+    it('should handle all callback error and throw', async () => {
+      const query: ItemQuery = { name: 'test' };
+      const error = new Error('Adapter error');
+      mockAdapterContext.all.mockRejectedValue(error);
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides }) => {
+        capturedCallbacks = overrides;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the captured all callback and expect it to throw
+      await expect(capturedCallbacks.all()).rejects.toThrow('Adapter error');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Error getting all items'),
+        error
+      );
+    });
+
+    it('should handle one callback error and throw', async () => {
+      const query: ItemQuery = { name: 'test' };
+      const error = new Error('Adapter error');
+      mockAdapterContext.one.mockRejectedValue(error);
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides }) => {
+        capturedCallbacks = overrides;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the captured one callback and expect it to throw
+      await expect(capturedCallbacks.one()).rejects.toThrow('Adapter error');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('Error getting one item'),
+        error
+      );
+    });
+
+    it('should throw error when all callback is called without parent locations', async () => {
+      const mockParentContextWithoutLocations = {
+        ...mockParentContext,
+        locations: null,
+      };
+      mockUseAItem.mockReturnValue(mockParentContextWithoutLocations);
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides }) => {
+        capturedCallbacks = overrides;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the captured all callback and expect it to throw
+      await expect(capturedCallbacks.all()).rejects.toThrow(
+        'No parent locations present to query for all containeditems in TestItemsQuery'
+      );
+      expect(mockLogger.default).toHaveBeenCalledWith(
+        expect.stringContaining('No parent locations present to query for all containeditems'),
+        expect.any(Object)
+      );
+    });
+
+    it('should throw error when one callback is called without parent locations', async () => {
+      const mockParentContextWithoutLocations = {
+        ...mockParentContext,
+        locations: null,
+      };
+      mockUseAItem.mockReturnValue(mockParentContextWithoutLocations);
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides }) => {
+        capturedCallbacks = overrides;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the captured one callback and expect it to throw
+      await expect(capturedCallbacks.one()).rejects.toThrow(
+        'No parent locations present to query for one containeditem in TestItemsQuery'
+      );
+      expect(mockLogger.default).toHaveBeenCalledWith(
+        expect.stringContaining('No parent locations present to query for one containeditem'),
+        expect.any(Object)
+      );
+    });
+  });
+
+  // useEffect behavior tests
+  describe('useEffect Behavior', () => {
+    it('should call adapter.all during useEffect when parent locations are present', async () => {
+      const query: ItemQuery = { name: 'test', limit: 5 };
+      mockAdapterContext.all.mockResolvedValue([testItem]);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Wait for useEffect to complete
+      await waitFor(() => {
+        expect(mockAdapterContext.all).toHaveBeenCalledWith(query, parentLocations);
+      });
+
+      expect(mockLogger.trace).toHaveBeenCalledWith(
+        expect.stringContaining('useEffect[queryString]'),
+        expect.objectContaining({
+          query: expect.any(String),
+          parentLocations: expect.any(String),
+        })
+      );
+    });
+
+    it('should log warning during useEffect when parent locations are missing', async () => {
+      const mockParentContextWithoutLocations = {
+        ...mockParentContext,
+        locations: null,
+      };
+      mockUseAItem.mockReturnValue(mockParentContextWithoutLocations);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      await waitFor(() => {
+        expect(mockLogger.warning).toHaveBeenCalledWith(
+          expect.stringContaining('useEffect[queryString, parentLocations] without parent locations'),
+          expect.any(Object)
+        );
+      });
+    });
+
+    it('should handle useEffect error gracefully without throwing', async () => {
+      const error = new Error('useEffect error');
+      mockAdapterContext.all.mockRejectedValue(error);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      // Should render without throwing
+      expect(() => render(<TestWrapper />)).not.toThrow();
+
+      await waitFor(() => {
+        expect(mockLogger.error).toHaveBeenCalledWith(
+          expect.stringContaining('Error in useEffect'),
+          error
+        );
+      });
+    });
+
+    it('should re-run useEffect when query changes', async () => {
+      const initialQuery: ItemQuery = { name: 'initial' };
+      const updatedQuery: ItemQuery = { name: 'updated' };
+      mockAdapterContext.all.mockResolvedValue([testItem]);
+
+      const TestWrapper = ({ query }: { query: ItemQuery }) => {
+        return CItemsQuery({
+          ...defaultProps,
+          query,
+        });
+      };
+
+      const { rerender } = render(<TestWrapper query={initialQuery} />);
+
+      await waitFor(() => {
+        expect(mockAdapterContext.all).toHaveBeenCalledWith(initialQuery, parentLocations);
+      });
+
+      // Clear previous calls
+      mockAdapterContext.all.mockClear();
+
+      // Re-render with updated query
+      rerender(<TestWrapper query={updatedQuery} />);
+
+      await waitFor(() => {
+        expect(mockAdapterContext.all).toHaveBeenCalledWith(updatedQuery, parentLocations);
+      });
+    });
+
+    it('should re-run useEffect when parent locations change', async () => {
+      const newParentLocations: LocKeyArray<'container'> = [{ lk: '4-4-4-4-4' as UUID, kt: 'container' }];
+      mockAdapterContext.all.mockResolvedValue([testItem]);
+
+      const TestWrapper = ({ parentLocations }: { parentLocations: LocKeyArray<'container'> }) => {
+        const mockParentContextWithLocations = {
+          ...mockParentContext,
+          locations: parentLocations,
+        };
+        mockUseAItem.mockReturnValue(mockParentContextWithLocations);
+
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      const { rerender } = render(<TestWrapper parentLocations={parentLocations} />);
+
+      await waitFor(() => {
+        expect(mockAdapterContext.all).toHaveBeenCalledWith({}, parentLocations);
+      });
+
+      // Clear previous calls
+      mockAdapterContext.all.mockClear();
+
+      // Re-render with new parent locations
+      rerender(<TestWrapper parentLocations={newParentLocations} />);
+
+      await waitFor(() => {
+        expect(mockAdapterContext.all).toHaveBeenCalledWith({}, newParentLocations);
+      });
+    });
+  });
+
+  // Memoization tests
+  describe('Memoization Behavior', () => {
+    it('should memoize items based on cacheMap and parent locations', () => {
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      expect(mockCacheMap.queryIn).toHaveBeenCalledWith({}, parentLocations);
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          items: [testItem],
+        })
+      );
+    });
+
+    it('should return null items when parent locations are missing', () => {
+      const mockParentContextWithoutLocations = {
+        ...mockParentContext,
+        locations: null,
+      };
+      mockUseAItem.mockReturnValue(mockParentContextWithoutLocations);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          items: null,
+        })
+      );
+      expect(mockLogger.warning).toHaveBeenCalledWith(
+        expect.stringContaining('items without parent locations'),
+        expect.any(Object)
+      );
+    });
+
+    it('should update items when cacheMap results change', () => {
+      const newItems = [{ ...testItem, key: { ...itemKey, pk: '5-5-5-5-5' as UUID } }];
+
+      // Create new cache map instance to trigger dependency change
+      const newMockCacheMap = {
+        queryIn: vi.fn(),
+      };
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      // First render with original items
+      mockCacheMap.queryIn.mockReturnValue([testItem]);
+      const { rerender } = render(<TestWrapper />);
+
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          items: [testItem],
+        })
+      );
+
+      // Update adapter context to use new cache map
+      newMockCacheMap.queryIn.mockReturnValue(newItems);
+      mockUseCItemAdapter.mockReturnValue({
+        ...mockAdapterContext,
+        cacheMap: newMockCacheMap,
+      });
+
+      rerender(<TestWrapper />);
+
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          items: newItems,
+        })
+      );
+    });
+  });
+
+  // Edge cases and error scenarios
+  describe('Edge Cases and Error Scenarios', () => {
+    it('should handle undefined query gracefully', () => {
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query: undefined as any,
+        });
+      };
+
+      expect(() => render(<TestWrapper />)).not.toThrow();
+    });
+
+    it('should handle null adapter context', () => {
+      mockUseCItemAdapter.mockReturnValue(null as any);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      expect(() => render(<TestWrapper />)).toThrow();
+    });
+
+    it('should handle null parent context', () => {
+      mockUseAItem.mockReturnValue(null as any);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      expect(() => render(<TestWrapper />)).toThrow();
+    });
+
+    it('should handle empty string name', () => {
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          name: '',
+        });
+      };
+
+      render(<TestWrapper />);
+
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          name: '',
+        })
+      );
+    });
+
+    it('should handle complex nested query objects', () => {
+      const complexQuery: ItemQuery = {
+        name: 'test',
+        filters: {
+          status: 'active',
+          tags: ['important', 'urgent'],
+        },
+        sort: {
+          field: 'created',
+          direction: 'desc',
+        },
+        pagination: {
+          limit: 20,
+          offset: 40,
+        },
+      };
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+          query: complexQuery,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      expect(mockCacheMap.queryIn).toHaveBeenCalledWith(complexQuery, parentLocations);
+    });
+
+    it('should handle very large item arrays', () => {
+      const largeItemArray = Array.from({ length: 1000 }, (_, i) => ({
+        ...testItem,
+        key: { ...itemKey, pk: `${i}-${i}-${i}-${i}-${i}` as UUID },
+      }));
+
+      mockCacheMap.queryIn.mockReturnValue(largeItemArray);
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          items: largeItemArray,
+        })
+      );
+    });
+  });
+
+  // Loading state management tests
+  describe('Loading State Management', () => {
+    it('should manage loading state during all callback execution', async () => {
+      const delay = () => new Promise(resolve => setTimeout(resolve, 50));
+      mockAdapterContext.all.mockImplementation(async () => {
+        await delay();
+        return [testItem];
+      });
+
+      const loadingStates: boolean[] = [];
+      mockCItemsProvider.mockImplementation(({ isLoadingParam }) => {
+        loadingStates.push(isLoadingParam);
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides, isLoadingParam }) => {
+        capturedCallbacks = overrides;
+        loadingStates.push(isLoadingParam);
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the all callback
+      const promise = capturedCallbacks.all();
+
+      // Allow some time for loading state changes
+      await act(async () => {
+        await promise;
+      });
+
+      // Should have captured loading state transitions
+      expect(loadingStates.some(state => state === true)).toBe(true);
+      expect(loadingStates.some(state => state === false)).toBe(true);
+    });
+
+    it('should manage loading state during one callback execution', async () => {
+      const delay = () => new Promise(resolve => setTimeout(resolve, 50));
+      mockAdapterContext.one.mockImplementation(async () => {
+        await delay();
+        return testItem;
+      });
+
+      const loadingStates: boolean[] = [];
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides, isLoadingParam }) => {
+        capturedCallbacks = overrides;
+        loadingStates.push(isLoadingParam);
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the one callback
+      const promise = capturedCallbacks.one();
+
+      // Allow some time for loading state changes
+      await act(async () => {
+        await promise;
+      });
+
+      // Should have captured loading state transitions
+      expect(loadingStates.some(state => state === true)).toBe(true);
+      expect(loadingStates.some(state => state === false)).toBe(true);
+    });
+
+    it('should set loading to false even when callback fails', async () => {
+      mockAdapterContext.all.mockRejectedValue(new Error('Test error'));
+
+      let finalLoadingState: boolean | undefined;
+      let capturedCallbacks: any = {};
+      mockCItemsProvider.mockImplementation(({ overrides, isLoadingParam }) => {
+        capturedCallbacks = overrides;
+        finalLoadingState = isLoadingParam;
+        return React.createElement('div', { 'data-testid': 'citems-provider' });
+      });
+
+      const TestWrapper = () => {
+        return CItemsQuery({
+          ...defaultProps,
+        });
+      };
+
+      render(<TestWrapper />);
+
+      // Execute the all callback and expect it to fail
+      try {
+        await capturedCallbacks.all();
+      } catch {
+        // Expected to fail
+      }
+
+      // Loading should still be set to false
+      await waitFor(() => {
+        expect(finalLoadingState).toBe(false);
+      });
+    });
   });
 });

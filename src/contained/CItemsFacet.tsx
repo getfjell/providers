@@ -73,19 +73,32 @@ export const CItemsFacet = <
   useEffect(() => {
     if (facet && facetParams && parentLocations && adapterContextInstance) {
       (async () => {
-        const result = await adapterContextInstance.allFacet(facet, facetParams, parentLocations);
-        setResult(result as any);
-        setIsLoading(false);
+        try {
+          const result = await adapterContextInstance.allFacet(facet, facetParams, parentLocations);
+          setResult(result);
+          setIsLoading(false);
+        } catch (error) {
+          // Handle facet errors gracefully
+          console.error(`[@fjell/providers] [CItemsFacet] Failed to execute facet "${facet}" with params`, facetParams, ':', error);
+          setResult(null);
+          // Keep loading state as true when there's an error - the operation is incomplete
+        }
       })();
     }
   }, [facet, facetParamsString, parentLocations]);
 
   // If we have an existing context, enhance it by adding our facet results
   if (existingContext) {
-    const enhancedFacetResults = {
-      ...existingContext.facetResults,
-      ...(result ? { [facet]: result } : {}),
-    };
+    const enhancedFacetResults = { ...existingContext.facetResults };
+    if (result) {
+      if (!enhancedFacetResults[facet]) {
+        enhancedFacetResults[facet] = {};
+      }
+      enhancedFacetResults[facet] = {
+        ...enhancedFacetResults[facet],
+        [facetParamsString]: result
+      };
+    }
 
     // Create enhanced context value
     const enhancedContextValue: CItems.ContextType<V, S, L1, L2, L3, L4, L5> = {
@@ -103,6 +116,11 @@ export const CItemsFacet = <
   }
 
   // No existing context, create a new provider
+  const initialFacetResults: Record<string, Record<string, any>> = {};
+  if (result) {
+    initialFacetResults[facet] = { [facetParamsString]: result };
+  }
+
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,
     adapter,
@@ -110,7 +128,7 @@ export const CItemsFacet = <
     context: itemsContext,
     contextName: contextName,
     renderEach,
-    facetResults: result ? { [facet]: result } : {},
+    facetResults: initialFacetResults,
     isLoadingParam: isLoading,
     parent,
     parentContextName,

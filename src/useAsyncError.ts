@@ -38,7 +38,9 @@ export const withAsyncErrorHandling = <T extends any[], R>(
       return await asyncFn(...args);
     } catch (error) {
       if (!optional) {
-        throwAsyncError(error as Error);
+        // Safely convert unknown error to Error instance
+        const errorInstance = error instanceof Error ? error : new Error(String(error));
+        throwAsyncError(errorInstance);
       }
       return null;
     }
