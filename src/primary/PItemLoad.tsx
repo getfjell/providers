@@ -12,6 +12,7 @@ import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import * as PItem from "./PItem";
 import * as PItemAdapter from "./PItemAdapter";
+import { useAsyncError } from "../useAsyncError";
 
 const logger = LibLogger.get('PItemLoad');
 
@@ -28,7 +29,6 @@ export const PItemLoad = <
     item: providedItem
   }: {
   name: string;
-  // TODO: I want this to be two separate properties.
   adapter: PItemAdapter.Context<V, S>;
   children: React.ReactNode;
   context: PItem.Context<V, S>;
@@ -45,10 +45,7 @@ export const PItemLoad = <
     providedItem
   });
 
-  // const [error, setError] = React.useState<Error | null>(null);
-  // if (error) {
-  //   throw error;
-  // }
+  const { throwAsyncError } = useAsyncError();
 
   // Validate that both ik and item are not provided at the same time
   if (ik !== undefined && providedItem !== undefined) {
@@ -130,6 +127,10 @@ export const PItemLoad = <
       if (!cachedItem) {
         setIsLoading(true); // Set loading to true ONLY when we are about to fetch
         retrieveItem(ik)
+          .catch((error) => {
+            logger.error(`${name}: Error retrieving item`, error);
+            throwAsyncError(error as Error);
+          })
           .finally(() => {
             setIsLoading(false);
           });
@@ -163,7 +164,7 @@ export const PItemLoad = <
       }
     } else {
       logger.debug(`${name}: Invalid itemKey for remove`, { itemKey });
-      itemLogger.error(`${name}: Item key is required to remove an item`);
+      logger.error(`${name}: Item key is required to remove an item`);
       throw new Error(`Item key is required to remove an item in ${name}`);
     }
   }, [removeItem, itemKey]);
@@ -270,6 +271,7 @@ export const PItemLoad = <
     facet,
     set,
     locations,
+    facetResults: {},
   };
 
   contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
