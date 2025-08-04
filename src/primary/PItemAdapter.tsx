@@ -7,6 +7,7 @@ import * as AItemAdapter from "../AItemAdapter";
 import * as AItem from "../AItem";
 import * as AItems from "../AItems";
 import LibLogger from '../logger';
+import { isPromise } from '../utils';
 
 const logger = LibLogger.get('PItemAdapter');
 
@@ -30,7 +31,9 @@ export const usePItemAdapter = <
 
   if (contextInstance === undefined) {
     throw new Error(
-      `This generic item adapter hook must be used within a ${contextName}`,
+      `usePItemAdapter hook must be used within a ${contextName} provider. ` +
+      `Make sure to wrap your component with <${contextName}.Provider value={...}> ` +
+      `or use the corresponding Provider component.`
     );
   }
   return contextInstance;
@@ -105,7 +108,7 @@ export const Adapter = <
   }, [cache, aggregates, events, name]);
 
   const [resolvedSourceCache, setResolvedSourceCache] = React.useState<Cache<V, S> | null>(() => {
-    if (sourceCache && typeof (sourceCache as any).then !== 'function') {
+    if (sourceCache && !isPromise(sourceCache)) {
       return sourceCache as Cache<V, S>;
     }
     return null;
@@ -113,33 +116,42 @@ export const Adapter = <
 
   React.useEffect(() => {
     if (sourceCache) {
-      if (typeof (sourceCache as any).then === 'function') {
-        (sourceCache as Promise<Cache<V,S>>).then(c => {
+      if (isPromise<Cache<V, S>>(sourceCache)) {
+        sourceCache.then(c => {
           setResolvedSourceCache(c);
         }).catch(error => {
           logger.error('Failed to initialize source cache in %s: %s', name, error);
         });
       } else {
-        setResolvedSourceCache(sourceCache as Cache<V, S>);
+        setResolvedSourceCache(sourceCache);
       }
     } else {
       setResolvedSourceCache(null);
     }
   }, [sourceCache, name]);
 
-  const handleCacheError = useCallback((operation: string) => {
+  const handleCacheError = useCallback((operation: string): never => {
     logger.error('Cache not initialized in %s. Operation "%s" failed.', name, operation);
-    throw new Error(`Cache not initialized in ${name}. Operation "${operation}" failed.`);
+    throw new Error(
+      `Cache not initialized in ${name}. Operation "${operation}" failed. ` +
+      `This usually means the cache prop was not provided to the adapter or ` +
+      `the cache Promise has not resolved yet. Check your adapter configuration.`
+    );
   }, [name]);
+
+  const ensureCache = useCallback((operation: string) => {
+    if (!resolvedSourceCache) {
+      handleCacheError(operation);
+    }
+    return resolvedSourceCache!;
+  }, [resolvedSourceCache, handleCacheError]);
 
   const all = useCallback(async (
     query?: ItemQuery,
   ): Promise<V[] | null> => {
     logger.trace('all', { query: query && query.toString() });
-    if (!resolvedSourceCache) {
-      return handleCacheError('all');
-    }
-    const result = await resolvedSourceCache.operations.all(query);
+    const cache = ensureCache('all');
+    const result = await cache.operations.all(query);
     if (!Array.isArray(result)) {
       logger.error('Invalid result from cache.all() in %s', name);
       return null;
@@ -149,16 +161,14 @@ export const Adapter = <
       setCacheMap(newCacheMap.clone());
     }
     return items as V[] | null;
-  }, [resolvedSourceCache, handleCacheError, name]);
+  }, [ensureCache, name]);
 
   const one = useCallback(async (
     query?: ItemQuery,
   ): Promise<V | null> => {
     logger.trace('one', { query: query && query.toString() });
-    if (!resolvedSourceCache) {
-      return handleCacheError('one');
-    }
-    const [newCacheMap, item] = await resolvedSourceCache.operations.one(query);
+    const cache = ensureCache('one');
+    const [newCacheMap, item] = await cache.operations.one(query);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -169,22 +179,20 @@ export const Adapter = <
     item: Partial<Item<S>>,
   ): Promise<V> => {
     logger.trace('create', { item });
-    if (!resolvedSourceCache) {
-      return handleCacheError('create');
-    }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.create(item);
+    const cache = ensureCache('create');
+    const [newCacheMap, newItem] = await cache.operations.create(item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
     return newItem as V;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const get = useCallback(async (
     key: PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('get', { key: abbrevIK(key) });
     if (!resolvedSourceCache) {
-      return handleCacheError('get');
+      handleCacheError('get');
     }
     const [newCacheMap, item] = await resolvedSourceCache.operations.get(key);
     if (newCacheMap) {
@@ -198,7 +206,7 @@ export const Adapter = <
   ): Promise<void> => {
     logger.trace('remove', { key: abbrevIK(key) });
     if (!resolvedSourceCache) {
-      return handleCacheError('remove');
+      handleCacheError('remove');
     }
     const newCacheMap = await resolvedSourceCache.operations.remove(key);
     if (newCacheMap) {
@@ -211,7 +219,7 @@ export const Adapter = <
   ): Promise<V | null> => {
     logger.trace('retrieve', { key: abbrevIK(key) });
     if (!resolvedSourceCache) {
-      return handleCacheError('retrieve');
+      handleCacheError('retrieve');
     }
     const [newCacheMap, item] = await resolvedSourceCache.operations.retrieve(key);
     // Update the cacheMap state if there's a new cache map from the underlying cache
@@ -235,7 +243,7 @@ export const Adapter = <
   ): Promise<V> => {
     logger.trace('update', { key: abbrevIK(key), item });
     if (!resolvedSourceCache) {
-      return handleCacheError('update');
+      handleCacheError('update');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.operations.update(key, item);
     if (newCacheMap) {
@@ -251,7 +259,7 @@ export const Adapter = <
   ): Promise<V> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
     if (!resolvedSourceCache) {
-      return handleCacheError('action');
+      handleCacheError('action');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.operations.action(key, action, body);
     if (newCacheMap) {
@@ -266,7 +274,7 @@ export const Adapter = <
   ): Promise<V[] | null> => {
     logger.trace('action', { action, body });
     if (!resolvedSourceCache) {
-      return handleCacheError('allAction');
+      handleCacheError('allAction');
     }
     const [newCacheMap, newItems] = await resolvedSourceCache.operations.allAction(action, body);
     if (newCacheMap) {
@@ -282,7 +290,7 @@ export const Adapter = <
   ): Promise<any | null> => {
     logger.trace('facet', { key: abbrevIK(key), facet, params });
     if (!resolvedSourceCache) {
-      return handleCacheError('facet');
+      handleCacheError('facet');
     }
     const [newCacheMap, response] = params !== undefined
       ? await resolvedSourceCache.operations.facet(key, facet, params)
@@ -299,7 +307,7 @@ export const Adapter = <
   ): Promise<any> => {
     logger.trace('allFacet', { facet, params });
     if (!resolvedSourceCache) {
-      return handleCacheError('allFacet');
+      handleCacheError('allFacet');
     }
     const [newCacheMap, response] = await resolvedSourceCache.operations.allFacet(facet, params);
     if (newCacheMap) {
@@ -314,7 +322,7 @@ export const Adapter = <
   ): Promise<V[] | null> => {
     logger.trace('find', { finder, finderParams });
     if (!resolvedSourceCache) {
-      return handleCacheError('find');
+      handleCacheError('find');
     }
     const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams);
     if (newCacheMap) {
@@ -329,7 +337,7 @@ export const Adapter = <
   ): Promise<V | null> => {
     logger.trace('findOne', { finder, finderParams });
     if (!resolvedSourceCache) {
-      return handleCacheError('findOne');
+      handleCacheError('findOne');
     }
     const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams);
     if (newCacheMap) {
@@ -344,7 +352,7 @@ export const Adapter = <
   ): Promise<V> => {
     logger.trace('set', { key: abbrevIK(key), item });
     if (!resolvedSourceCache) {
-      return handleCacheError('set');
+      handleCacheError('set');
     }
     const [newCacheMap, newItem] = await resolvedSourceCache.operations.set(key, item);
     if (newCacheMap) {

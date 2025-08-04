@@ -96,11 +96,12 @@ export interface ContextType<
     name: string;
     items: V[];
       /**
-   * Results of facet operations, keyed by facet name.
+   * Results of facet operations, keyed by facet name and parameter hash.
+   * First key is the facet name, second key is the parameter hash.
    * This is intentionally not of type Item, as facet results can be arbitrary data
    * returned from the backend, such as aggregations, statistics, or other computed values.
    */
-  facetResults?: Record<string, any>;
+  facetResults?: Record<string, Record<string, any>>;
     locations?: LocKeyArray<S, L1, L2, L3, L4> | null;
     isLoading: boolean;
     isCreating: boolean;

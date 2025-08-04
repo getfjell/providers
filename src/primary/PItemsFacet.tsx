@@ -55,7 +55,7 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
       (async () => {
         if( adapterContextInstance.allFacet ) {
           const result = await adapterContextInstance.allFacet(facet, facetParams);
-          setResult(result as any);
+          setResult(result);
           setIsLoading(false);
         } else {
           setResult(null);
@@ -67,10 +67,16 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
 
   // If we have an existing context, enhance it by adding our facet results
   if (existingContext) {
-    const enhancedFacetResults = {
-      ...existingContext.facetResults,
-      ...(result ? { [facet]: result } : {}),
-    };
+    const enhancedFacetResults = { ...existingContext.facetResults };
+    if (result) {
+      if (!enhancedFacetResults[facet]) {
+        enhancedFacetResults[facet] = {};
+      }
+      enhancedFacetResults[facet] = {
+        ...enhancedFacetResults[facet],
+        [facetParamsString]: result
+      };
+    }
 
     // Create enhanced context value
     const enhancedContextValue: PItems.ContextType<V, S> = {
@@ -88,6 +94,11 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
   }
 
   // No existing context, create a new provider
+  const initialFacetResults: Record<string, Record<string, any>> = {};
+  if (result) {
+    initialFacetResults[facet] = { [facetParamsString]: result };
+  }
+
   return PItemsProvider<V, S>({
     name,
     adapter,
@@ -95,7 +106,7 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
     context: itemsContext,
     contextName: contextName,
     renderEach,
-    facetResults: result ? { [facet]: result } : {},
+    facetResults: initialFacetResults,
     isLoadingParam: isLoading,
   });
 }

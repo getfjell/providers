@@ -21,7 +21,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
   }: {
     name: string;
     items?: V[];
-    facetResults?: Record<string, any>;
+    facetResults?: Record<string, Record<string, any>>;
     adapter: PItemAdapter.Context<V, S>;
     addQueries?: (contextValues: PItems.ContextType<V, S>) =>
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;

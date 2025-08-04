@@ -157,7 +157,7 @@ describe('PItemFacet', () => {
     });
   });
 
-  it('updates context with facet results', async () => {
+  it('updates context with facet results using nested structure', async () => {
     const mockFacetResult = { data: 'facet result' };
     mockFacetFn.mockResolvedValue(mockFacetResult);
 
@@ -169,6 +169,8 @@ describe('PItemFacet', () => {
       return <div>Test Child</div>;
     };
 
+    const facetParams = { param1: 'value1' };
+
     render(
       <TestWrapper>
         <PItemFacet
@@ -176,6 +178,7 @@ describe('PItemFacet', () => {
           context={TestContext}
           contextName="TestItem"
           facet="testFacet"
+          facetParams={facetParams}
         >
           <TestChildComponent />
         </PItemFacet>
@@ -183,10 +186,75 @@ describe('PItemFacet', () => {
     );
 
     await waitFor(() => {
-      expect(capturedContext?.facetResults.testFacet).toEqual(mockFacetResult);
+      // Check that facetResults has the nested structure
+      expect(capturedContext?.facetResults.testFacet).toBeDefined();
+      // The result should be nested under a parameter hash key
+      const facetResultsForTestFacet = capturedContext?.facetResults.testFacet;
+      const paramHashKeys = Object.keys(facetResultsForTestFacet || {});
+      expect(paramHashKeys).toHaveLength(1);
+      expect(facetResultsForTestFacet?.[paramHashKeys[0]]).toEqual(mockFacetResult);
     });
 
     expect(capturedContext!.isLoading).toBe(false);
+  });
+
+  it('supports multiple calls to same facet with different parameters', async () => {
+    const mockFacetResult1 = { data: 'GPH result' };
+    const mockFacetResult2 = { data: 'PRT result' };
+
+    mockFacetFn.mockResolvedValue(mockFacetResult2);
+
+    // Start with a context that already has one facet result (simulating a previous call)
+    const itemContextWithExistingReportFacet = {
+      ...mockItemContext,
+      facetResults: {
+        report: {
+          'existingGPHHash': mockFacetResult1
+        }
+      }
+    };
+
+    let capturedContext: TestItemContextType | null = null;
+
+    const TestChildComponent = () => {
+      const context = PItem.usePItem(TestContext, 'TestItem');
+      capturedContext = context;
+      return <div>Test Child</div>;
+    };
+
+    // Call facet with PRT parameters - this should add to the existing GPH results
+    render(
+      <TestWrapper itemContextValue={itemContextWithExistingReportFacet}>
+        <PItemFacet
+          adapter={AdapterContext}
+          context={TestContext}
+          contextName="TestItem"
+          facet="report"
+          facetParams={{ code: 'PRT' }}
+        >
+          <TestChildComponent />
+        </PItemFacet>
+      </TestWrapper>
+    );
+
+    // Wait for the new facet to complete
+    await waitFor(() => {
+      const reportResults = capturedContext?.facetResults.report;
+      expect(Object.keys(reportResults || {})).toHaveLength(2);
+    });
+
+    // Verify both results are preserved
+    const finalReportResults = capturedContext?.facetResults.report || {};
+    const resultKeys = Object.keys(finalReportResults);
+    expect(resultKeys).toHaveLength(2);
+
+    // Check that both results are present
+    expect(finalReportResults['existingGPHHash']).toEqual(mockFacetResult1);
+
+    // Find the new result (the one that's not the existing hash)
+    const newResultKey = resultKeys.find(key => key !== 'existingGPHHash');
+    expect(newResultKey).toBeDefined();
+    expect(finalReportResults[newResultKey!]).toEqual(mockFacetResult2);
   });
 
   it('handles facet loading state correctly', async () => {
@@ -328,7 +396,7 @@ describe('PItemFacet', () => {
 
     const itemContextWithExistingFacets = {
       ...mockItemContext,
-      facetResults: { existingFacet: { data: 'existing' } }
+      facetResults: { existingFacet: { 'existingParamHash': { data: 'existing' } } }
     };
 
     let capturedContext: TestItemContextType | null = null;
@@ -353,8 +421,15 @@ describe('PItemFacet', () => {
     );
 
     await waitFor(() => {
-      expect(capturedContext?.facetResults.newFacet).toEqual(mockFacetResult);
-      expect(capturedContext?.facetResults.existingFacet).toEqual({ data: 'existing' });
+      // Check that newFacet results are added with nested structure
+      expect(capturedContext?.facetResults.newFacet).toBeDefined();
+      const newFacetResults = capturedContext?.facetResults.newFacet;
+      const newFacetKeys = Object.keys(newFacetResults || {});
+      expect(newFacetKeys).toHaveLength(1);
+      expect(newFacetResults?.[newFacetKeys[0]]).toEqual(mockFacetResult);
+
+      // Check that existing facet results are preserved
+      expect(capturedContext?.facetResults.existingFacet).toEqual({ 'existingParamHash': { data: 'existing' } });
     });
   });
 
