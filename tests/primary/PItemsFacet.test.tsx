@@ -45,6 +45,7 @@ describe('PItemsFacet', () => {
     mockItemsContext = {
       name: 'test',
       items: [],
+      facetResults: {},
       isLoading: false,
       isCreating: false,
       isUpdating: false,
@@ -222,5 +223,103 @@ describe('PItemsFacet', () => {
     await waitFor(() => {
       expect(mockAdapterContext.allFacet).toHaveBeenCalledWith('testFacet', {});
     });
+  });
+
+  it('should store facet results in nested structure', async () => {
+    const mockFacetResult = { data: 'test facet result' };
+    mockAdapterContext.allFacet = vi.fn().mockResolvedValue(mockFacetResult);
+
+    let capturedContext: PItems.ContextType<TestItem, 'test'> | null = null;
+
+    const TestChildComponent = () => {
+      const context = PItems.usePItems(TestItemsContext, 'TestContext');
+      capturedContext = context;
+      return <div>Test Child</div>;
+    };
+
+    renderWithProviders(
+      <PItemsFacet<TestItem, 'test'>
+        name="test-facet"
+        adapter={TestAdapterContext}
+        context={TestItemsContext}
+        contextName="TestContext"
+        facet="testFacet"
+        facetParams={{ category: 'test' }}
+      >
+        <TestChildComponent />
+      </PItemsFacet>
+    );
+
+    await waitFor(() => {
+      // Check that facetResults has the nested structure
+      expect(capturedContext?.facetResults?.testFacet).toBeDefined();
+      // The result should be nested under a parameter hash key
+      const facetResultsForTestFacet = capturedContext?.facetResults?.testFacet;
+      const paramHashKeys = Object.keys(facetResultsForTestFacet || {});
+      expect(paramHashKeys).toHaveLength(1);
+      expect(facetResultsForTestFacet?.[paramHashKeys[0]]).toEqual(mockFacetResult);
+    });
+  });
+
+  it('should support multiple calls to same facet with different parameters', async () => {
+    const mockFacetResult1 = { data: 'GPH result' };
+    const mockFacetResult2 = { data: 'PRT result' };
+
+    mockAdapterContext.allFacet = vi.fn().mockResolvedValue(mockFacetResult2);
+
+    // Start with a context that already has one facet result (simulating a previous call)
+    const itemsContextWithExistingReportFacet = {
+      ...mockItemsContext,
+      facetResults: {
+        report: {
+          'existingGPHHash': mockFacetResult1
+        }
+      }
+    };
+
+    let capturedContext: PItems.ContextType<TestItem, 'test'> | null = null;
+
+    const TestChildComponent = () => {
+      const context = PItems.usePItems(TestItemsContext, 'TestContext');
+      capturedContext = context;
+      return <div>Test Child</div>;
+    };
+
+    // Render with existing context that has existing facet results
+    render(
+      <TestAdapterContext.Provider value={mockAdapterContext}>
+        <TestItemsContext.Provider value={itemsContextWithExistingReportFacet}>
+          <PItemsFacet<TestItem, 'test'>
+            name="test-facet"
+            adapter={TestAdapterContext}
+            context={TestItemsContext}
+            contextName="TestContext"
+            facet="report"
+            facetParams={{ code: 'PRT' }}
+          >
+            <TestChildComponent />
+          </PItemsFacet>
+        </TestItemsContext.Provider>
+      </TestAdapterContext.Provider>
+    );
+
+    // Wait for the new facet to complete
+    await waitFor(() => {
+      const reportResults = capturedContext?.facetResults?.report;
+      expect(Object.keys(reportResults || {})).toHaveLength(2);
+    });
+
+    // Verify both results are preserved
+    const finalReportResults = capturedContext?.facetResults?.report || {};
+    const resultKeys = Object.keys(finalReportResults);
+    expect(resultKeys).toHaveLength(2);
+
+    // Check that both results are present
+    expect(finalReportResults['existingGPHHash']).toEqual(mockFacetResult1);
+
+    // Find the new result (the one that's not the existing hash)
+    const newResultKey = resultKeys.find(key => key !== 'existingGPHHash');
+    expect(newResultKey).toBeDefined();
+    expect(finalReportResults[newResultKey!]).toEqual(mockFacetResult2);
   });
 });

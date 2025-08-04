@@ -140,10 +140,19 @@ describe('CItemsFacet', () => {
     // Check that CItemsProvider was called again with the result
     expect(CItemsProvider).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        facetResults: { 'testFacet': mockResult },
+        facetResults: expect.objectContaining({
+          'testFacet': expect.any(Object)
+        }),
         isLoadingParam: false,
       })
     );
+
+    // Verify the nested structure contains the result
+    const lastCall = CItemsProvider.mock.calls[CItemsProvider.mock.calls.length - 1][0];
+    const testFacetResults = lastCall.facetResults['testFacet'];
+    const paramHashKeys = Object.keys(testFacetResults);
+    expect(paramHashKeys).toHaveLength(1);
+    expect(testFacetResults[paramHashKeys[0]]).toEqual(mockResult);
   });
 
   it('should not call allFacet when facet is missing', () => {

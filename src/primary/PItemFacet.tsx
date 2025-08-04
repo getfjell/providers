@@ -58,12 +58,23 @@ export const PItemFacet = <V extends Item<S>, S extends string>(
   const contextValue = useMemo(() => {
     if (!itemContextValue) return itemContextValue;
 
+    const updatedFacetResults = { ...itemContextValue.facetResults };
+    if (result) {
+      if (!updatedFacetResults[facet]) {
+        updatedFacetResults[facet] = {};
+      }
+      updatedFacetResults[facet] = {
+        ...updatedFacetResults[facet],
+        [facetParamsString]: result
+      };
+    }
+
     return {
       ...itemContextValue,
-      facetResults: result ? { ...itemContextValue.facetResults, [facet]: result } : itemContextValue.facetResults,
+      facetResults: updatedFacetResults,
       isLoading: isLoading || itemContextValue.isLoading,
     };
-  }, [itemContextValue, result, isLoading, facet]);
+  }, [itemContextValue, result, isLoading, facet, facetParamsString]);
 
   return (
     <itemContext.Provider value={contextValue}>

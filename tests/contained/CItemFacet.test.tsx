@@ -203,14 +203,17 @@ describe('CItemFacet', () => {
     );
 
     await waitFor(() => {
-      expect(capturedContextValue?.facetResults).toEqual({
-        testFacet: mockFacetResult
-      });
+      // Check that facetResults has the nested structure
+      expect(capturedContextValue?.facetResults?.testFacet).toBeDefined();
+      const facetResultsForTestFacet = capturedContextValue?.facetResults?.testFacet;
+      const paramHashKeys = Object.keys(facetResultsForTestFacet || {});
+      expect(paramHashKeys).toHaveLength(1);
+      expect(facetResultsForTestFacet?.[paramHashKeys[0]]).toEqual(mockFacetResult);
     });
   });
 
   it('should preserve existing facet results when adding new ones', async () => {
-    const existingFacetResults = { existingFacet: 'existing data' };
+    const existingFacetResults = { existingFacet: { 'existingParamHash': 'existing data' } };
     mockItemContext.facetResults = existingFacetResults;
 
     let capturedContextValue: any;
@@ -235,10 +238,15 @@ describe('CItemFacet', () => {
     );
 
     await waitFor(() => {
-      expect(capturedContextValue?.facetResults).toEqual({
-        existingFacet: 'existing data',
-        testFacet: mockFacetResult
-      });
+      // Check that testFacet results are added with nested structure
+      expect(capturedContextValue?.facetResults?.testFacet).toBeDefined();
+      const testFacetResults = capturedContextValue?.facetResults?.testFacet;
+      const testFacetKeys = Object.keys(testFacetResults || {});
+      expect(testFacetKeys).toHaveLength(1);
+      expect(testFacetResults?.[testFacetKeys[0]]).toEqual(mockFacetResult);
+
+      // Check that existing facet results are preserved
+      expect(capturedContextValue?.facetResults?.existingFacet).toEqual({ 'existingParamHash': 'existing data' });
     });
   });
 
