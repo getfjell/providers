@@ -11,9 +11,11 @@ import {
 } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
+import { createStableHash } from '../utils';
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItem from "./CItem";
 import { CItemLoad } from "./CItemLoad";
+import { useAsyncError } from "../useAsyncError";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
 const logger = LibLogger.get('CItemQueryProvider');
@@ -58,10 +60,7 @@ export const CItemQuery = <
 
   const [itemKey, setItemKey] = React.useState<ComKey<S, L1, L2, L3, L4, L5> | PriKey<S> | undefined>(undefined);
   const [queryRunning, setQueryRunning] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<Error | null>(null);
-  if (error) {
-    throw error;
-  }
+  const { throwAsyncError } = useAsyncError();
 
   // Since we pass this to the actions constructor, don't destructure it yet
   const cItemAdapter = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
@@ -78,8 +77,7 @@ export const CItemQuery = <
     locations: parentLocations,
   } = parentItemContext;
 
-  // TODO: Same in CItemsProvider, this is a way to avoid needles rerender on a change to the instance of query
-  const queryString = useMemo(() => JSON.stringify(query), [query]);
+  const queryString = useMemo(() => createStableHash(query), [query]);
 
   useEffect(() => {
     if (!query) {
@@ -108,7 +106,7 @@ export const CItemQuery = <
               if (!optional) {
                 setQueryRunning(false);
                 logger.error(`${name}: Required Item not found, and no create provided`, { query, optional });
-                setError(new Error(`Required Item not found, and no create provided in ${name}`));
+                throwAsyncError(new Error(`Required Item not found, and no create provided in ${name}`));
               } else {
                 setQueryRunning(false);
                 logger.default('Optional item not found, item will be null', { query, optional });
@@ -125,7 +123,7 @@ export const CItemQuery = <
             } else {
               if (!optional) {
                 setQueryRunning(false);
-                setError(err as Error);
+                throwAsyncError(err as Error);
               } else {
                 setQueryRunning(false);
                 logger.default('Optional item not found, item will be null');

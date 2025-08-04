@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
 import LibLogger from "../logger";
+import { createStableHash } from '../utils';
 import * as AItem from "../AItem";
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItems from "./CItems";
@@ -63,17 +64,21 @@ export const CItemsQuery = <
     item: parentItem,
   } = useMemo(() => parentContext, [parentContext]);
 
-  // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the string has changed.
-  const queryString = useMemo(() => JSON.stringify(query), [query]);
+  const queryString = useMemo(() => createStableHash(query), [query]);
 
   const all = useCallback(async () => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.debug(`${name}: all`, { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
       setIsLoading(true);
-      const result = await allItems(query, parentLocations) as V[] | null;
-      setIsLoading(false);
-      return result;
+      try {
+        const result = await allItems(query, parentLocations) as V[] | null;
+        return result;
+      } catch (error) {
+        logger.error(`${name}: Error getting all items`, error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       logger.default(`${name}: No parent locations present to query for all containeditems`,
         { query: abbrevQuery(query) });
@@ -82,13 +87,18 @@ export const CItemsQuery = <
   }, [allItems, parentLocations, queryString]);
 
   const one = useCallback(async () => {
-    // TODO: Probably need exception handling here
     if (parentLocations) {
       logger.trace('one', { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
       setIsLoading(true);
-      const result = await oneItem(query, parentLocations) as V | null;
-      setIsLoading(false);
-      return result;
+      try {
+        const result = await oneItem(query, parentLocations) as V | null;
+        return result;
+      } catch (error) {
+        logger.error(`${name}: Error getting one item`, error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       logger.default(`${name}: No parent locations present to query for one containeditem`,
         { query: abbrevQuery(query) });
@@ -97,31 +107,30 @@ export const CItemsQuery = <
   }, [oneItem, parentLocations, queryString]);
 
   useEffect(() => {
-    // TODO: Probably need exception handling here
     logger.trace('useEffect[queryString, parentLocations, parentName, item]',
       { queryString, parentLocations: abbrevLKA(parentLocations as any), parentName, parentItem });
     (async () => {
-      if (parentLocations) {
-        logger.trace('useEffect[queryString]',
-          { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-        await allItems(query, parentLocations);
+      try {
+        if (parentLocations) {
+          logger.trace('useEffect[queryString]',
+            { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
+          await allItems(query, parentLocations);
+          setIsLoading(false);
+        } else {
+          logger.warning(`${name}: useEffect[queryString, parentLocations] without parent locations`,
+            { query: abbrevQuery(query) });
+          setIsLoading(false);
+        }
+      } catch (error) {
+        logger.error(`${name}: Error in useEffect`, error);
         setIsLoading(false);
-      } else {
-        logger.warning(`${name}: useEffect[queryString, parentLocations] without parent locations`,
-          { query: abbrevQuery(query) });
-        // logger.warn('No parent locations present to process queryString for containeditems', {
-        //   query,
-        //   queryString,
-        //   parentLocations,
-        //   parentItem,
-        // });
-        // throw new Error('No parent locations present to process queryString for containeditems');
+        // Don't throw here as this would be lost in the async context
+        // Let the all/one override functions handle error throwing
       }
     })();
   }, [queryString, parentLocations, parentName, parentItem]);
 
   const items: V[] | null = useMemo(() => {
-    // TODO: Probably need exception handling here
     logger.trace('useMemo[cacheMap, parentLocations]',
       { cacheMapIsNull: cacheMap === null, parentLocations: abbrevLKA(parentLocations as any) });
     if (parentLocations) {

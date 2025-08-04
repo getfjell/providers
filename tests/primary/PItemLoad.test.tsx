@@ -46,24 +46,24 @@ const createMockCache = () => {
         (sharedCacheMap as any).set(key, testItem);
         return [sharedCacheMap.clone(), testItem];
       }),
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      remove: vi.fn().mockImplementation(async (_key: PriKey<'test'>) => {
+
+      remove: vi.fn().mockImplementation(async () => {
         (sharedCacheMap as any).delete(priKey);
         return sharedCacheMap.clone();
       }),
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      update: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Partial<Item<'test'>>) => {
+
+      update: vi.fn().mockImplementation(async () => {
         const updatedItem = { ...testItem };
         (sharedCacheMap as any).set(priKey, updatedItem);
         return [sharedCacheMap.clone(), updatedItem];
       }),
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      set: vi.fn().mockImplementation(async (_key: PriKey<'test'>, _item: Item<'test'>) => {
+
+      set: vi.fn().mockImplementation(async () => {
         (sharedCacheMap as any).set(priKey, testItem);
         return [sharedCacheMap.clone(), testItem];
       }),
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      create: vi.fn().mockImplementation(async (_item: Partial<Item<'test'>>) => {
+
+      create: vi.fn().mockImplementation(async () => {
         (sharedCacheMap as any).set(priKey, testItem);
         return [sharedCacheMap.clone(), testItem];
       }),
@@ -231,5 +231,64 @@ describe('PItemLoad', () => {
     const { result } = renderHook(() => React.useContext(TestItemProviderContext), { wrapper });
     expect(result.current?.isLoading).toBe(false);
     expect(result.current?.item).toBeNull();
+  });
+
+  it('should handle changing ik prop', async () => {
+    const newPriKey = { kt: 'test', pk: 'new-key' } as PriKey<'test'>;
+    const newTestItem: Item<'test'> = {
+      ...testItem,
+      key: newPriKey,
+      id: 'new-id',
+      name: 'New Test Item'
+    };
+
+    // Mock retrieve to return different items based on key
+    testItemCache.operations.retrieve = vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
+      const item = key.pk === 'test-key' ? testItem : newTestItem;
+      (sharedCacheMap as any).set(key, item);
+      return [sharedCacheMap.clone(), item];
+    });
+
+    // Test with first wrapper and first key
+    const wrapper1 = ({ children }: { children: React.ReactNode }) => (
+      <TestItemAdapter>
+        <TestItemProvider ik={priKey}>
+          {children}
+        </TestItemProvider>
+      </TestItemAdapter>
+    );
+
+    const { result: result1, unmount } = renderHook(() => React.useContext(TestItemProviderContext), {
+      wrapper: wrapper1,
+    });
+
+    await waitFor(() => {
+      expect(result1.current?.item).toEqual(testItem);
+    });
+
+    expect(testItemCache.operations.retrieve).toHaveBeenCalledWith(priKey);
+    unmount();
+
+    // Clear cache and test with second wrapper and second key
+    const keys = Array.from((sharedCacheMap as any).keys());
+    keys.forEach(key => (sharedCacheMap as any).delete(key));
+
+    const wrapper2 = ({ children }: { children: React.ReactNode }) => (
+      <TestItemAdapter>
+        <TestItemProvider ik={newPriKey}>
+          {children}
+        </TestItemProvider>
+      </TestItemAdapter>
+    );
+
+    const { result: result2 } = renderHook(() => React.useContext(TestItemProviderContext), {
+      wrapper: wrapper2,
+    });
+
+    await waitFor(() => {
+      expect(result2.current?.item).toEqual(newTestItem);
+    });
+
+    expect(testItemCache.operations.retrieve).toHaveBeenCalledWith(newPriKey);
   });
 });

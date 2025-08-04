@@ -8,9 +8,11 @@ import {
 } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
+import { createStableHash } from '../utils';
 import { PItemLoad } from "./PItemLoad";
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItem from "./PItem";
+import { useAsyncError } from "../useAsyncError";
 
 const logger = LibLogger.get('PItemQuery');
 
@@ -26,7 +28,6 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
   optional = false,
   query,
 }: {
-    // TODO: I want this to be two separate properties.
     name: string;
     adapter: PItemAdapter.Context<V, S>;
     children: React.ReactNode;
@@ -41,6 +42,7 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
 ) => {
   const [itemKey, setItemKey] = React.useState<PriKey<S> | null>(null);
   const [queryRunning, setQueryRunning] = React.useState<boolean>(true);
+  const { throwAsyncError } = useAsyncError();
 
   // Since we pass this to the actions constructor, don't destructure it yet
   const PItemAdapter = usePItemAdapter<V, S>(adapter, contextName);
@@ -50,8 +52,8 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
     one: oneItem,
     create: createItem,
   } = useMemo(() => PItemAdapter, [PItemAdapter]);
-  // TODO: Same in CItemsProvider, this is a way to avoid needles rerender on a change to the instance of query
-  const queryString = useMemo(() => JSON.stringify(query), [query]);
+
+  const queryString = useMemo(() => createStableHash(query), [query]);
 
   useEffect(() => {
     logger.default(`${name}: useEffect[query]`, { query });
@@ -76,7 +78,8 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
           } else {
             if (!optional) {
               setQueryRunning(false);
-              throw new Error('Required Item not found, and no create provided');
+              logger.error(`${name}: Required Item not found, and no create provided`, { query, optional });
+              throwAsyncError(new Error(`Required Item not found, and no create provided in ${name}`));
             } else {
               setQueryRunning(false);
               logger.default(`${name}: Optional item not found, item will be null`, { query, optional });
@@ -92,7 +95,7 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
           } else {
             if (!optional) {
               setQueryRunning(false);
-              throw err;
+              throwAsyncError(err as Error);
             } else {
               setQueryRunning(false);
               logger.default(`${name}: Optional item not found, item will be null`);

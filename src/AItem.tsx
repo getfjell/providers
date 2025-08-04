@@ -92,6 +92,7 @@ export interface ContextType<
 
   actions?: Record<string, AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
   facets?: Record<string, AddedFacetMethod<L1, L2, L3, L4, L5>>;
+  facetResults: Record<string, any>;
 
   remove: RemoveMethod;
   update: UpdateMethod<V, S, L1, L2, L3, L4, L5>;

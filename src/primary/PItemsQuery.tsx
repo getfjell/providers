@@ -4,9 +4,9 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
 import LibLogger from '../logger';
-import { PItemsProvider } from "./PItemsProvider";
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItems from "./PItems";
+import { PItemsProvider } from "./PItemsProvider";
 
 const logger = LibLogger.get('PItemsQuery');
 
@@ -40,14 +40,21 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
-  // TODO: Same in CItemsProvider, this is a way to avoid needles rerender on a change to the instance of query
+
   const queryString = useMemo(() => JSON.stringify(query), [query]);
 
   useEffect(() => {
     (async () => {
-      logger.trace('useEffect[queryString] %s', query.toString());
-      await allItems(query);
-      setIsLoading(false);
+      try {
+        logger.trace('useEffect[queryString] %s', JSON.stringify(query));
+        await allItems(query);
+        setIsLoading(false);
+      } catch (error) {
+        logger.error(`${name}: Error loading items:`, error);
+        setIsLoading(false);
+        // Don't throw here as this would be lost in the async context
+        // Let the all/one override functions handle error throwing
+      }
     })();
   }, [queryString]);
 
@@ -57,20 +64,32 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   }, [cacheMap, query]);
 
   const all = useCallback(async () => {
-    logger.trace('all', { query });
-    setIsLoading(true);
-    const items = await allItems(query) as V[] | null;
-    setIsLoading(false);
-    logger.debug('Items Returned for All', { items });
-    return items;
+    try {
+      logger.trace('all', { query });
+      setIsLoading(true);
+      const items = await allItems(query) as V[] | null;
+      setIsLoading(false);
+      logger.debug('Items Returned for All', { items });
+      return items;
+    } catch (error) {
+      logger.error('Error in all:', error);
+      setIsLoading(false);
+      throw error;
+    }
   }, [allItems]);
 
   const one = useCallback(async () => {
-    logger.trace('one', { query });
-    setIsLoading(true);
-    const item = await oneItem(query) as V | null;
-    setIsLoading(false);
-    return item;
+    try {
+      logger.trace('one', { query });
+      setIsLoading(true);
+      const item = await oneItem(query) as V | null;
+      setIsLoading(false);
+      return item;
+    } catch (error) {
+      logger.error('Error in one:', error);
+      setIsLoading(false);
+      throw error;
+    }
   }, [oneItem]);
 
   return PItemsProvider<V, S>({

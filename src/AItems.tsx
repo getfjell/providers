@@ -95,6 +95,12 @@ export interface ContextType<
   > {
     name: string;
     items: V[];
+      /**
+   * Results of facet operations, keyed by facet name.
+   * This is intentionally not of type Item, as facet results can be arbitrary data
+   * returned from the backend, such as aggregations, statistics, or other computed values.
+   */
+  facetResults?: Record<string, any>;
     locations?: LocKeyArray<S, L1, L2, L3, L4> | null;
     isLoading: boolean;
     isCreating: boolean;
