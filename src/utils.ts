@@ -63,16 +63,31 @@ export function createStableHash(obj: any): string {
 }
 
 /**
- * Hook to create a stable memoized value based on object content rather than reference.
+ * Creates a stable memoized value based on object content rather than reference.
  * Use this instead of JSON.stringify in useMemo dependencies.
+ * Note: This is NOT a React hook despite the similar naming pattern.
  *
  * @param obj The object to create a stable representation for
  * @returns A stable string that changes only when the object content changes
  */
-export function useStableMemo<T>(obj: T): string {
-  // Using a simple implementation here since we can't use React hooks in a utility function
-  // This will be called from within useMemo in the components
+export function createStableMemo<T>(obj: T): string {
+  // This should be called from within useMemo in the components
   return createStableHash(obj);
+}
+
+/**
+ * Type guard to safely check if a value is a Promise
+ */
+export function isPromise<T>(value: unknown): value is Promise<T> {
+  return (
+    value !== null &&
+    value !== undefined &&
+    typeof value === 'object' &&
+    'then' in value &&
+    typeof (value as any).then === 'function' &&
+    'catch' in value &&
+    typeof (value as any).catch === 'function'
+  );
 }
 
 /**
@@ -83,7 +98,7 @@ export function useStableMemo<T>(obj: T): string {
  * @param b Second object to compare
  * @returns True if objects are deeply equal
  */
-export function deepEqual(a: any, b: any): boolean {
+export function deepEqual(a: any, b: any, visitedPairs = new WeakMap()): boolean {
   if (a === b) return true;
 
   if (a === null || b === null || a === undefined || b === undefined) {
@@ -94,12 +109,21 @@ export function deepEqual(a: any, b: any): boolean {
 
   if (typeof a !== 'object') return a === b;
 
+  // Handle circular references by tracking pairs of objects
+  if (visitedPairs.has(a)) {
+    const visitedB = visitedPairs.get(a);
+    if (visitedB === b) return true; // We've seen this exact pair before
+    if (visitedB !== undefined) return false; // a is already paired with a different object
+  }
+
+  visitedPairs.set(a, b);
+
   if (Array.isArray(a) !== Array.isArray(b)) return false;
 
   if (Array.isArray(a)) {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
-      if (!deepEqual(a[i], b[i])) return false;
+      if (!deepEqual(a[i], b[i], visitedPairs)) return false;
     }
     return true;
   }
@@ -113,9 +137,12 @@ export function deepEqual(a: any, b: any): boolean {
 
   if (keysA.length !== keysB.length) return false;
 
+  // Convert keysB to Set for O(1) lookup instead of O(n) includes()
+  const keysBSet = new Set(keysB);
+
   for (const key of keysA) {
-    if (!keysB.includes(key)) return false;
-    if (!deepEqual(a[key], b[key])) return false;
+    if (!keysBSet.has(key)) return false;
+    if (!deepEqual(a[key], b[key], visitedPairs)) return false;
   }
 
   return true;

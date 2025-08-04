@@ -55,7 +55,7 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
       (async () => {
         if( adapterContextInstance.allFacet ) {
           const result = await adapterContextInstance.allFacet(facet, facetParams);
-          setResult(result as any);
+          setResult(result);
           setIsLoading(false);
         } else {
           setResult(null);

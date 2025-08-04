@@ -2,6 +2,8 @@ import { Item } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import { createStableHash } from '../utils';
+import LibLogger from '../logger';
+import { FacetParams } from '../types';
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItem from "./PItem";
 
@@ -21,12 +23,14 @@ export const PItemFacet = <V extends Item<S>, S extends string>(
     contextName: string;
     adapterContext?: string;
     facet: string,
-    facetParams?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    facetParams?: FacetParams,
   }
 ) => {
 
   const [result, setResult] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
+
+  const logger = LibLogger.get('PItemFacet');
 
   // Default adapterContext to contextName + "Adapter" if not provided
   const adapterContextName = adapterContext || `${contextName}Adapter`;
@@ -46,7 +50,8 @@ export const PItemFacet = <V extends Item<S>, S extends string>(
           const result = await adapterContextInstance.facet(itemContextValue.key, facet, facetParams);
           setResult(result);
           setIsLoading(false);
-        } catch {
+        } catch (error) {
+          logger.error('Failed to execute facet "%s" with params %O: %s', facet, facetParams, error);
           setResult(null);
           setIsLoading(false);
         }

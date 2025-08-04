@@ -74,7 +74,7 @@ export const CItemsFacet = <
     if (facet && facetParams && parentLocations && adapterContextInstance) {
       (async () => {
         const result = await adapterContextInstance.allFacet(facet, facetParams, parentLocations);
-        setResult(result as any);
+        setResult(result);
         setIsLoading(false);
       })();
     }

@@ -494,7 +494,11 @@ describe('PItemAdapter', () => {
   it('should throw error when usePItemAdapter hook is used outside context', () => {
     expect(() => {
       renderHook(() => usePItemAdapter(TestItemContext, 'TestItemAdapter'));
-    }).toThrow('This generic item adapter hook must be used within a TestItemAdapter');
+    }).toThrow(
+      'usePItemAdapter hook must be used within a TestItemAdapter provider. ' +
+      'Make sure to wrap your component with <TestItemAdapter.Provider value={...}> ' +
+      'or use the corresponding Provider component.'
+    );
   });
 
   it('should handle null cacheMap updates from cache operations', async () => {
