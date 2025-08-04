@@ -329,7 +329,11 @@ describe('PItemsQuery', () => {
             <div>Test</div>
           </PItemsQuery>
         );
-      }).toThrow('This generic item adapter hook must be used within a TestItemAdapterContext');
+      }).toThrow(
+        'usePItemAdapter hook must be used within a TestItemAdapterContext provider. ' +
+        'Make sure to wrap your component with <TestItemAdapterContext.Provider value={...}> ' +
+        'or use the corresponding Provider component.'
+      );
 
       consoleSpy.mockRestore();
     });
