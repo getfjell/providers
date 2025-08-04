@@ -844,7 +844,7 @@ describe('CItemAdapter', () => {
 
   describe('Add actions and facets functionality', () => {
     it('should provide addActions in context when passed as prop', async () => {
-      const mockAddActions = vi.fn((_action: any) => ({
+      const mockAddActions = vi.fn(() => ({
         customAction: vi.fn().mockResolvedValue(testItem)
       }));
 
@@ -868,7 +868,7 @@ describe('CItemAdapter', () => {
     });
 
     it('should provide addFacets in context when passed as prop', async () => {
-      const mockAddFacets = vi.fn((_facet: any) => ({
+      const mockAddFacets = vi.fn(() => ({
         customFacet: vi.fn().mockResolvedValue({ data: 'facet result' })
       }));
 
@@ -892,7 +892,7 @@ describe('CItemAdapter', () => {
     });
 
     it('should provide addAllActions in context when passed as prop', async () => {
-      const mockAddAllActions = vi.fn((_allAction: any) => ({
+      const mockAddAllActions = vi.fn(() => ({
         customAllAction: vi.fn().mockResolvedValue([testItem])
       }));
 
@@ -916,7 +916,7 @@ describe('CItemAdapter', () => {
     });
 
     it('should provide addAllFacets in context when passed as prop', async () => {
-      const mockAddAllFacets = vi.fn((_allFacet: any) => ({
+      const mockAddAllFacets = vi.fn(() => ({
         customAllFacet: vi.fn().mockResolvedValue({ summary: 'all facet result' })
       }));
 
