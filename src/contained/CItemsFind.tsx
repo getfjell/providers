@@ -2,6 +2,7 @@ import { Item, ItemQuery } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import * as AItem from "../AItem";
 import { useCItemAdapter } from "./CItemAdapter";
+import { createStableHash } from '../utils';
 
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItems from "./CItems";
@@ -53,15 +54,20 @@ export const CItemsFind = <
     locations: parentLocations,
   } = useMemo(() => parentContext, [parentContext]);
 
-  // TODO: Ok, I sort of hate this, but we're making sure that we're not requerying unless the params have changed.
-  const finderParamsString = useMemo(() => JSON.stringify(finderParams), [finderParams]);
+  const finderParamsString = useMemo(() => createStableHash(finderParams), [finderParams]);
 
   useEffect(() => {
     if (finder && finderParams && parentLocations && adapterContext) {
       (async () => {
-        const result = await adapterContext.find(finder, finderParams, parentLocations);
-        setItems(result as V[] | null);
-        setIsLoading(false);
+        try {
+          const result = await adapterContext.find(finder, finderParams, parentLocations);
+          setItems(result as V[] | null);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Find operation failed:', error);
+          setItems(null);
+          setIsLoading(false);
+        }
       })();
     }
   }, [finder, finderParamsString, parentLocations]);

@@ -10,6 +10,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
   {
     name,
     items = [],
+    facetResults = {},
     adapter,
     children,
     context,
@@ -20,6 +21,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
   }: {
     name: string;
     items?: V[];
+    facetResults?: Record<string, any>;
     adapter: PItemAdapter.Context<V, S>;
     addQueries?: (contextValues: PItems.ContextType<V, S>) =>
       Record<string, (...params: any) => Promise<string | boolean | number | null>>;
@@ -182,6 +184,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     isCreating,
     isUpdating,
     isRemoving,
+    facetResults: facetResults || {},
     create,
     update,
     remove,
