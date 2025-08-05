@@ -3,16 +3,18 @@ import { Item } from "@fjell/core";
 import * as React from "react";
 import * as AItem from "../AItem";
 
-export type ContextType<
+export interface ContextType<
   V extends Item<S>,
   S extends string
-> = AItem.ContextType<V, S>;
-
+> extends AItem.ContextType<V, S> {
+  parentItem: null;
+}
 export type Context<
   V extends Item<S>,
   S extends string
 > = React.Context<ContextType<V, S> | undefined>;
 
+// TODO: Why doesn't this just call AItem.useContext?
 export const usePItem = <
   V extends Item<S>,
   S extends string
