@@ -58,7 +58,6 @@ describe('PItemsFacet', () => {
       find: vi.fn(),
       findOne: vi.fn(),
       allAction: vi.fn(),
-      allFacet: vi.fn(),
       action: vi.fn(),
       facet: vi.fn(),
       finders: {},
@@ -450,35 +449,6 @@ describe('PItemsFacet', () => {
 
     // Restore original function
     vi.spyOn(PItems, 'usePItems').mockImplementation(originalUsePItems);
-  });
-
-  it('should render successfully when adapter context is missing allFacet method', async () => {
-    const adapterWithoutAllFacet = {
-      ...mockAdapterContext,
-      allFacet: undefined,
-    };
-
-    const TestAdapterContextWithoutAllFacet = React.createContext<PItemAdapter.ContextType<TestItem, 'test'> | undefined>(undefined);
-
-    const { getByText } = render(
-      <TestAdapterContextWithoutAllFacet.Provider value={adapterWithoutAllFacet}>
-        <TestItemsContext.Provider value={mockItemsContext}>
-          <PItemsFacet<TestItem, 'test'>
-            name="test-facet"
-            adapter={TestAdapterContextWithoutAllFacet}
-            context={TestItemsContext}
-            contextName="TestContext"
-            facet="testFacet"
-            facetParams={{ category: 'test' }}
-          >
-            <div>Test children</div>
-          </PItemsFacet>
-        </TestItemsContext.Provider>
-      </TestAdapterContextWithoutAllFacet.Provider>
-    );
-
-    // Component should render without errors even if allFacet is not available
-    expect(getByText('Test children')).toBeDefined();
   });
 
   it('should create new provider when no existing context', () => {
