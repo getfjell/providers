@@ -11,6 +11,7 @@ export * from "./contained/CItemsFacet";
 export * from "./contained/CItemsFind";
 export * from "./contained/CItemsProvider";
 export * from "./contained/CItemsQuery";
+export * as Faceted from "./Faceted";
 export * as PItemAdapter from "./primary/PItemAdapter";
 export * as PItem from "./primary/PItem";
 export * as PItems from "./primary/PItems";

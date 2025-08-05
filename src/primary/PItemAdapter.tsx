@@ -8,6 +8,8 @@ import * as AItem from "../AItem";
 import * as AItems from "../AItems";
 import LibLogger from '../logger';
 import { isPromise } from '../utils';
+import * as Faceted from "../Faceted";
+import { FacetParams } from "src/types";
 
 const logger = LibLogger.get('PItemAdapter');
 
@@ -60,9 +62,9 @@ export const Adapter = <
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
   addActions?: (action: AItem.ActionMethod<V, S>) => Record<string, AItem.AddedActionMethod<V, S>>;
-  addFacets?: (facet: AItem.FacetMethod) => Record<string, AItem.AddedFacetMethod>;
+  addFacets?: (facet: Faceted.FacetMethod) => Record<string, Faceted.AddedFacetMethod>;
   addAllActions?: (allAction: AItems.AllActionMethod<V, S>) => Record<string, AItems.AddedAllActionMethod<V, S>>;
-  addAllFacets?: (allFacet: AItems.AllFacetMethod) => Record<string, AItems.AddedAllFacetMethod>;
+  addAllFacets?: (allFacet: Faceted.AllFacetMethod) => Record<string, Faceted.AddedFacetMethod>;
   children: React.ReactNode;
 }) => {
 
@@ -194,7 +196,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('get');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.operations.get(key);
+    const [newCacheMap, item] = await resolvedSourceCache!.operations.get(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -208,7 +210,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('remove');
     }
-    const newCacheMap = await resolvedSourceCache.operations.remove(key);
+    const newCacheMap = await resolvedSourceCache!.operations.remove(key);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -221,7 +223,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('retrieve');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.operations.retrieve(key);
+    const [newCacheMap, item] = await resolvedSourceCache!.operations.retrieve(key);
     // Update the cacheMap state if there's a new cache map from the underlying cache
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
@@ -245,7 +247,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('update');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.update(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache!.operations.update(key, item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -261,7 +263,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('action');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.action(key, action, body);
+    const [newCacheMap, newItem] = await resolvedSourceCache!.operations.action(key, action, body);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -276,7 +278,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('allAction');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.operations.allAction(action, body);
+    const [newCacheMap, newItems] = await resolvedSourceCache!.operations.allAction(action, body);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -286,15 +288,15 @@ export const Adapter = <
   const facet = useCallback(async (
     key: PriKey<S>,
     facet: string,
-    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    params?: FacetParams,
   ): Promise<any | null> => {
     logger.trace('facet', { key: abbrevIK(key), facet, params });
     if (!resolvedSourceCache) {
       handleCacheError('facet');
     }
     const [newCacheMap, response] = params !== undefined
-      ? await resolvedSourceCache.operations.facet(key, facet, params)
-      : await resolvedSourceCache.operations.facet(key, facet);
+      ? await resolvedSourceCache!.operations.facet(key, facet, params)
+      : await resolvedSourceCache!.operations.facet(key, facet);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -303,13 +305,13 @@ export const Adapter = <
 
   const allFacet = useCallback(async (
     facet: string,
-    params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    params?: FacetParams,
   ): Promise<any> => {
     logger.trace('allFacet', { facet, params });
     if (!resolvedSourceCache) {
       handleCacheError('allFacet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.operations.allFacet(facet, params);
+    const [newCacheMap, response] = await resolvedSourceCache!.operations.allFacet(facet, params);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -324,7 +326,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('find');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams);
+    const [newCacheMap, newItems] = await resolvedSourceCache!.operations.find(finder, finderParams);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -339,7 +341,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('findOne');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams);
+    const [newCacheMap, newItems] = await resolvedSourceCache!.operations.find(finder, finderParams);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }
@@ -354,7 +356,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       handleCacheError('set');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.set(key, item);
+    const [newCacheMap, newItem] = await resolvedSourceCache!.operations.set(key, item);
     if (newCacheMap) {
       setCacheMap(newCacheMap.clone());
     }

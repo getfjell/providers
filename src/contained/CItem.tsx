@@ -13,7 +13,7 @@ export interface ContextType<
   L4 extends string = never,
   L5 extends string = never
 > extends AItem.ContextType<V, S, L1, L2, L3, L4, L5> {
-  parentItem: Item<L1, L2, L3, L4, L5> | null;
+  parentItem: Item<L1, L2, L3, L4, L5>;
 }
 
 export type Context<
@@ -29,6 +29,7 @@ export type Context<
 export const useCItem = <
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
+  // TODO: Wouldn't a CItem always have at least L1?
   L1 extends string = never,
   L2 extends string = never,
   L3 extends string = never,

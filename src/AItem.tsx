@@ -1,4 +1,5 @@
 import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
+import * as Faceted from "./Faceted";
 import * as React from "react";
 
 export type ActionMethod<
@@ -24,26 +25,6 @@ export type AddedActionMethod<
   L4 extends string = never,
   L5 extends string = never
 > = (body?: any, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V | null>;
-
-export type FacetMethod<
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-> = (
-  facet: string,
-  params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-  locations?: LocKeyArray<L1, L2, L3, L4, L5>
-) => Promise<any | null>;
-
-export type AddedFacetMethod<
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-> = (params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<any | null>;
 
 export type UpdateMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -79,11 +60,12 @@ export interface ContextType<
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
-> {
+> extends Faceted.ContextType {
   name: string;
   key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>;
   locations?: LocKeyArray<S, L1, L2, L3, L4> | null;
   pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
+  parentItem: Item<L1, L2, L3, L4, L5> | null;
 
   item: V | null;
   isLoading: boolean;
@@ -91,15 +73,12 @@ export interface ContextType<
   isRemoving: boolean;
 
   actions?: Record<string, AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  facets?: Record<string, AddedFacetMethod<L1, L2, L3, L4, L5>>;
-  facetResults: Record<string, Record<string, any>>;
 
   remove: RemoveMethod;
   update: UpdateMethod<V, S, L1, L2, L3, L4, L5>;
   set: SetMethod<V, S, L1, L2, L3, L4, L5>;
 
   action: ActionMethod<V, S, L1, L2, L3, L4, L5>;
-  facet: FacetMethod<L1, L2, L3, L4, L5>;
 }
 
 export type Context<

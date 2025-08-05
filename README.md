@@ -78,6 +78,65 @@ function MyComponent() {
 ### Adapters
 - **AItemAdapter** - Adapter component for item transformation and mapping
 
+## Faceted Data Access
+
+Fjell Providers includes a powerful faceting system that allows you to retrieve pre-computed results for specific queries or computations within your React contexts.
+
+### Faceted Hook
+
+The `useFacetResult` hook provides access to cached facet results:
+
+```tsx
+import { useFacetResult } from '@fjell/providers';
+
+function MyComponent() {
+  // Retrieve a facet result with parameters
+  const searchResults = useFacetResult(
+    MyItemContext,
+    "MyItemContext",
+    "search",
+    { query: "typescript", limit: 10 }
+  );
+
+  const aggregatedData = useFacetResult(
+    MyItemContext,
+    "MyItemContext",
+    "aggregate",
+    { groupBy: "category", metric: "count" }
+  );
+
+  return (
+    <div>
+      {searchResults && (
+        <div>
+          Found {searchResults.length} results
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Key Features
+
+- **Parameter Stability**: Uses stable hashing to ensure consistent parameter keys
+- **Type Safety**: Strongly typed context integration
+- **Caching**: Accesses pre-computed results stored in provider context
+- **Error Handling**: Validates hook usage within correct provider context
+
+### Facet Results Structure
+
+Facet results are organized hierarchically within the provider context:
+
+```tsx
+interface ContextType {
+  facetResults: Record<string, Record<string, any>>;
+  // facetResults[facetName][parameterHash] = result
+}
+```
+
+This structure allows for efficient lookup of results based on facet names and parameterized queries, enabling complex data access patterns while maintaining performance through pre-computation and caching.
+
 ## Error Handling
 
 All providers include robust error handling through React Error Boundary integration:
