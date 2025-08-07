@@ -5,7 +5,7 @@ import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 import { Cache } from '@fjell/cache';
 import { AggregateConfig } from '@fjell/cache';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -46,7 +46,7 @@ describe('CItemAdapter', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    cacheMap = new CacheMap<TestItem, 'test', 'container', never, never, never, never>(['test']);
+    cacheMap = new MemoryCacheMap<TestItem, 'test', 'container', never, never, never, never>(['test']);
     (cacheMap as any).set(itemKey, testItem);
 
     testItemCache = {
@@ -794,7 +794,7 @@ describe('CItemAdapter', () => {
 
   describe('Cache map state management', () => {
     it('should update cache map when operations return new cache map', async () => {
-      const newCacheMap = new CacheMap<TestItem, 'test', 'container', never, never, never, never>(['test']);
+      const newCacheMap = new MemoryCacheMap<TestItem, 'test', 'container', never, never, never, never>(['test']);
       const updatedItem = { ...testItem, name: 'updated' };
       newCacheMap.set(itemKey, updatedItem);
 

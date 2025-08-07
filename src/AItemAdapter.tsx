@@ -9,6 +9,7 @@ import { ItemQuery } from "@fjell/core";
 import React from "react";
 import * as AItem from "./AItem";
 import * as AItems from "./AItems";
+import * as Faceted from "./Faceted";
 
 export type FindMethod<
     V extends Item<S, L1, L2, L3, L4, L5>,
@@ -221,9 +222,9 @@ export interface ContextType<
   set: SetMethod<V, S, L1, L2, L3, L4, L5>;
 
   addActions?: (action: AItem.ActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItem.AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addFacets?: (facet: AItem.FacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItem.AddedFacetMethod<L1, L2, L3, L4, L5>>;
+  addFacets?: (facet: Faceted.FacetMethod<L1, L2, L3, L4, L5>) => Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
   addAllActions?: (allAction: AItems.AllActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addAllFacets?: (allFacet: AItems.AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllFacetMethod<L1, L2, L3, L4, L5>>;
+  addAllFacets?: (allFacet: AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
 
 }
 

@@ -1,5 +1,5 @@
 
-import { Cache, CacheMap } from "@fjell/cache";
+import { Cache, MemoryCacheMap } from "@fjell/cache";
 import { Item, PriKey } from "@fjell/core";
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -25,7 +25,7 @@ const testItem: Item<'test'> = {
 const priKey = testItem.key;
 
 // Create a shared CacheMap instance for all tests
-const sharedCacheMap = new CacheMap<Item<'test'>, 'test'>(['test']);
+const sharedCacheMap = new MemoryCacheMap<Item<'test'>, 'test'>(['test']);
 
 // Create a mock cache that properly manages its internal cacheMap
 const createMockCache = () => {

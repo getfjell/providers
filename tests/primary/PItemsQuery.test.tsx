@@ -1,5 +1,5 @@
 
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 import { Item, ItemQuery, PriKey } from '@fjell/core';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -40,7 +40,7 @@ describe('PItemsQuery', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    cacheMap = new CacheMap(['test']);
+    cacheMap = new MemoryCacheMap(['test']);
     cacheMap.set(testItem.key, testItem);
     cacheMap.queryIn = vi.fn().mockReturnValue([testItem]);
 
@@ -239,7 +239,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(queryInSpy).toHaveBeenCalledWith(query);
+        expect(queryInSpy).toHaveBeenCalledWith(query, []);
       });
     });
   });

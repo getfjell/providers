@@ -5,7 +5,7 @@ import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 import { Cache } from '@fjell/cache';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -34,7 +34,7 @@ describe('PItemAdapter', () => {
     }
   };
 
-  let cacheMap: CacheMap<TestItem, 'test'>;
+  let cacheMap: MemoryCacheMap<TestItem, 'test'>;
   let testItemCache: TestItemCache;
   let TestItemContext: React.Context<TestItemAdapterContextType | undefined>;
   let TestItemAdapter: React.FC<{ children: ReactNode }>;
@@ -43,7 +43,7 @@ describe('PItemAdapter', () => {
     vi.resetAllMocks();
 
     // Initialize cache map with test item
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
+    cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
     (cacheMap as any).set(testItem.key, testItem);
 
     // Create mock cache with all required methods

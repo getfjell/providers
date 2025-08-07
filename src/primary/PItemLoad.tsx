@@ -81,7 +81,7 @@ export const PItemLoad = <
     facet: facetItem,
     set: setItem,
     addActions,
-    addFacets,
+    // addFacets,
   } = PItemAdapter;
 
   const itemLogger = LibLogger.get('PItemLoad', ...(pkTypes || []));
@@ -264,6 +264,7 @@ export const PItemLoad = <
     isLoading,
     isUpdating,
     isRemoving,
+    parentItem: null,
     pkTypes: pkTypes as AllItemTypeArrays<S>,
     remove,
     update,
@@ -275,7 +276,7 @@ export const PItemLoad = <
   };
 
   contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
-  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
+  // contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
 
   return createElement(
     context.Provider,

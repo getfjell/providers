@@ -60,7 +60,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
 
   const items: V[] = useMemo(() => {
     logger.trace('useMemo[cacheMap]', { query });
-    return cacheMap.queryIn(query) as V[];
+    return cacheMap.queryIn(query, []) as V[];
   }, [cacheMap, query]);
 
   const all = useCallback(async () => {

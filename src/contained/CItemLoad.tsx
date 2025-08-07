@@ -282,7 +282,7 @@ export const CItemLoad = <
     name,
     key: itemKey as ComKey<S, L1, L2, L3, L4, L5>,
     item,
-    parentItem: parentItem as Item<L1, L2, L3, L4, L5> | null,
+    parentItem: parentItem as Item<L1, L2, L3, L4, L5>,
     isLoading,
     isUpdating,
     isRemoving,

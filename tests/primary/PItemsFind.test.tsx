@@ -6,7 +6,7 @@ import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 interface TestItem extends Item<'test'> {
@@ -41,7 +41,7 @@ describe('PItemsFind', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
+    cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
     (cacheMap as any).set(testItem.key, testItem);
 
     testItemCache = {

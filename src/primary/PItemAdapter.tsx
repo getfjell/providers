@@ -2,7 +2,7 @@
 import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useMemo } from "react";
 
-import { AggregateConfig, Cache, CacheMap, createAggregator } from "@fjell/cache";
+import { AggregateConfig, Cache, CacheMap, createAggregator, MemoryCacheMap } from "@fjell/cache";
 import * as AItemAdapter from "../AItemAdapter";
 import * as AItem from "../AItem";
 import * as AItems from "../AItems";
@@ -20,6 +20,8 @@ export interface ContextType<
     name: string;
     cacheMap: CacheMap<V, S>;
     pkTypes: AllItemTypeArrays<S>;
+    addFacets?: (facet: Faceted.FacetMethod) => Record<string, Faceted.AddedFacetMethod>;
+    addAllFacets?: (allFacet: Faceted.AllFacetMethod) => Record<string, Faceted.AddedFacetMethod>;
   }
 
 export type Context<V extends Item<S>, S extends string> =
@@ -87,13 +89,13 @@ export const Adapter = <
     React.useState<CacheMap<V, S>>(() => {
       // Use a placeholder type when pkTypes is not available yet
       const defaultTypes = (pkTypes || ['placeholder' as S]) as AllItemTypeArrays<S>;
-      return new CacheMap<V, S>(defaultTypes);
+      return new MemoryCacheMap<V, S>(defaultTypes);
     });
 
   // Update CacheMap when pkTypes becomes available
   React.useEffect(() => {
     if (pkTypes) {
-      setCacheMap(new CacheMap<V, S>(pkTypes));
+      setCacheMap(new MemoryCacheMap<V, S>(pkTypes));
     }
   }, [pkTypes]);
 
@@ -116,6 +118,9 @@ export const Adapter = <
     return null;
   });
 
+  // State to trigger re-renders when cache events occur
+  const [cacheVersion, setCacheVersion] = React.useState(0);
+
   React.useEffect(() => {
     if (sourceCache) {
       if (isPromise<Cache<V, S>>(sourceCache)) {
@@ -131,6 +136,45 @@ export const Adapter = <
       setResolvedSourceCache(null);
     }
   }, [sourceCache, name]);
+
+  // Subscribe to cache events to trigger re-renders
+  React.useEffect(() => {
+    if (!resolvedSourceCache || typeof resolvedSourceCache.subscribe !== 'function') {
+      return;
+    }
+
+    try {
+      const subscription = resolvedSourceCache.subscribe((event) => {
+        // Increment version to trigger re-renders for any cache change
+        setCacheVersion(prev => prev + 1);
+        logger.debug(`Cache event in ${name}:`, event.type, event);
+      }, {
+        // Subscribe to all cache events for this adapter
+        eventTypes: [
+          'item_created',
+          'item_updated',
+          'item_removed',
+          'item_retrieved',
+          'item_set',
+          'items_queried',
+          'cache_cleared',
+          'location_invalidated',
+          'query_invalidated'
+        ],
+        debounceMs: 50 // Small debounce to batch rapid updates
+      });
+
+      return () => {
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe();
+        }
+      };
+    } catch (error) {
+      logger.debug(`Cache subscription not available in ${name}:`, error);
+      // Return a no-op cleanup function
+      return () => {};
+    }
+  }, [resolvedSourceCache, name]);
 
   const handleCacheError = useCallback((operation: string): never => {
     logger.error('Cache not initialized in %s. Operation "%s" failed.', name, operation);
@@ -363,7 +407,7 @@ export const Adapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: ContextType<V, S> = {
+  const contextValue: ContextType<V, S> = useMemo(() => ({
     name,
     cacheMap,
     pkTypes: pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>),
@@ -385,7 +429,30 @@ export const Adapter = <
     addFacets,
     addAllActions,
     addAllFacets,
-  };
+  }), [
+    name,
+    cacheMap,
+    pkTypes,
+    all,
+    one,
+    create,
+    get,
+    remove,
+    retrieve,
+    update,
+    action,
+    allAction,
+    facet,
+    allFacet,
+    find,
+    findOne,
+    set,
+    addActions,
+    addFacets,
+    addAllActions,
+    addAllFacets,
+    cacheVersion // Include cacheVersion to trigger re-renders on cache events
+  ]);
 
   return createElement(
     context.Provider,

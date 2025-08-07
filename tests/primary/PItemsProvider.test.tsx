@@ -1,4 +1,4 @@
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 import { Item, PriKey } from '@fjell/core';
 import { act, render, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -36,7 +36,7 @@ const TestItemAdapterContext = React.createContext<PItemAdapter.ContextType<Test
 TestItemAdapterContext.displayName = 'TestItemAdapterContext';
 
 const TestItemsAdapter = ({ children }: { children: React.ReactNode }) => {
-  const cacheMap = new CacheMap<TestItem, 'test'>(['test']);
+  const cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
   const adapter = {
     name: 'test',
     cacheMap,
@@ -573,7 +573,7 @@ describe('PItemsProvider', () => {
 
   it('should handle findOne returning null', async () => {
     const TestItemsAdapterWithoutFindOne = ({ children }: { children: React.ReactNode }) => {
-      const cacheMap = new CacheMap<TestItem, 'test'>(['test']);
+      const cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
       const adapter = {
         name: 'test',
         cacheMap,

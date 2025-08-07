@@ -8,7 +8,7 @@ import { CItemLoad } from '../../src/contained/CItemLoad';
 import { ContextType as CItemContextType } from '../../src/contained/CItem';
 import { ContextType as AItemContextType } from '../../src/AItem';
 import { ContextType as CItemAdapterContextType } from '../../src/contained/CItemAdapter';
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 
 // Mock the logger
 vi.mock('../../src/logger', () => ({
@@ -99,7 +99,7 @@ describe('CItemLoad', () => {
     vi.mocked(ikToLKA).mockImplementation((key) => (key && 'loc' in key) ? key.loc || [] as any : [] as any);
 
     // Setup cache map
-    mockCacheMap = new CacheMap<TestItem, 'test', 'container'>(['test']);
+    mockCacheMap = new MemoryCacheMap<TestItem, 'test', 'container'>(['test']);
     mockCacheMap.set(itemKey, testItem);
 
     // Setup adapter methods

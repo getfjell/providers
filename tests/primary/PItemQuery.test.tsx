@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { CacheMap } from '@fjell/cache';
+import { MemoryCacheMap } from '@fjell/cache';
 import { ComKey, Dictionary, Item, PriKey, UUID } from '@fjell/core';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -44,7 +44,7 @@ describe('PItemQueryProvider', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
+    cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
     (cacheMap as Dictionary<ComKey<'test'>, TestItem>).set(testItem.key, testItem);
 
     testItemCache = {
