@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cache, normalizeKeyValue } from '@fjell/cache';
 import { ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
+import { createStableHash, deepEqual } from '../utils';
 
 /**
  * React hook for subscribing to cache query results
@@ -32,8 +33,8 @@ export function useCacheQuery<
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Stable query and locations strings for dependency tracking
-  const queryString = useMemo(() => JSON.stringify(query), [query]);
-  const locationsString = useMemo(() => JSON.stringify(locations), [locations]);
+  const queryString = useMemo(() => createStableHash(query), [query]);
+  const locationsString = useMemo(() => createStableHash(locations), [locations]);
 
   // Load initial items from cache
   useEffect(() => {
@@ -51,31 +52,28 @@ export function useCacheQuery<
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
   const normalizeKey = useCallback((key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>): string => {
-    return JSON.stringify(key, (k, v) => {
-      if (typeof v === 'string' || typeof v === 'number') {
-        return normalizeKeyValue(v);
-      }
-      return v;
-    });
+    // Normalize then create stable string
+    const normalized = ((): any => {
+      const replacer = (value: any): any => {
+        if (typeof value === 'string' || typeof value === 'number') {
+          return normalizeKeyValue(value);
+        }
+        if (Array.isArray(value)) return value.map(replacer);
+        if (value && typeof value === 'object') {
+          const out: any = {};
+          for (const k of Object.keys(value)) out[k] = replacer((value as any)[k]);
+          return out;
+        }
+        return value;
+      };
+      return replacer(key);
+    })();
+    return createStableHash(normalized);
   }, []);
 
   // Improved query comparison that handles object ordering
   const queriesMatch = useCallback((q1: ItemQuery, q2: ItemQuery): boolean => {
-    // Sort keys to ensure consistent comparison
-    const normalize = (obj: any): any => {
-      // eslint-disable-next-line no-undefined
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj !== 'object') return obj;
-      if (Array.isArray(obj)) return obj.map(normalize).sort();
-
-      const sorted: any = {};
-      Object.keys(obj).sort().forEach(key => {
-        sorted[key] = normalize(obj[key]);
-      });
-      return sorted;
-    };
-
-    return JSON.stringify(normalize(q1)) === JSON.stringify(normalize(q2));
+    return deepEqual(q1, q2);
   }, []);
 
   // Create event listener to update items when they change
@@ -84,7 +82,7 @@ export function useCacheQuery<
       case 'items_queried':
         // Check if this event matches our query with improved comparison
         if (queriesMatch(event.query, query) &&
-            JSON.stringify(event.locations) === JSON.stringify(locations)) {
+            createStableHash(event.locations) === locationsString) {
           setItems(event.items);
         }
         break;

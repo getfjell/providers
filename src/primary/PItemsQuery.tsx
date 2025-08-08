@@ -7,6 +7,7 @@ import LibLogger from '../logger';
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItems from "./PItems";
 import { PItemsProvider } from "./PItemsProvider";
+import { createStableHash } from '../utils';
 
 const logger = LibLogger.get('PItemsQuery');
 
@@ -41,12 +42,12 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
-  const queryString = useMemo(() => JSON.stringify(query), [query]);
+  const queryString = useMemo(() => createStableHash(query), [query]);
 
   useEffect(() => {
     (async () => {
       try {
-        logger.trace('useEffect[queryString] %s', JSON.stringify(query));
+        logger.trace('useEffect[queryString] %s', createStableHash(query));
         await allItems(query);
         setIsLoading(false);
       } catch (error) {

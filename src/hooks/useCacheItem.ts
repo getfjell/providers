@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cache, normalizeKeyValue } from '@fjell/cache';
 import { ComKey, Item, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
+import { createStableHash } from '../utils';
 
 /**
  * React hook for subscribing to a specific cache item
@@ -45,12 +46,24 @@ export function useCacheItem<
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
   const normalizeKey = useCallback((key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>): string => {
-    return JSON.stringify(key, (k, v) => {
-      if (typeof v === 'string' || typeof v === 'number') {
-        return normalizeKeyValue(v);
-      }
-      return v;
-    });
+    // Normalize string/number values in the key (same logic as CacheEventEmitter) first,
+    // then produce a stable, circular-safe string using createStableHash
+    const normalized = ((): any => {
+      const replacer = (value: any): any => {
+        if (typeof value === 'string' || typeof value === 'number') {
+          return normalizeKeyValue(value);
+        }
+        if (Array.isArray(value)) return value.map(replacer);
+        if (value && typeof value === 'object') {
+          const out: any = {};
+          for (const k of Object.keys(value)) out[k] = replacer((value as any)[k]);
+          return out;
+        }
+        return value;
+      };
+      return replacer(key);
+    })();
+    return createStableHash(normalized);
   }, []);
 
   // Create event listener to update item when it changes
