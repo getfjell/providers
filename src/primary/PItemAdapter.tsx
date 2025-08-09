@@ -200,7 +200,7 @@ export const Adapter = <
     }
     const [newCacheMap, items] = result;
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return items as V[] | null;
   }, [ensureCache, name]);
@@ -212,7 +212,7 @@ export const Adapter = <
     const cache = ensureCache('one');
     const [newCacheMap, item] = await cache.operations.one(query);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
@@ -224,7 +224,7 @@ export const Adapter = <
     const cache = ensureCache('create');
     const [newCacheMap, newItem] = await cache.operations.create(item);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItem as V;
   }, [ensureCache]);
@@ -238,7 +238,7 @@ export const Adapter = <
     }
     const [newCacheMap, item] = await resolvedSourceCache!.operations.get(key);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return item as V | null;
   }, [resolvedSourceCache, handleCacheError]);
@@ -252,7 +252,7 @@ export const Adapter = <
     }
     const newCacheMap = await resolvedSourceCache!.operations.remove(key);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -266,14 +266,20 @@ export const Adapter = <
     const [newCacheMap, item] = await resolvedSourceCache!.operations.retrieve(key);
     // Update the cacheMap state if there's a new cache map from the underlying cache
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     } else if (item) {
       // If newCacheMap is null but we have an item, it means the item was already cached
       // in the underlying cache but might not be in our React state cacheMap, so update it
       setCacheMap(prevCacheMap => {
-        const newMap = prevCacheMap.clone();
-        newMap.set(key, item);
-        return newMap;
+        if (!prevCacheMap) {
+          // If we don't have a cacheMap yet, create one with the proper types
+          const newMap = new MemoryCacheMap<V, S>(pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>));
+          newMap.set(key, item);
+          return newMap;
+        }
+        // Use the existing cacheMap and update it directly
+        prevCacheMap.set(key, item);
+        return prevCacheMap;
       });
     }
     return item as V | null;
@@ -289,7 +295,7 @@ export const Adapter = <
     }
     const [newCacheMap, newItem] = await resolvedSourceCache!.operations.update(key, item);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
@@ -305,7 +311,7 @@ export const Adapter = <
     }
     const [newCacheMap, newItem] = await resolvedSourceCache!.operations.action(key, action, body);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
@@ -320,7 +326,7 @@ export const Adapter = <
     }
     const [newCacheMap, newItems] = await resolvedSourceCache!.operations.allAction(action, body);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
@@ -338,7 +344,7 @@ export const Adapter = <
       ? await resolvedSourceCache!.operations.facet(key, facet, params)
       : await resolvedSourceCache!.operations.facet(key, facet);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return response as any | null;
   }, [resolvedSourceCache, handleCacheError]);
@@ -353,7 +359,7 @@ export const Adapter = <
     }
     const [newCacheMap, response] = await resolvedSourceCache!.operations.allFacet(facet, params);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
@@ -368,7 +374,7 @@ export const Adapter = <
     }
     const [newCacheMap, newItems] = await resolvedSourceCache!.operations.find(finder, finderParams);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
@@ -383,7 +389,7 @@ export const Adapter = <
     }
     const [newCacheMap, newItems] = await resolvedSourceCache!.operations.find(finder, finderParams);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItems && newItems.length > 0 ? (newItems[0] as V) : null;
   }, [resolvedSourceCache, handleCacheError]);
@@ -398,7 +404,7 @@ export const Adapter = <
     }
     const [newCacheMap, newItem] = await resolvedSourceCache!.operations.set(key, item);
     if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
+      setCacheMap(newCacheMap);
     }
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
