@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
 import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/core";
-import React, { createElement, useCallback, useMemo } from "react";
+import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
 import { AggregateConfig, Cache, CacheMap, createAggregator, MemoryCacheMap } from "@fjell/cache";
 import * as AItemAdapter from "../AItemAdapter";
