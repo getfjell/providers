@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cache, normalizeKeyValue } from '@fjell/cache';
+import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
 import { ComKey, Item, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
 import { createStableHash } from '../utils';
@@ -96,11 +96,12 @@ export function useCacheItem<
 
   // Subscription options to filter events for this specific key
   const subscriptionOptions = useMemo(() => {
-    if (!key) return null;
+    // eslint-disable-next-line no-undefined
+    if (!key) return undefined;
 
     return {
       keys: [key],
-      eventTypes: ['item_created', 'item_updated', 'item_removed', 'item_retrieved', 'item_set', 'cache_cleared'] as const
+      eventTypes: ['item_created', 'item_updated', 'item_removed', 'item_retrieved', 'item_set', 'cache_cleared'] as CacheEventType[]
     };
   }, [key]);
 

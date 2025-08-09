@@ -33,7 +33,6 @@
     "@fjell/cache": "file:../fjell-cache",
     "@fjell/client-api": "file:../fjell-client-api",
     "@fjell/core": "file:../fjell-core",
-    "@fjell/docs-template": "file:../fjell-docs-template",
     "@fjell/logging": "file:../fjell-logging",
     "react-error-boundary": "^6.0.0"
   },

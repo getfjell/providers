@@ -83,7 +83,7 @@ export const Adapter = <
   addActions?: (action: AItem.ActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItem.AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
   addFacets?: (facet: Faceted.FacetMethod<L1, L2, L3, L4, L5>) => Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
   addAllActions?: (allAction: AItems.AllActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addAllFacets?: (allFacet: AItems.AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllFacetMethod<L1, L2, L3, L4, L5>>;
+  addAllFacets?: (allFacet: Faceted.AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
   children: React.ReactNode;
 }) => {
 

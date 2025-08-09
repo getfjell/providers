@@ -14,6 +14,7 @@ import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 import * as CItemAdapter from "./CItemAdapter";
 import * as CItem from "./CItem";
+import * as Faceted from "../Faceted";
 import { useAsyncError } from "../useAsyncError";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
@@ -308,7 +309,7 @@ export const CItemLoad = <
   });
 
   contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
-  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
+  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet as Faceted.FacetMethod<L1, L2, L3, L4, L5>), [addFacets, contextValue.facet]);
 
   logger.debug(`${name}: Creating context provider element`, {
     hasContext: !!context,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cache, normalizeKeyValue } from '@fjell/cache';
+import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
 import { ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
 import { createStableHash, deepEqual } from '../utils';
@@ -124,7 +124,7 @@ export function useCacheQuery<
       'item_retrieved',
       'item_set',
       'cache_cleared'
-    ] as const,
+    ] as CacheEventType[],
     debounceMs: 50 // Small debounce to batch rapid updates
   }), []);
 
