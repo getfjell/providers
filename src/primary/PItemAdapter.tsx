@@ -3,13 +3,13 @@ import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/cor
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
 import { AggregateConfig, Cache, CacheMap, createAggregator, MemoryCacheMap } from "@fjell/cache";
-import * as AItemAdapter from "../AItemAdapter";
+import { FacetParams } from "src/types";
 import * as AItem from "../AItem";
+import * as AItemAdapter from "../AItemAdapter";
 import * as AItems from "../AItems";
+import * as Faceted from "../Faceted";
 import LibLogger from '../logger';
 import { isPromise } from '../utils';
-import * as Faceted from "../Faceted";
-import { FacetParams } from "src/types";
 
 const logger = LibLogger.get('PItemAdapter');
 
@@ -71,7 +71,7 @@ export const Adapter = <
 }) => {
 
   // Validate cache at initialization
-  React.useEffect(() => {
+  useEffect(() => {
     if (!cache) {
       logger.error('Cache is undefined in %s. This will cause all operations to fail.', name);
     }
