@@ -85,19 +85,15 @@ export const Adapter = <
     return cache.coordinate?.kta;
   }, [cache]);
 
-  const [cacheMap, setCacheMap] =
-    React.useState<CacheMap<V, S>>(() => {
-      // Use a placeholder type when pkTypes is not available yet
-      const defaultTypes = (pkTypes || ['placeholder' as S]) as AllItemTypeArrays<S>;
-      return new MemoryCacheMap<V, S>(defaultTypes);
-    });
+  // Use the cache's actual cacheMap instead of creating our own
+  const [cacheMap, setCacheMap] = React.useState<CacheMap<V, S> | null>(null);
 
-  // Update CacheMap when pkTypes becomes available
+  // Set the cacheMap to the actual cache's cacheMap when available
   React.useEffect(() => {
-    if (pkTypes) {
-      setCacheMap(new MemoryCacheMap<V, S>(pkTypes));
+    if (cache && cache.cacheMap) {
+      setCacheMap(cache.cacheMap);
     }
-  }, [pkTypes]);
+  }, [cache]);
 
   const sourceCache = useMemo(() => {
     if (!cache) {
@@ -409,7 +405,7 @@ export const Adapter = <
 
   const contextValue: ContextType<V, S> = useMemo(() => ({
     name,
-    cacheMap,
+    cacheMap: cacheMap || new MemoryCacheMap<V, S>(['placeholder' as S] as AllItemTypeArrays<S>),
     pkTypes: pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>),
     all,
     one,
