@@ -1,5 +1,4 @@
 
-import { CacheMap } from '@fjell/cache';
 import { Item, ItemQuery, PriKey } from '@fjell/core';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -35,27 +34,21 @@ describe('PItemsQuery', () => {
   let mockAdapter: any;
   let mockAll: any;
   let mockOne: any;
-  let cacheMap: any;
 
   beforeEach(() => {
     vi.resetAllMocks();
-
-    cacheMap = new CacheMap(['test']);
-    cacheMap.set(testItem.key, testItem);
-    cacheMap.queryIn = vi.fn().mockReturnValue([testItem]);
 
     mockAll = vi.fn().mockResolvedValue([testItem]);
     mockOne = vi.fn().mockResolvedValue(testItem);
 
     mockAdapter = {
       name: 'test',
-      cacheMap,
       pkTypes: ['test'],
       all: mockAll,
       one: mockOne,
       create: vi.fn().mockResolvedValue(testItem),
       get: vi.fn().mockResolvedValue(testItem),
-      remove: vi.fn().mockResolvedValue(true),
+      remove: vi.fn().mockResolvedValue(void 0),
       retrieve: vi.fn().mockResolvedValue(testItem),
       update: vi.fn().mockResolvedValue(testItem),
       action: vi.fn().mockResolvedValue(testItem),
@@ -129,7 +122,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({});
+        expect(mockAll).toHaveBeenCalledWith({}, []);
       });
     });
 
@@ -151,7 +144,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(customQuery);
+        expect(mockAll).toHaveBeenCalledWith(customQuery, []);
       });
     });
 
@@ -173,7 +166,7 @@ describe('PItemsQuery', () => {
       const { rerender } = render(<TestQueryComponent query={{}} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({});
+        expect(mockAll).toHaveBeenCalledWith({}, []);
       });
 
       // Change query
@@ -181,7 +174,7 @@ describe('PItemsQuery', () => {
       rerender(<TestQueryComponent query={newQuery} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(newQuery);
+        expect(mockAll).toHaveBeenCalledWith(newQuery, []);
       });
 
       expect(mockAll).toHaveBeenCalledTimes(2);
@@ -220,26 +213,25 @@ describe('PItemsQuery', () => {
   });
 
   describe('Loading State and Items', () => {
-    it('should use cacheMap.queryIn for items computation', async () => {
-      const queryInSpy = vi.spyOn(mockAdapter.cacheMap, 'queryIn');
+    it('should call adapter.all with correct parameters', async () => {
       const query = { limit: 5 };
 
       render(
-        <TestItemAdapterContext.Provider value={mockAdapter}>
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-            query={query}
-          >
-            <div>Test</div>
-          </PItemsQuery>
-        </TestItemAdapterContext.Provider>
+          <TestItemAdapterContext.Provider value={mockAdapter}>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+              query={query}
+            >
+              <div>Test</div>
+            </PItemsQuery>
+          </TestItemAdapterContext.Provider>
       );
 
       await waitFor(() => {
-        expect(queryInSpy).toHaveBeenCalledWith(query);
+        expect(mockAll).toHaveBeenCalledWith(query, []);
       });
     });
   });
@@ -255,16 +247,16 @@ describe('PItemsQuery', () => {
       };
 
       render(
-        <TestItemAdapterContext.Provider value={mockAdapter}>
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-          >
-            <TestComponent />
-          </PItemsQuery>
-        </TestItemAdapterContext.Provider>
+          <TestItemAdapterContext.Provider value={mockAdapter}>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+            >
+              <TestComponent />
+            </PItemsQuery>
+          </TestItemAdapterContext.Provider>
       );
 
       expect(allCallback).toBeDefined();
@@ -275,7 +267,7 @@ describe('PItemsQuery', () => {
           expect(result).toEqual([testItem]);
         });
 
-        expect(mockAll).toHaveBeenCalledTimes(2); // Once on mount, once from callback
+        expect(mockAll).toHaveBeenCalledTimes(2); // Initial call plus callback
       }
     });
 
@@ -289,16 +281,16 @@ describe('PItemsQuery', () => {
       };
 
       render(
-        <TestItemAdapterContext.Provider value={mockAdapter}>
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-          >
-            <TestComponent />
-          </PItemsQuery>
-        </TestItemAdapterContext.Provider>
+          <TestItemAdapterContext.Provider value={mockAdapter}>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+            >
+              <TestComponent />
+            </PItemsQuery>
+          </TestItemAdapterContext.Provider>
       );
 
       expect(oneCallback).toBeDefined();
@@ -320,19 +312,19 @@ describe('PItemsQuery', () => {
 
       expect(() => {
         render(
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-          >
-            <div>Test</div>
-          </PItemsQuery>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+            >
+              <div>Test</div>
+            </PItemsQuery>
         );
       }).toThrow(
         'usePItemAdapter hook must be used within a TestItemAdapterContext provider. ' +
-        'Make sure to wrap your component with <TestItemAdapterContext.Provider value={...}> ' +
-        'or use the corresponding Provider component.'
+          'Make sure to wrap your component with <TestItemAdapterContext.Provider value={...}> ' +
+          'or use the corresponding Provider component.'
       );
 
       consoleSpy.mockRestore();
@@ -345,16 +337,16 @@ describe('PItemsQuery', () => {
       };
 
       render(
-        <TestItemAdapterContext.Provider value={failingAdapter}>
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-          >
-            <div>Test</div>
-          </PItemsQuery>
-        </TestItemAdapterContext.Provider>
+          <TestItemAdapterContext.Provider value={failingAdapter}>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+            >
+              <div>Test</div>
+            </PItemsQuery>
+          </TestItemAdapterContext.Provider>
       );
 
       await waitFor(() => {
@@ -384,16 +376,16 @@ describe('PItemsQuery', () => {
       };
 
       render(
-        <TestItemAdapterContext.Provider value={mockAdapter}>
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-          >
-            <TestComponent />
-          </PItemsQuery>
-        </TestItemAdapterContext.Provider>
+          <TestItemAdapterContext.Provider value={mockAdapter}>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+            >
+              <TestComponent />
+            </PItemsQuery>
+          </TestItemAdapterContext.Provider>
       );
 
       expect(screen.getByText('Provider Working')).toBeDefined();
@@ -401,33 +393,33 @@ describe('PItemsQuery', () => {
 
     it('should handle multiple query updates correctly', async () => {
       const TestComponent = ({ query }: { query: ItemQuery }) => (
-        <TestItemAdapterContext.Provider value={mockAdapter}>
-          <PItemsQuery
-            name="test"
-            adapter={TestItemAdapterContext as any}
-            context={TestItemsProviderContext as any}
-            contextName="TestItemAdapterContext"
-            query={query}
-          >
-            <div>Query Test</div>
-          </PItemsQuery>
-        </TestItemAdapterContext.Provider>
+          <TestItemAdapterContext.Provider value={mockAdapter}>
+            <PItemsQuery
+              name="test"
+              adapter={TestItemAdapterContext as any}
+              context={TestItemsProviderContext as any}
+              contextName="TestItemAdapterContext"
+              query={query}
+            >
+              <div>Query Test</div>
+            </PItemsQuery>
+          </TestItemAdapterContext.Provider>
       );
 
       const { rerender } = render(<TestComponent query={{}} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenNthCalledWith(1, {});
+        expect(mockAll).toHaveBeenCalledWith({}, []);
       });
 
       rerender(<TestComponent query={{ limit: 5 }} />);
       await waitFor(() => {
-        expect(mockAll).toHaveBeenNthCalledWith(2, { limit: 5 });
+        expect(mockAll).toHaveBeenCalledWith({ limit: 5 }, []);
       });
 
       rerender(<TestComponent query={{ limit: 10, offset: 5 }} />);
       await waitFor(() => {
-        expect(mockAll).toHaveBeenNthCalledWith(3, { limit: 10, offset: 5 });
+        expect(mockAll).toHaveBeenCalledWith({ limit: 10, offset: 5 }, []);
       });
 
       expect(mockAll).toHaveBeenCalledTimes(3);

@@ -49,7 +49,6 @@ describe('PItemFacet', () => {
 
   const mockAdapterContext: TestItemAdapterContextType = {
     name: 'TestAdapter',
-    cacheMap: {} as any,
     pkTypes: ['test'],
     all: vi.fn(),
     one: vi.fn(),

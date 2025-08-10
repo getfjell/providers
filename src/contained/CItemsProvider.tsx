@@ -251,10 +251,11 @@ export const CItemsProvider = <
         } finally {
           setIsUpdating(false);
         }
+      } else {
+        const errorMessage = `${name}: No parent locations present to query for facet ${facet}`;
+        logger.error(errorMessage, { key, facet, params });
+        throw new Error(errorMessage);
       }
-      const errorMessage = `${name}: No parent locations present to query for facet ${facet}`;
-      logger.error(errorMessage, { key, facet, params });
-      throw new Error(errorMessage);
     }, [facetItem, parentLocations]);
 
   const findOne = useCallback(
