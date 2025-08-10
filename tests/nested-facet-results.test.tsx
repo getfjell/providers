@@ -57,7 +57,6 @@ describe('Nested FacetResults Integration Tests', () => {
 
     mockAdapterContext = {
       name: 'test',
-      cacheMap: {} as any,
       pkTypes: ['test'],
       all: vi.fn(),
       one: vi.fn(),

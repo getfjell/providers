@@ -3,6 +3,7 @@ import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
 import LibLogger from '../logger';
+import { createStableHash } from '../utils';
 import * as PItemAdapter from "./PItemAdapter";
 import * as PItems from "./PItems";
 
@@ -64,7 +65,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     addAllFacets,
   } = adapterContext;
 
-  const logger = LibLogger.get('PItemsProvider', JSON.stringify(pkTypes));
+  const logger = LibLogger.get('PItemsProvider', createStableHash(pkTypes));
 
   useEffect(() => {
     setIsLoading(isLoadingParam);

@@ -70,7 +70,7 @@ export interface ContextType<
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
-  > extends Faceted.ContextType<L1, L2, L3, L4, L5> {
+  > extends Omit<Faceted.ContextType<L1, L2, L3, L4, L5>, 'facet'> {
     name: string;
     items: V[];
     locations?: LocKeyArray<S, L1, L2, L3, L4> | null;
@@ -80,14 +80,17 @@ export interface ContextType<
     isRemoving: boolean;
     pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
 
-    allActions?: Record<string, AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
-    finders?: Record<string, (...params: any[]) => Promise<V[] | V | null>>;
+      allActions?: Record<string, AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
+  allFacets?: Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
+  finders?: Record<string, (...params: any[]) => Promise<V[] | V | null>>;
 
     create: CreateMethod<V, S, L1, L2, L3, L4, L5>;
     all: AllMethod<V, S, L1, L2, L3, L4, L5>;
     one: OneMethod<V, S, L1, L2, L3, L4, L5>;
-    allAction: AllActionMethod<V, S, L1, L2, L3, L4, L5>;
-    set: AItemAdapter.SetMethod<V, S, L1, L2, L3, L4, L5>;
+      allAction: AllActionMethod<V, S, L1, L2, L3, L4, L5>;
+  allFacet: Faceted.AllFacetMethod<L1, L2, L3, L4, L5>;
+  facet: AItemAdapter.FacetMethod<S, L1, L2, L3, L4, L5>;
+  set: AItemAdapter.SetMethod<V, S, L1, L2, L3, L4, L5>;
     find: AItemAdapter.FindMethod<V, S, L1, L2, L3, L4, L5>;
     findOne: AItemAdapter.FindOneMethod<V, S, L1, L2, L3, L4, L5>;
     update: AItemAdapter.UpdateMethod<V, S, L1, L2, L3, L4, L5>;

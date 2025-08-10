@@ -8,7 +8,7 @@ import {
   LocKeyArray,
   PriKey,
 } from "@fjell/core";
-import React, { createElement, useCallback, useEffect, useMemo } from "react";
+import React, { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import * as PItem from "./PItem";
 import * as PItemAdapter from "./PItemAdapter";
@@ -72,7 +72,6 @@ export const PItemLoad = <
 
   // Destructure the values we need to define functions.
   const {
-    cacheMap,
     pkTypes,
     retrieve: retrieveItem,
     remove: removeItem,
@@ -81,21 +80,32 @@ export const PItemLoad = <
     facet: facetItem,
     set: setItem,
     addActions,
-    addFacets,
+    // addFacets,
   } = PItemAdapter;
 
   const itemLogger = LibLogger.get('PItemLoad', ...(pkTypes || []));
   logger.debug(`${name}: Item logger created with pkTypes`, { pkTypes });
 
-  const item: V | null = useMemo(() => {
+  const [item, setItemState] = useState<V | null>(null);
+
+  // Load item from cache or use provided item
+  useEffect(() => {
     if (providedItem) {
-      return providedItem;
+      setItemState(providedItem);
+      return;
     }
     if (itemKey && isValidPriKey(itemKey)) {
-      return (cacheMap?.get(itemKey as PriKey<S>) as V) || null;
+      // Use retrieve to get the item from cache (cache-first)
+      retrieveItem(itemKey as PriKey<S>).then(retrievedItem => {
+        setItemState(retrievedItem as V | null);
+      }).catch(error => {
+        logger.error('Error retrieving item:', error);
+        setItemState(null);
+      });
+    } else {
+      setItemState(null);
     }
-    return null;
-  }, [itemKey, cacheMap, providedItem]);
+  }, [itemKey, providedItem, retrieveItem]);
 
   const locations: LocKeyArray<S> | null = useMemo(() => {
     logger.debug(`${name}: Computing locations memoization`, { hasItem: !!item });
@@ -122,26 +132,20 @@ export const PItemLoad = <
 
     if (ik && isValidPriKey(ik)) {
       setItemKey(ik);
-      const cachedItem = cacheMap?.get(ik);
-
-      if (!cachedItem) {
-        setIsLoading(true); // Set loading to true ONLY when we are about to fetch
-        retrieveItem(ik)
-          .catch((error) => {
-            logger.error(`${name}: Error retrieving item`, error);
-            throwAsyncError(error as Error);
-          })
-          .finally(() => {
-            setIsLoading(false);
-          });
-      } else {
-        setIsLoading(false);
-      }
+      setIsLoading(true); // Set loading to true when we are about to fetch
+      retrieveItem(ik)
+        .catch((error) => {
+          logger.error(`${name}: Error retrieving item`, error);
+          throwAsyncError(error as Error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     } else {
       setItemKey(undefined);
       setIsLoading(false);
     }
-  }, [ik, providedItem, cacheMap, retrieveItem]); // Removing cacheMap and retrieveItem from deps
+  }, [ik, providedItem, retrieveItem]);
 
   const remove = useCallback(async () => {
     logger.debug(`${name}: remove() called`, {
@@ -264,6 +268,7 @@ export const PItemLoad = <
     isLoading,
     isUpdating,
     isRemoving,
+    parentItem: null,
     pkTypes: pkTypes as AllItemTypeArrays<S>,
     remove,
     update,
@@ -275,7 +280,7 @@ export const PItemLoad = <
   };
 
   contextValue.actions = useMemo(() => addActions && addActions(contextValue.action), [addActions, contextValue.action]);
-  contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
+  // contextValue.facets = useMemo(() => addFacets && addFacets(contextValue.facet), [addFacets, contextValue.facet]);
 
   return createElement(
     context.Provider,

@@ -1,6 +1,6 @@
 
 import { abbrevLKA, abbrevQuery, Item, ItemQuery } from "@fjell/core";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
 import LibLogger from "../logger";
@@ -51,7 +51,6 @@ export const CItemsQuery = <
 
   // Destructure the values we need to define functions.
   const {
-    cacheMap,
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
@@ -106,6 +105,9 @@ export const CItemsQuery = <
     }
   }, [oneItem, parentLocations, queryString]);
 
+  const [items, setItems] = useState<V[] | null>(null);
+
+  // Load items when query or parent context changes
   useEffect(() => {
     logger.trace('useEffect[queryString, parentLocations, parentName, item]',
       { queryString, parentLocations: abbrevLKA(parentLocations as any), parentName, parentItem });
@@ -114,41 +116,25 @@ export const CItemsQuery = <
         if (parentLocations) {
           logger.trace('useEffect[queryString]',
             { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-          await allItems(query, parentLocations);
+          setIsLoading(true);
+          const results = await allItems(query, parentLocations);
+          setItems(results as V[] | null);
           setIsLoading(false);
         } else {
           logger.warning(`${name}: useEffect[queryString, parentLocations] without parent locations`,
             { query: abbrevQuery(query) });
+          setItems(null);
           setIsLoading(false);
         }
       } catch (error) {
         logger.error(`${name}: Error in useEffect`, error);
+        setItems(null);
         setIsLoading(false);
         // Don't throw here as this would be lost in the async context
         // Let the all/one override functions handle error throwing
       }
     })();
-  }, [queryString, parentLocations, parentName, parentItem]);
-
-  const items: V[] | null = useMemo(() => {
-    logger.trace('useMemo[cacheMap, parentLocations]',
-      { cacheMapIsNull: cacheMap === null, parentLocations: abbrevLKA(parentLocations as any) });
-    if (parentLocations) {
-      const results: V[] | null = cacheMap.queryIn(query, parentLocations) as V[] | null;
-      setIsLoading(false);
-      return results;
-    } else {
-      logger.warning(`${name}: items without parent locations`, { query: abbrevQuery(query) });
-      // logger.warn('No parent locations present to query cacheMap for containeditems', {
-      //   query,
-      //   queryString,
-      //   parentLocations,
-      //   parentItem,
-      // });
-      //throw new Error('No parent locations present to query cacheMap for containeditems');
-      return null;
-    }
-  }, [cacheMap, parentLocations]);
+  }, [queryString, parentLocations, parentName, parentItem, allItems, name]);
 
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,

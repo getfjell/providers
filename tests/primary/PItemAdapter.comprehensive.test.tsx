@@ -5,7 +5,7 @@ import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { CacheMap } from '@fjell/cache';
+
 import { Cache } from '@fjell/cache';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -34,15 +34,11 @@ describe('PItemAdapter - Core Operations', () => {
     }
   };
 
-  let cacheMap: CacheMap<TestItem, 'test'>;
   let testItemCache: TestItemCache;
   let TestItemContext: React.Context<TestItemAdapterContextType | undefined>;
 
   beforeEach(() => {
     vi.resetAllMocks();
-
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
-    (cacheMap as any).set(testItem.key, testItem);
 
     testItemCache = {
       coordinate: {
@@ -51,39 +47,24 @@ describe('PItemAdapter - Core Operations', () => {
       },
       registry: {} as any,
       api: {} as any,
-      cacheMap: cacheMap,
+
       operations: {
-        all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-        one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        remove: vi.fn().mockResolvedValue(cacheMap),
-        retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-        set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-        facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
-        allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
-        reset: vi.fn().mockResolvedValue([cacheMap])
+        all: vi.fn().mockResolvedValue([testItem]),
+        one: vi.fn().mockResolvedValue(testItem),
+        create: vi.fn().mockResolvedValue(testItem),
+        get: vi.fn().mockResolvedValue(testItem),
+        remove: vi.fn().mockResolvedValue(undefined),
+        retrieve: vi.fn().mockResolvedValue(testItem),
+        update: vi.fn().mockResolvedValue(testItem),
+        action: vi.fn().mockResolvedValue(testItem),
+        allAction: vi.fn().mockResolvedValue([testItem]),
+        set: vi.fn().mockResolvedValue(testItem),
+        find: vi.fn().mockResolvedValue([testItem]),
+        facet: vi.fn().mockResolvedValue({ facetData: 'test' }),
+        allFacet: vi.fn().mockResolvedValue({ allFacetData: 'test' }),
+        reset: vi.fn().mockResolvedValue(undefined)
       },
-      // Legacy properties for backwards compatibility
-      pkTypes: ['test'],
-      all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      remove: vi.fn().mockResolvedValue(cacheMap),
-      retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-      find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-      facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
-      allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
-      reset: vi.fn().mockResolvedValue([cacheMap])
+      subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
     } as unknown as TestItemCache;
 
     TestItemContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);

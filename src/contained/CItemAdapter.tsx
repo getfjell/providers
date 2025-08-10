@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 /* eslint-disable no-undefined */
 import LibLogger from "../logger";
-import { AggregateConfig, Cache, CacheMap, createAggregator } from "@fjell/cache";
+import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
   ComKey,
@@ -12,6 +12,7 @@ import * as React from "react";
 import * as AItem from "../AItem";
 import * as AItemAdapter from "../AItemAdapter";
 import * as AItems from "../AItems";
+import * as Faceted from "../Faceted";
 
 const logger = LibLogger.get('CItemAdapter');
 
@@ -80,9 +81,9 @@ export const Adapter = <
   aggregates?: AggregateConfig;
   events?: AggregateConfig;
   addActions?: (action: AItem.ActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItem.AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addFacets?: (facet: AItem.FacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItem.AddedFacetMethod<L1, L2, L3, L4, L5>>;
+  addFacets?: (facet: Faceted.FacetMethod<L1, L2, L3, L4, L5>) => Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
   addAllActions?: (allAction: AItems.AllActionMethod<V, S, L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  addAllFacets?: (allFacet: AItems.AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, AItems.AddedAllFacetMethod<L1, L2, L3, L4, L5>>;
+  addAllFacets?: (allFacet: Faceted.AllFacetMethod<L1, L2, L3, L4, L5>) => Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
   children: React.ReactNode;
 }) => {
 
@@ -94,9 +95,6 @@ export const Adapter = <
   }, [cache, name]);
 
   const pkTypes = React.useMemo(() => cache?.coordinate.kta, [cache]);
-
-  const [cacheMap, setCacheMap] =
-    React.useState<CacheMap<V, S, L1, L2, L3, L4, L5>>(new CacheMap<V, S, L1, L2, L3, L4, L5>(pkTypes));
 
   const sourceCache = React.useMemo(() => {
     if (!cache) {
@@ -113,6 +111,9 @@ export const Adapter = <
 
   const [resolvedSourceCache, setResolvedSourceCache] = React.useState<Cache<V, S, L1, L2, L3, L4, L5> | null>(null);
 
+  // State to trigger re-renders when cache events occur
+  const [, setCacheVersion] = React.useState(0);
+
   React.useEffect(() => {
     if (sourceCache) {
       if ('then' in sourceCache && typeof sourceCache.then === 'function') {
@@ -126,6 +127,45 @@ export const Adapter = <
       }
     }
   }, [sourceCache, name]);
+
+  // Subscribe to cache events to trigger re-renders
+  React.useEffect(() => {
+    if (!resolvedSourceCache || typeof resolvedSourceCache.subscribe !== 'function') {
+      return;
+    }
+
+    try {
+      const subscription = resolvedSourceCache.subscribe((event) => {
+        // Increment version to trigger re-renders for any cache change
+        setCacheVersion(prev => prev + 1);
+        logger.debug(`Cache event in ${name}:`, event.type, event);
+      }, {
+        // Subscribe to all cache events for this adapter
+        eventTypes: [
+          'item_created',
+          'item_updated',
+          'item_removed',
+          'item_retrieved',
+          'item_set',
+          'items_queried',
+          'cache_cleared',
+          'location_invalidated',
+          'query_invalidated'
+        ],
+        debounceMs: 50 // Small debounce to batch rapid updates
+      });
+
+      return () => {
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe();
+        }
+      };
+    } catch (error) {
+      logger.debug(`Cache subscription not available in ${name}:`, error);
+      // Return a no-op cleanup function
+      return () => {};
+    }
+  }, [resolvedSourceCache, name]);
 
   const handleCacheError = React.useCallback((operation: string) => {
     logger.error('Cache not initialized in %s. Operation "%s" failed.', name, operation);
@@ -145,10 +185,7 @@ export const Adapter = <
       return handleCacheError('all');
     }
     logger.debug('Fetching Items from sourceCache.all');
-    const [newCacheMap, items] = await resolvedSourceCache.operations.all(query, locations);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const items = await resolvedSourceCache.operations.all(query, locations);
     return items as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -163,10 +200,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('one');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.operations.one(query, locations);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const item = await resolvedSourceCache.operations.one(query, locations);
     return item as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -181,10 +215,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('create');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.create(item, locations);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const newItem = await resolvedSourceCache.operations.create(item, locations);
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -195,10 +226,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('get');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.operations.get(key);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const item = await resolvedSourceCache.operations.get(key);
     return item as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -209,10 +237,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('remove');
     }
-    const newCacheMap = await resolvedSourceCache.operations.remove(key);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    await resolvedSourceCache.operations.remove(key);
   }, [resolvedSourceCache, handleCacheError]);
 
   const retrieve = React.useCallback(async (
@@ -222,19 +247,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('retrieve');
     }
-    const [newCacheMap, item] = await resolvedSourceCache.operations.retrieve(key);
-    // Update the cacheMap state if there's a new cache map from the underlying cache
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    } else if (item) {
-      // If newCacheMap is null but we have an item, it means the item was already cached
-      // in the underlying cache but might not be in our React state cacheMap, so update it
-      setCacheMap(prevCacheMap => {
-        const newMap = prevCacheMap.clone();
-        newMap.set(key, item);
-        return newMap;
-      });
-    }
+    const item = await resolvedSourceCache.operations.retrieve(key);
     return item as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -246,10 +259,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('update');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.update(key, item);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const newItem = await resolvedSourceCache.operations.update(key, item);
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -262,10 +272,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('action');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.action(key, action, body);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const newItem = await resolvedSourceCache.operations.action(key, action, body);
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -282,10 +289,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('allAction');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.operations.allAction(action, body, locations);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const newItems = await resolvedSourceCache.operations.allAction(action, body, locations);
     return newItems as V[];
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -297,10 +301,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('facet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.operations.facet(key, facet);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const response = await resolvedSourceCache.operations.facet(key, facet);
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -312,10 +313,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('allFacet');
     }
-    const [newCacheMap, response] = await resolvedSourceCache.operations.allFacet(facet, params);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const response = await resolvedSourceCache.operations.allFacet(facet, params);
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -328,11 +326,21 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('find');
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache.operations.find(finder, finderParams, locations);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const newItems = await resolvedSourceCache.operations.find(finder, finderParams, locations);
     return newItems as V[];
+  }, [resolvedSourceCache, handleCacheError]);
+
+  const findOne = React.useCallback(async (
+    finder: string,
+    finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+  ): Promise<V | null> => {
+    logger.trace('findOne', { finder, finderParams, locations });
+    if (!resolvedSourceCache) {
+      return handleCacheError('findOne');
+    }
+    const newItems = await resolvedSourceCache.operations.findOne(finder, finderParams, locations);
+    return newItems as V | null;
   }, [resolvedSourceCache, handleCacheError]);
 
   const set = React.useCallback(async (
@@ -343,16 +351,33 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('set');
     }
-    const [newCacheMap, newItem] = await resolvedSourceCache.operations.set(key, item);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap.clone());
-    }
+    const newItem = await resolvedSourceCache.operations.set(key, item);
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: Partial<ContextType<V, S, L1, L2, L3, L4, L5>> = {
+  const contextValue: ContextType<V, S, L1, L2, L3, L4, L5> = React.useMemo(() => ({
     name,
-    cacheMap,
+    pkTypes: pkTypes || ([] as any),
+    all,
+    one,
+    create,
+    get,
+    remove,
+    retrieve,
+    update,
+    action,
+    allAction,
+    facet,
+    allFacet,
+    find,
+    findOne,
+    set,
+    addActions,
+    addFacets,
+    addAllActions,
+    addAllFacets
+  }), [
+    name,
     pkTypes,
     all,
     one,
@@ -366,17 +391,19 @@ export const Adapter = <
     facet,
     allFacet,
     find,
+    findOne,
     set,
     addActions,
     addFacets,
     addAllActions,
-    addAllFacets
-  };
+    addAllFacets,
+
+  ]);
 
   return React.createElement(
     context.Provider,
     {
-      value: contextValue as ContextType<V, S, L1, L2, L3, L4, L5>,
+      value: contextValue,
     },
     children,
   );
