@@ -741,7 +741,7 @@ describe('Memoization Behavior', () => {
       })
     );
     expect(mockLogger.warning).toHaveBeenCalledWith(
-      expect.stringContaining('items without parent locations'),
+      expect.stringContaining('useEffect[queryString, parentLocations] without parent locations'),
       expect.any(Object)
     );
   });

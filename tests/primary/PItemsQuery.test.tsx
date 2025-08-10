@@ -122,7 +122,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({});
+        expect(mockAll).toHaveBeenCalledWith({}, []);
       });
     });
 
@@ -144,7 +144,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(customQuery);
+        expect(mockAll).toHaveBeenCalledWith(customQuery, []);
       });
     });
 
@@ -166,7 +166,7 @@ describe('PItemsQuery', () => {
       const { rerender } = render(<TestQueryComponent query={{}} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({});
+        expect(mockAll).toHaveBeenCalledWith({}, []);
       });
 
       // Change query
@@ -174,10 +174,10 @@ describe('PItemsQuery', () => {
       rerender(<TestQueryComponent query={newQuery} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(newQuery);
+        expect(mockAll).toHaveBeenCalledWith(newQuery, []);
       });
 
-      expect(mockAll).toHaveBeenCalledTimes(4);
+      expect(mockAll).toHaveBeenCalledTimes(2);
     });
 
     it('should memoize query string to prevent unnecessary re-renders', async () => {
@@ -199,15 +199,15 @@ describe('PItemsQuery', () => {
       const { rerender } = render(<TestComponent query={query} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledTimes(2);
+        expect(mockAll).toHaveBeenCalledTimes(1);
       });
 
       // Re-render with same query object should not trigger reload
       rerender(<TestComponent query={query} />);
 
-      // Should still only be called twice
+      // Should still only be called once
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledTimes(2);
+        expect(mockAll).toHaveBeenCalledTimes(1);
       });
     });
   });
@@ -231,7 +231,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(query);
+        expect(mockAll).toHaveBeenCalledWith(query, []);
       });
     });
   });
@@ -267,7 +267,7 @@ describe('PItemsQuery', () => {
           expect(result).toEqual([testItem]);
         });
 
-        expect(mockAll).toHaveBeenCalledTimes(5); // Initial calls plus callback
+        expect(mockAll).toHaveBeenCalledTimes(2); // Initial call plus callback
       }
     });
 
@@ -409,20 +409,20 @@ describe('PItemsQuery', () => {
       const { rerender } = render(<TestComponent query={{}} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({});
+        expect(mockAll).toHaveBeenCalledWith({}, []);
       });
 
       rerender(<TestComponent query={{ limit: 5 }} />);
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({ limit: 5 });
+        expect(mockAll).toHaveBeenCalledWith({ limit: 5 }, []);
       });
 
       rerender(<TestComponent query={{ limit: 10, offset: 5 }} />);
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({ limit: 10, offset: 5 });
+        expect(mockAll).toHaveBeenCalledWith({ limit: 10, offset: 5 }, []);
       });
 
-      expect(mockAll).toHaveBeenCalledTimes(6);
+      expect(mockAll).toHaveBeenCalledTimes(3);
     });
   });
 });

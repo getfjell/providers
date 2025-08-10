@@ -67,7 +67,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     try {
       logger.trace('all', { query });
       setIsLoading(true);
-      const items = await allItems(query) as V[] | null;
+      const items = await allItems(query, []) as V[] | null;
       setIsLoading(false);
       logger.debug('Items Returned for All', { items });
       return items;
