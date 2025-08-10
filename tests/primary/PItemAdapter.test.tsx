@@ -5,7 +5,7 @@ import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { MemoryCacheMap } from '@fjell/cache';
+
 import { Cache } from '@fjell/cache';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -34,7 +34,6 @@ describe('PItemAdapter', () => {
     }
   };
 
-  let cacheMap: MemoryCacheMap<TestItem, 'test'>;
   let testItemCache: TestItemCache;
   let TestItemContext: React.Context<TestItemAdapterContextType | undefined>;
   let TestItemAdapter: React.FC<{ children: ReactNode }>;
@@ -42,31 +41,27 @@ describe('PItemAdapter', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    // Initialize cache map with test item
-    cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
-    (cacheMap as any).set(testItem.key, testItem);
-
     // Create mock cache with all required methods
     testItemCache = {
       coordinate: { kta: ['test'] },
       registry: {},
       api: {},
-      cacheMap: cacheMap,
+      subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
       operations: {
-        all: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-        one: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        create: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        get: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        remove: vi.fn().mockResolvedValue(cacheMap),
-        retrieve: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        update: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        action: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        allAction: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-        set: vi.fn().mockResolvedValue([cacheMap, testItem]),
-        find: vi.fn().mockResolvedValue([cacheMap, [testItem]]),
-        facet: vi.fn().mockResolvedValue([cacheMap, { facetData: 'test' }]),
-        allFacet: vi.fn().mockResolvedValue([cacheMap, { allFacetData: 'test' }]),
-        reset: vi.fn().mockResolvedValue([cacheMap]),
+        all: vi.fn().mockResolvedValue([testItem]),
+        one: vi.fn().mockResolvedValue(testItem),
+        create: vi.fn().mockResolvedValue(testItem),
+        get: vi.fn().mockResolvedValue(testItem),
+        remove: vi.fn().mockResolvedValue(undefined),
+        retrieve: vi.fn().mockResolvedValue(testItem),
+        update: vi.fn().mockResolvedValue(testItem),
+        action: vi.fn().mockResolvedValue(testItem),
+        allAction: vi.fn().mockResolvedValue([testItem]),
+        set: vi.fn().mockResolvedValue(testItem),
+        find: vi.fn().mockResolvedValue([testItem]),
+        facet: vi.fn().mockResolvedValue({ facetData: 'test' }),
+        allFacet: vi.fn().mockResolvedValue({ allFacetData: 'test' }),
+        reset: vi.fn().mockResolvedValue(undefined),
       }
     } as unknown as TestItemCache;
 
@@ -501,21 +496,21 @@ describe('PItemAdapter', () => {
     );
   });
 
-  it('should handle null cacheMap updates from cache operations', async () => {
-    // Mock cache that returns null cacheMaps
-    const nullCacheMapCache = {
+  it('should handle cache operations correctly', async () => {
+    // Mock cache with standard operations
+    const standardCache = {
       ...testItemCache,
       operations: {
         ...testItemCache.operations,
-        get: vi.fn().mockResolvedValue([null, testItem]),
-        retrieve: vi.fn().mockResolvedValue([null, testItem]),
+        get: vi.fn().mockResolvedValue(testItem),
+        retrieve: vi.fn().mockResolvedValue(testItem),
       }
     } as unknown as TestItemCache;
 
-    const NullCacheMapAdapter = ({ children }: { children: React.ReactNode }) => (
+    const StandardCacheAdapter = ({ children }: { children: React.ReactNode }) => (
       <Adapter
         name="test"
-        cache={nullCacheMapCache}
+        cache={standardCache}
         context={TestItemContext}
       >
         {children}
@@ -523,7 +518,7 @@ describe('PItemAdapter', () => {
     );
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
-      <NullCacheMapAdapter>{children}</NullCacheMapAdapter>
+      <StandardCacheAdapter>{children}</StandardCacheAdapter>
     );
 
     const { result } = renderHook(() => {
@@ -542,13 +537,13 @@ describe('PItemAdapter', () => {
     });
   });
 
-  it('should handle retrieve operation with item but no cacheMap update', async () => {
-    // Mock cache where retrieve returns null cacheMap but valid item
+  it('should handle retrieve operation correctly', async () => {
+    // Mock cache with standard retrieve operation
     const retrieveCache = {
       ...testItemCache,
       operations: {
         ...testItemCache.operations,
-        retrieve: vi.fn().mockResolvedValue([null, testItem]),
+        retrieve: vi.fn().mockResolvedValue(testItem),
       }
     } as unknown as TestItemCache;
 
@@ -628,7 +623,7 @@ describe('PItemAdapter', () => {
       ...testItemCache,
       operations: {
         ...testItemCache.operations,
-        find: vi.fn().mockResolvedValue([cacheMap, []]),
+        find: vi.fn().mockResolvedValue([]),
       }
     } as unknown as TestItemCache;
 
@@ -660,6 +655,9 @@ describe('PItemAdapter', () => {
       const item = await result.current.findOne('testFinder', { name: 'test' });
       expect(item).toBeNull();
     });
+
+    // Verify the correct mock was called
+    expect(emptyFindCache.operations.find).toHaveBeenCalledWith('testFinder', { name: 'test' });
   });
 
   it('should handle async cache initialization', async () => {

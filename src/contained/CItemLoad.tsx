@@ -71,14 +71,13 @@ export const CItemLoad = <
 
   // Destructure the values we need to define functions.
   const {
-    cacheMap,
     pkTypes,
     retrieve: retrieveItem,
     remove: removeItem,
     update: updateItem,
     action: actionItem,
     facet: facetItem,
-    set: setItem,
+    set: setCacheItem,
     addActions,
     addFacets,
   } = cItemAdapter;
@@ -89,32 +88,7 @@ export const CItemLoad = <
     item: parentItem,
   } = useMemo(() => parentItemAdapter, [parentItemAdapter]);
 
-  const item: V | null = useMemo(() => {
-    // If a providedItem is supplied, use it directly and skip cache retrieval
-    if (providedItem !== undefined) {
-      logger.debug('Using provided item directly', { providedItem });
-      setIsLoading(false);
-      setIsUpdating(false);
-      setIsRemoving(false);
-      return providedItem;
-    }
-
-    // We only call the cache if the key is valid.  If we don't do this we end up driving up errors
-    // And here's the explanation, there are cases where you don't have a valid key, and a null result is expected
-    // if we don't do this we end up with making a request to the server we know will fail.
-    if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
-      const item = cacheMap && cacheMap.get(itemKey as ComKey<S, L1, L2, L3, L4, L5>);
-      setIsLoading(false);
-      setIsUpdating(false);
-      setIsRemoving(false);
-      return item as V | null;
-    } else {
-      setIsLoading(false);
-      setIsUpdating(false);
-      setIsRemoving(false);
-      return null;
-    }
-  }, [itemKey, cacheMap, providedItem]);
+  const [item, setItemState] = React.useState<V | null>(null);
 
   const locations: LocKeyArray<S, L1, L2, L3, L4> | null = useMemo(() => {
     if (item) {
@@ -124,10 +98,11 @@ export const CItemLoad = <
     }
   }, [item])
 
+  // Set item key from ik or provided item
   useEffect(() => {
     logger.trace('useEffect[ik]', { ik, providedItem });
 
-    // If a providedItem is supplied, extract the key from it and skip cache retrieval
+    // If a providedItem is supplied, extract the key from it
     if (providedItem !== undefined) {
       if (providedItem && providedItem.key) {
         logger.debug('Using key from provided item', { itemKey: providedItem.key });
@@ -152,30 +127,51 @@ export const CItemLoad = <
     } else {
       logger.debug('No item key was provided, no item will be retrieved', { ik });
       setIsLoading(false);
+      setItemKey(undefined);
     }
   }, [ik, providedItem]);
 
+  // Load item from cache or use provided item (consolidated effect)
   useEffect(() => {
-    // If a providedItem is supplied, skip cache retrieval
+    // If a providedItem is supplied, use it directly and skip cache retrieval
     if (providedItem !== undefined) {
-      logger.debug('Skipping cache retrieval due to provided item');
+      logger.debug('Using provided item directly', { providedItem });
+      setItemState(providedItem);
+      setIsLoading(false);
+      setIsUpdating(false);
+      setIsRemoving(false);
       return;
     }
 
+    // We only call the cache if the key is valid.  If we don't do this we end up driving up errors
+    // And here's the explanation, there are cases where you don't have a valid key, and a null result is expected
+    // if we don't do this we end up with making a request to the server we know will fail.
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       (async () => {
         try {
           logger.trace('useEffect[itemKey]', { itemKey: abbrevIK(itemKey) });
-          await retrieveItem(itemKey);
+          setIsLoading(true);
+          const retrievedItem = await retrieveItem(itemKey);
+          setItemState(retrievedItem as V | null);
           setIsLoading(false);
+          setIsUpdating(false);
+          setIsRemoving(false);
         } catch (error) {
           logger.error(`${name}: Error retrieving item`, error);
+          setItemState(null);
           setIsLoading(false);
+          setIsUpdating(false);
+          setIsRemoving(false);
           throwAsyncError(error as Error);
         }
       })();
+    } else {
+      setItemState(null);
+      setIsLoading(false);
+      setIsUpdating(false);
+      setIsRemoving(false);
     }
-  }, [itemKey, providedItem]);
+  }, [itemKey, providedItem, retrieveItem, name]);
 
   const remove = useCallback(async () => {
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
@@ -224,14 +220,14 @@ export const CItemLoad = <
   const set = useCallback(async (item: V): Promise<V> => {
     logger.trace("set", { item });
     if (item && isValidComKey(item.key as ComKey<S, L1, L2, L3, L4, L5>)) {
-      const retItem = await setItem(item.key, item);
+      const retItem = await setCacheItem(item.key, item);
       return retItem as V;
     } else {
       const errorMessage = !item ? `${name}: No item provided to set` : `${name}: Invalid or missing key in item provided to set`;
       logger.error(errorMessage, { item });
       throw new Error(errorMessage);
     }
-  }, [setItem, name]);
+  }, [setCacheItem, name]);
 
   const action = useCallback(async (
     actionName: string,

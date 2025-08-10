@@ -1,10 +1,6 @@
 import { AllItemTypeArrays, ComKey, PriKey } from "@fjell/core";
-
 import { Item } from "@fjell/core";
-
 import { LocKeyArray } from "@fjell/core";
-
-import { CacheMap } from "@fjell/cache";
 import { ItemQuery } from "@fjell/core";
 import React from "react";
 import * as AItem from "./AItem";
@@ -190,7 +186,6 @@ export interface ContextType<
   L5 extends string = never,
 > {
   name: string;
-  cacheMap: CacheMap<V, S, L1, L2, L3, L4, L5>;
   pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
 
   all: AllMethod<V, S, L1, L2, L3, L4, L5>;

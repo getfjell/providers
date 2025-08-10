@@ -1,7 +1,7 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Cache, MemoryCacheMap } from '@fjell/cache';
 import { ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from '@fjell/core';
+import { Cache } from '@fjell/cache';
 import { useCacheQuery } from '../../src/hooks/useCacheQuery';
 
 // Mock logger to avoid console noise in tests
@@ -31,7 +31,6 @@ interface TestItem extends Item<'test', 'container'> {
 type TestItemCache = Cache<TestItem, 'test', 'container'>;
 
 describe('useCacheQuery', () => {
-  let cacheMap: MemoryCacheMap<TestItem, 'test', 'container', never, never, never, never>;
   let cache: TestItemCache;
   let eventListeners: Array<(event: any) => void>;
   let unsubscribeFunctions: Array<() => void>;
@@ -71,18 +70,14 @@ describe('useCacheQuery', () => {
     unsubscribeFunctions = [];
 
     // Set up cache with test data
-    cacheMap = new MemoryCacheMap<TestItem, 'test', 'container', never, never, never, never>(['test']);
-    cacheMap.set(itemKey1, testItem1);
-    cacheMap.set(itemKey2, testItem2);
 
     // Create cache with mocked operations and subscription
     cache = {
       coordinate: {
         kta: ['test']
       },
-      cacheMap,
       operations: {
-        all: vi.fn().mockResolvedValue([null, [testItem1, testItem2]]),
+        all: vi.fn().mockResolvedValue([testItem1, testItem2]),
         get: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -150,20 +145,30 @@ describe('useCacheQuery', () => {
       expect(typeof result.current.refetch).toBe('function');
     });
 
-    it('should load initial items from cache', () => {
+    it('should load initial items from cache', async () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
-      expect(result.current.items).toEqual([testItem1, testItem2]);
-      expect(result.current.isLoading).toBe(false);
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1, testItem2]);
+        expect(result.current.isLoading).toBe(false);
+      });
     });
 
-    it('should filter items based on query', () => {
-      vi.spyOn(cacheMap, 'queryIn').mockReturnValue([testItem1]);
+    it('should filter items based on query', async () => {
+      // Mock the all operation to filter items based on the query
+      cache.operations.all = vi.fn().mockImplementation((query) => {
+        const allItems = [testItem1, testItem2];
+        if (query.name) {
+          return Promise.resolve(allItems.filter(item => item.name === query.name));
+        }
+        return Promise.resolve(allItems);
+      });
 
       const { result } = renderHook(() => useCacheQuery(cache, { name: 'test1' }, []));
 
-      expect(result.current.items).toEqual([testItem1]);
-      expect(cacheMap.queryIn).toHaveBeenCalledWith({ name: 'test1' }, []);
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1]);
+      });
     });
   });
 
@@ -189,23 +194,32 @@ describe('useCacheQuery', () => {
       expect(result.current.items).toEqual(newItems);
     });
 
-    it('should re-query cache for item_created event', () => {
+    it('should re-query cache for item_created event', async () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1, testItem2]);
+      });
+
       const newItems = [testItem1, testItem2, testItem1];
-      vi.spyOn(cacheMap, 'queryIn').mockReturnValue(newItems);
+      // Mock the all operation to return new items when re-queried
+      vi.mocked(cache.operations.all).mockResolvedValue(newItems);
 
       act(() => {
         triggerEvent({ type: 'item_created', item: testItem1 });
       });
 
-      expect(result.current.items).toEqual(newItems);
+      await waitFor(() => {
+        expect(result.current.items).toEqual(newItems);
+      });
     });
 
-    it('should remove item for item_removed event', () => {
+    it('should remove item for item_removed event', async () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
-      expect(result.current.items).toEqual([testItem1, testItem2]);
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1, testItem2]);
+      });
 
       act(() => {
         triggerEvent({ type: 'item_removed', key: itemKey1 });
@@ -214,10 +228,12 @@ describe('useCacheQuery', () => {
       expect(result.current.items).toEqual([testItem2]);
     });
 
-    it('should clear items for cache_cleared event', () => {
+    it('should clear items for cache_cleared event', async () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
-      expect(result.current.items).toEqual([testItem1, testItem2]);
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1, testItem2]);
+      });
 
       act(() => {
         triggerEvent({ type: 'cache_cleared' });
@@ -232,7 +248,7 @@ describe('useCacheQuery', () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
       const newItems = [testItem1];
-      vi.mocked(cache.operations.all).mockResolvedValue([null, newItems]);
+      vi.mocked(cache.operations.all).mockResolvedValue(newItems);
 
       let refetchResult: TestItem[];
       await act(async () => {
@@ -290,18 +306,30 @@ describe('useCacheQuery', () => {
   });
 
   describe('Parameter Changes', () => {
-    it('should update when query changes and handle memory cleanup', () => {
+    it('should update when query changes and handle memory cleanup', async () => {
       const { result, rerender, unmount } = renderHook(
         ({ query }) => useCacheQuery(cache, query, []),
         { initialProps: { query: {} } }
       );
 
-      expect(result.current.items).toEqual([testItem1, testItem2]);
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1, testItem2]);
+      });
 
-      vi.spyOn(cacheMap, 'queryIn').mockReturnValue([testItem1]);
+      // Set up mock for filtered query
+      cache.operations.all = vi.fn().mockImplementation((query) => {
+        const allItems = [testItem1, testItem2];
+        if (query.name) {
+          return Promise.resolve(allItems.filter(item => item.name === query.name));
+        }
+        return Promise.resolve(allItems);
+      });
+
       rerender({ query: { name: 'test1' } });
 
-      expect(result.current.items).toEqual([testItem1]);
+      await waitFor(() => {
+        expect(result.current.items).toEqual([testItem1]);
+      });
 
       // Explicitly unmount to ensure cleanup
       unmount();

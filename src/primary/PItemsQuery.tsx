@@ -1,6 +1,6 @@
 
 import { Item, ItemQuery } from "@fjell/core";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
 import LibLogger from '../logger';
@@ -37,32 +37,31 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
 
   // Destructure the values we need to define functions.
   const {
-    cacheMap,
     all: allItems,
     one: oneItem,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const queryString = useMemo(() => createStableHash(query), [query]);
+  const [items, setItems] = useState<V[]>([]);
 
+  // Load items when query changes
   useEffect(() => {
     (async () => {
       try {
         logger.trace('useEffect[queryString] %s', createStableHash(query));
-        await allItems(query);
+        setIsLoading(true);
+        const results = await allItems(query, []);
+        setItems(results as V[] || []);
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error loading items:`, error);
+        setItems([]);
         setIsLoading(false);
         // Don't throw here as this would be lost in the async context
         // Let the all/one override functions handle error throwing
       }
     })();
-  }, [queryString]);
-
-  const items: V[] = useMemo(() => {
-    logger.trace('useMemo[cacheMap]', { query });
-    return cacheMap.queryIn(query, []) as V[];
-  }, [cacheMap, query]);
+  }, [queryString, allItems, name]);
 
   const all = useCallback(async () => {
     try {

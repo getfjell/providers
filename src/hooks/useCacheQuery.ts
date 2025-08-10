@@ -44,10 +44,15 @@ export function useCacheQuery<
       return;
     }
 
-    // Get current items from cache
-    const cachedItems = cache.cacheMap.queryIn(query, locations);
-    setItems(cachedItems);
-    setIsLoading(false);
+    // Get current items from cache using all operation
+    cache.operations.all(query, locations).then(cachedItems => {
+      setItems(cachedItems || []);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error('Error querying items from cache:', error);
+      setItems([]);
+      setIsLoading(false);
+    });
   }, [cache, queryString, locationsString]);
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
@@ -94,8 +99,11 @@ export function useCacheQuery<
         // For individual item changes, we need to re-query to see if the item
         // should be included in our result set
         if (cache) {
-          const updatedItems = cache.cacheMap.queryIn(query, locations);
-          setItems(updatedItems);
+          cache.operations.all(query, locations).then(updatedItems => {
+            setItems(updatedItems || []);
+          }).catch(error => {
+            console.error('Error re-querying items from cache after item change:', error);
+          });
         }
         break;
 
@@ -139,9 +147,9 @@ export function useCacheQuery<
 
     setIsLoading(true);
     try {
-      const [, results] = await cache.operations.all(query, locations);
-      setItems(results);
-      return results;
+      const results = await cache.operations.all(query, locations);
+      setItems(results || []);
+      return results || [];
     } catch (error) {
       console.error('Error refetching query:', error);
       return [];

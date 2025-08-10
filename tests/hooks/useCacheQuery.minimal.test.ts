@@ -7,11 +7,17 @@ describe('useCacheQuery minimal', () => {
 
   beforeEach(() => {
     mockCache = {
-      subscribe: vi.fn(),
+      subscribe: vi.fn().mockReturnValue({
+        id: 'test-sub',
+        unsubscribe: vi.fn(),
+        isActive: () => true,
+        getOptions: () => ({})
+      }),
       unsubscribe: vi.fn(),
       get: vi.fn(),
       isActive: vi.fn(() => true),
-      cacheMap: {
+      operations: {
+        all: vi.fn().mockResolvedValue([]),
         queryIn: vi.fn(() => [])
       }
     };

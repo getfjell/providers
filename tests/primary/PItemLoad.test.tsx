@@ -1,6 +1,6 @@
 
-import { Cache, MemoryCacheMap } from "@fjell/cache";
 import { Item, PriKey } from "@fjell/core";
+import { Cache } from "@fjell/cache";
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,48 +24,31 @@ const testItem: Item<'test'> = {
 };
 const priKey = testItem.key;
 
-// Create a shared CacheMap instance for all tests
-const sharedCacheMap = new MemoryCacheMap<Item<'test'>, 'test'>(['test']);
-
-// Create a mock cache that properly manages its internal cacheMap
 const createMockCache = () => {
   return {
     coordinate: { kta: ['test'] },
     registry: {},
     api: {},
-    cacheMap: sharedCacheMap,
     operations: {
-      retrieve: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
-        if ((sharedCacheMap as any).includesKey(key)) {
-          return [null, (sharedCacheMap as any).get(key)];
-        }
-        (sharedCacheMap as any).set(key, testItem);
-        return [sharedCacheMap.clone(), testItem];
+      retrieve: vi.fn().mockImplementation(async () => {
+        return { ...testItem };
       }),
-      get: vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
-        (sharedCacheMap as any).set(key, testItem);
-        return [sharedCacheMap.clone(), testItem];
+      get: vi.fn().mockImplementation(async () => {
+        return { ...testItem };
       }),
 
       remove: vi.fn().mockImplementation(async () => {
-        (sharedCacheMap as any).delete(priKey);
-        return sharedCacheMap.clone();
+        return null;
       }),
 
       update: vi.fn().mockImplementation(async () => {
-        const updatedItem = { ...testItem };
-        (sharedCacheMap as any).set(priKey, updatedItem);
-        return [sharedCacheMap.clone(), updatedItem];
+        return { ...testItem };
       }),
 
       set: vi.fn().mockImplementation(async () => {
-        (sharedCacheMap as any).set(priKey, testItem);
-        return [sharedCacheMap.clone(), testItem];
       }),
 
       create: vi.fn().mockImplementation(async () => {
-        (sharedCacheMap as any).set(priKey, testItem);
-        return [sharedCacheMap.clone(), testItem];
       }),
     }
   } as unknown as Cache<Item<'test'>, 'test'>;
@@ -106,8 +89,6 @@ describe('PItemLoad', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Clear the shared cache map before each test
-    const keys = Array.from((sharedCacheMap as any).keys());
-    keys.forEach(key => (sharedCacheMap as any).delete(key));
     testItemCache = createMockCache();
   });
 
@@ -133,7 +114,6 @@ describe('PItemLoad', () => {
   });
 
   it('should remove an item', async () => {
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -157,7 +137,6 @@ describe('PItemLoad', () => {
   });
 
   it('should update an item', async () => {
-    (sharedCacheMap as any).set(priKey, testItem);
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
         <TestItemProvider ik={priKey}>
@@ -244,9 +223,7 @@ describe('PItemLoad', () => {
 
     // Mock retrieve to return different items based on key
     testItemCache.operations.retrieve = vi.fn().mockImplementation(async (key: PriKey<'test'>) => {
-      const item = key.pk === 'test-key' ? testItem : newTestItem;
-      (sharedCacheMap as any).set(key, item);
-      return [sharedCacheMap.clone(), item];
+      return key.pk === 'test-key' ? testItem : newTestItem;
     });
 
     // Test with first wrapper and first key
@@ -270,8 +247,6 @@ describe('PItemLoad', () => {
     unmount();
 
     // Clear cache and test with second wrapper and second key
-    const keys = Array.from((sharedCacheMap as any).keys());
-    keys.forEach(key => (sharedCacheMap as any).delete(key));
 
     const wrapper2 = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -306,7 +281,6 @@ describe('PItemLoad', () => {
   });
 
   it('should handle set operation', async () => {
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -332,11 +306,9 @@ describe('PItemLoad', () => {
   });
 
   it('should handle action operation', async () => {
-    (sharedCacheMap as any).set(priKey, testItem);
 
     // Mock the action operation
     testItemCache.operations.action = vi.fn().mockImplementation(async () => {
-      return [sharedCacheMap.clone(), testItem];
     });
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -363,11 +335,10 @@ describe('PItemLoad', () => {
   });
 
   it('should handle facet operation', async () => {
-    (sharedCacheMap as any).set(priKey, testItem);
 
     // Mock the facet operation to return proper cache format
     testItemCache.operations.facet = vi.fn().mockImplementation(async () => {
-      return [sharedCacheMap.clone(), { facetData: 'test' }];
+      return { facetData: 'test' };
     });
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -397,7 +368,6 @@ describe('PItemLoad', () => {
 
   it('should track isUpdating state during update operation', async () => {
     // Set up cache with item already present to avoid retrieval
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -426,7 +396,6 @@ describe('PItemLoad', () => {
 
   it('should track isRemoving state during remove operation', async () => {
     // Set up cache with item already present to avoid retrieval
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -454,7 +423,6 @@ describe('PItemLoad', () => {
 
   it('should track isUpdating state during set operation', async () => {
     // Set up cache with item already present to avoid retrieval
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -483,11 +451,9 @@ describe('PItemLoad', () => {
 
   it('should track isUpdating state during action operation', async () => {
     // Set up cache with item already present to avoid retrieval
-    (sharedCacheMap as any).set(priKey, testItem);
 
     // Mock the action operation
     testItemCache.operations.action = vi.fn().mockImplementation(async () => {
-      return [sharedCacheMap.clone(), testItem];
     });
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -608,7 +574,6 @@ describe('PItemLoad', () => {
 
   it('should throw error when setting item without valid key', async () => {
     // Set up cache with item already present
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -633,7 +598,6 @@ describe('PItemLoad', () => {
 
   it('should handle update operation errors', async () => {
     // Set up cache with item already present
-    (sharedCacheMap as any).set(priKey, testItem);
     const updateError = new Error('Update failed');
     testItemCache.operations.update = vi.fn().mockRejectedValue(updateError);
 
@@ -660,7 +624,6 @@ describe('PItemLoad', () => {
 
   it('should handle remove operation errors', async () => {
     // Set up cache with item already present
-    (sharedCacheMap as any).set(priKey, testItem);
     const removeError = new Error('Remove failed');
     testItemCache.operations.remove = vi.fn().mockRejectedValue(removeError);
 
@@ -687,7 +650,6 @@ describe('PItemLoad', () => {
 
   it('should handle facet operation errors', async () => {
     // Set up cache with item already present
-    (sharedCacheMap as any).set(priKey, testItem);
     const facetError = new Error('Facet failed');
     testItemCache.operations.facet = vi.fn().mockRejectedValue(facetError);
 
@@ -712,7 +674,6 @@ describe('PItemLoad', () => {
 
   it('should compute locations from item key', async () => {
     // Set up cache with item already present
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -751,7 +712,6 @@ describe('PItemLoad', () => {
 
   it('should load item from cache when available', async () => {
     // Pre-populate cache
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>
@@ -774,7 +734,6 @@ describe('PItemLoad', () => {
 
   it('should handle context value structure correctly', async () => {
     // Set up cache with item already present
-    (sharedCacheMap as any).set(priKey, testItem);
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <TestItemAdapter>

@@ -2,7 +2,7 @@
 import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
-import { AggregateConfig, Cache, CacheMap, createAggregator, MemoryCacheMap } from "@fjell/cache";
+import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
 import { FacetParams } from "src/types";
 import * as AItem from "../AItem";
 import * as AItemAdapter from "../AItemAdapter";
@@ -18,7 +18,6 @@ export interface ContextType<
     S extends string
   > extends AItemAdapter.ContextType<V, S> {
     name: string;
-    cacheMap: CacheMap<V, S>;
     pkTypes: AllItemTypeArrays<S>;
     addFacets?: (facet: Faceted.FacetMethod) => Record<string, Faceted.AddedFacetMethod>;
     addAllFacets?: (allFacet: Faceted.AllFacetMethod) => Record<string, Faceted.AddedFacetMethod>;
@@ -85,16 +84,6 @@ export const Adapter = <
     return cache.coordinate?.kta;
   }, [cache]);
 
-  // Use the cache's actual cacheMap instead of creating our own
-  const [cacheMap, setCacheMap] = React.useState<CacheMap<V, S> | null>(null);
-
-  // Set the cacheMap to the actual cache's cacheMap when available
-  React.useEffect(() => {
-    if (cache && cache.cacheMap) {
-      setCacheMap(cache.cacheMap);
-    }
-  }, [cache]);
-
   const sourceCache = useMemo(() => {
     if (!cache) {
       logger.error('No cache provided to %s, operations will fail', name);
@@ -115,7 +104,7 @@ export const Adapter = <
   });
 
   // State to trigger re-renders when cache events occur
-  const [cacheVersion, setCacheVersion] = React.useState(0);
+  const [, setCacheVersion] = React.useState(0);
 
   React.useEffect(() => {
     if (sourceCache) {
@@ -194,15 +183,15 @@ export const Adapter = <
     logger.trace('all', { query: query && query.toString() });
     const cache = ensureCache('all');
     const result = await cache.operations.all(query);
-    if (!Array.isArray(result)) {
-      logger.error('Invalid result from cache.all() in %s', name);
+    // Validate that result is an array or null, return null for invalid results
+    if (result === null || result === undefined) {
       return null;
     }
-    const [newCacheMap, items] = result;
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
+    if (!Array.isArray(result)) {
+      logger.debug('Invalid result from cache.operations.all: expected array or null, got %s', typeof result);
+      return null;
     }
-    return items as V[] | null;
+    return result as V[];
   }, [ensureCache, name]);
 
   const one = useCallback(async (
@@ -210,22 +199,16 @@ export const Adapter = <
   ): Promise<V | null> => {
     logger.trace('one', { query: query && query.toString() });
     const cache = ensureCache('one');
-    const [newCacheMap, item] = await cache.operations.one(query);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const item = await cache.operations.one(query);
     return item as V | null;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache, name]);
 
   const create = useCallback(async (
     item: Partial<Item<S>>,
   ): Promise<V> => {
     logger.trace('create', { item });
     const cache = ensureCache('create');
-    const [newCacheMap, newItem] = await cache.operations.create(item);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const newItem = await cache.operations.create(item);
     return newItem as V;
   }, [ensureCache]);
 
@@ -233,72 +216,37 @@ export const Adapter = <
     key: PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('get', { key: abbrevIK(key) });
-    if (!resolvedSourceCache) {
-      handleCacheError('get');
-    }
-    const [newCacheMap, item] = await resolvedSourceCache!.operations.get(key);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('get');
+    const item = await cache.operations.get(key);
     return item as V | null;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const remove = useCallback(async (
     key: PriKey<S>,
   ): Promise<void> => {
     logger.trace('remove', { key: abbrevIK(key) });
-    if (!resolvedSourceCache) {
-      handleCacheError('remove');
-    }
-    const newCacheMap = await resolvedSourceCache!.operations.remove(key);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
-  }, [resolvedSourceCache, handleCacheError]);
+    const cache = ensureCache('remove');
+    await cache.operations.remove(key);
+  }, [ensureCache]);
 
   const retrieve = useCallback(async (
     key: PriKey<S>,
   ): Promise<V | null> => {
     logger.trace('retrieve', { key: abbrevIK(key) });
-    if (!resolvedSourceCache) {
-      handleCacheError('retrieve');
-    }
-    const [newCacheMap, item] = await resolvedSourceCache!.operations.retrieve(key);
-    // Update the cacheMap state if there's a new cache map from the underlying cache
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    } else if (item) {
-      // If newCacheMap is null but we have an item, it means the item was already cached
-      // in the underlying cache but might not be in our React state cacheMap, so update it
-      setCacheMap(prevCacheMap => {
-        if (!prevCacheMap) {
-          // If we don't have a cacheMap yet, create one with the proper types
-          const newMap = new MemoryCacheMap<V, S>(pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>));
-          newMap.set(key, item);
-          return newMap;
-        }
-        // Use the existing cacheMap and update it directly
-        prevCacheMap.set(key, item);
-        return prevCacheMap;
-      });
-    }
+    const cache = ensureCache('retrieve');
+    const item = await cache.operations.retrieve(key);
     return item as V | null;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const update = useCallback(async (
     key: PriKey<S>,
     item: Partial<Item<S>>,
   ): Promise<V> => {
     logger.trace('update', { key: abbrevIK(key), item });
-    if (!resolvedSourceCache) {
-      handleCacheError('update');
-    }
-    const [newCacheMap, newItem] = await resolvedSourceCache!.operations.update(key, item);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('update');
+    const newItem = await cache.operations.update(key, item);
     return newItem as V;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const action = useCallback(async (
     key: PriKey<S>,
@@ -306,30 +254,20 @@ export const Adapter = <
     body?: any,
   ): Promise<V> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
-    if (!resolvedSourceCache) {
-      handleCacheError('action');
-    }
-    const [newCacheMap, newItem] = await resolvedSourceCache!.operations.action(key, action, body);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('action');
+    const newItem = await cache.operations.action(key, action, body);
     return newItem as V;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const allAction = useCallback(async (
     action: string,
     body?: any,
   ): Promise<V[] | null> => {
-    logger.trace('action', { action, body });
-    if (!resolvedSourceCache) {
-      handleCacheError('allAction');
-    }
-    const [newCacheMap, newItems] = await resolvedSourceCache!.operations.allAction(action, body);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    logger.trace('allAction', { action, body });
+    const cache = ensureCache('allAction');
+    const newItems = await cache.operations.allAction(action, body);
     return newItems as V[];
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const facet = useCallback(async (
     key: PriKey<S>,
@@ -337,81 +275,59 @@ export const Adapter = <
     params?: FacetParams,
   ): Promise<any | null> => {
     logger.trace('facet', { key: abbrevIK(key), facet, params });
-    if (!resolvedSourceCache) {
-      handleCacheError('facet');
-    }
-    const [newCacheMap, response] = params !== undefined
-      ? await resolvedSourceCache!.operations.facet(key, facet, params)
-      : await resolvedSourceCache!.operations.facet(key, facet);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('facet');
+    const response = params !== undefined
+      ? await cache.operations.facet(key, facet, params)
+      : await cache.operations.facet(key, facet);
     return response as any | null;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const allFacet = useCallback(async (
     facet: string,
     params?: FacetParams,
   ): Promise<any> => {
     logger.trace('allFacet', { facet, params });
-    if (!resolvedSourceCache) {
-      handleCacheError('allFacet');
-    }
-    const [newCacheMap, response] = await resolvedSourceCache!.operations.allFacet(facet, params);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('allFacet');
+    const response = await cache.operations.allFacet(facet, params);
     return response as any;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<V[] | null> => {
     logger.trace('find', { finder, finderParams });
-    if (!resolvedSourceCache) {
-      handleCacheError('find');
-    }
-    const [newCacheMap, newItems] = await resolvedSourceCache!.operations.find(finder, finderParams);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('find');
+    const newItems = await cache.operations.find(finder, finderParams);
     return newItems as V[];
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const findOne = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<V | null> => {
     logger.trace('findOne', { finder, finderParams });
-    if (!resolvedSourceCache) {
-      handleCacheError('findOne');
+    const cache = ensureCache('findOne');
+    const newItems = await cache.operations.find(finder, finderParams);
+    // findOne should return the first item from find results, or null if no results
+    if (!Array.isArray(newItems) || newItems.length === 0) {
+      return null;
     }
-    const [newCacheMap, newItems] = await resolvedSourceCache!.operations.find(finder, finderParams);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
-    return newItems && newItems.length > 0 ? (newItems[0] as V) : null;
-  }, [resolvedSourceCache, handleCacheError]);
+    return newItems[0] as V;
+  }, [ensureCache]);
 
   const set = useCallback(async (
     key: PriKey<S>,
     item: V,
   ): Promise<V> => {
     logger.trace('set', { key: abbrevIK(key), item });
-    if (!resolvedSourceCache) {
-      handleCacheError('set');
-    }
-    const [newCacheMap, newItem] = await resolvedSourceCache!.operations.set(key, item);
-    if (newCacheMap) {
-      setCacheMap(newCacheMap);
-    }
+    const cache = ensureCache('set');
+    const newItem = await cache.operations.set(key, item);
     return newItem as V;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [ensureCache]);
 
   const contextValue: ContextType<V, S> = useMemo(() => ({
     name,
-    cacheMap: cacheMap || new MemoryCacheMap<V, S>(['placeholder' as S] as AllItemTypeArrays<S>),
     pkTypes: pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>),
     all,
     one,
@@ -433,7 +349,6 @@ export const Adapter = <
     addAllFacets,
   }), [
     name,
-    cacheMap,
     pkTypes,
     all,
     one,
@@ -453,7 +368,7 @@ export const Adapter = <
     addFacets,
     addAllActions,
     addAllFacets,
-    cacheVersion // Include cacheVersion to trigger re-renders on cache events
+
   ]);
 
   return createElement(

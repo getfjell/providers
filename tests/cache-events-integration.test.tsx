@@ -42,7 +42,6 @@ describe('Cache Events Integration', () => {
       cacheMap: {
         get: vi.fn(),
         set: vi.fn(),
-        clone: vi.fn(() => mockCache.cacheMap)
       },
       operations: {
         get: vi.fn().mockResolvedValue([null, null]),
@@ -114,17 +113,18 @@ describe('Cache Events Integration', () => {
   });
 
   it('should trigger re-renders when cache events occur', async () => {
-    const renderCounts: number[] = [];
+    const eventReceived = { current: false };
 
     const TestComponent = () => {
       const [renderCount, setRenderCount] = React.useState(0);
-      const adapter = React.useContext(TestUserAdapterContext);
 
-      React.useEffect(() => {
-        const newCount = renderCount + 1;
-        setRenderCount(newCount);
-        renderCounts.push(newCount);
-      }, [adapter]); // Depend on adapter context to trigger re-renders when cache events occur
+      // Use useCacheSubscription to test cache event handling
+      useCacheSubscription(mockCache, () => {
+        eventReceived.current = true;
+        setRenderCount(prev => prev + 1);
+      }, {
+        eventTypes: ['item_updated']
+      });
 
       return <div data-testid="render-count">{renderCount}</div>;
     };
@@ -139,37 +139,39 @@ describe('Cache Events Integration', () => {
       </PItemAdapter.Adapter>
     );
 
-    // Wait for initial render and subscription
+    // Wait for both adapter and component subscriptions
     await waitFor(() => {
-      expect(mockCache.subscribe).toHaveBeenCalled();
+      expect(mockCache.subscribe).toHaveBeenCalledTimes(2); // Adapter + TestComponent
     });
 
     // Capture initial render state
     await waitFor(() => {
       const element = screen.getByTestId('render-count');
-      expect(element.textContent).toBeTruthy(); // Just verify it renders
+      expect(element.textContent).toBe('0');
     });
 
-    const initialRenderCount = renderCounts.length;
-
-    // Simulate a cache event
+    // Simulate a cache event - call all listeners
     await act(async () => {
       if (eventListeners.length > 0) {
-        eventListeners[0]({
+        const testEvent = {
           type: 'item_updated',
           timestamp: Date.now(),
           source: 'api',
           key: { pk: 'test-user-1' },
           item: { id: 'test-user-1', name: 'Updated User' },
           previousItem: { id: 'test-user-1', name: 'Original User' }
-        });
+        };
+        // Call all event listeners
+        eventListeners.forEach(listener => listener(testEvent));
       }
     });
 
-    // Should trigger a re-render due to cache version change
+    // Should trigger a re-render due to cache event
     await waitFor(() => {
-      expect(renderCounts.length).toBeGreaterThan(initialRenderCount);
-    }, { timeout: 100 });
+      const element = screen.getByTestId('render-count');
+      expect(element.textContent).toBe('1');
+      expect(eventReceived.current).toBe(true);
+    }, { timeout: 200 });
   });
 
   it('should unsubscribe when component unmounts', async () => {

@@ -24,7 +24,6 @@ describe('PItemsFacet', () => {
 
     mockAdapterContext = {
       name: 'test',
-      cacheMap: {} as any,
       pkTypes: ['test'],
       all: vi.fn().mockResolvedValue([]),
       one: vi.fn().mockResolvedValue(null),

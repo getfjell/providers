@@ -1,6 +1,5 @@
 /* eslint-disable no-undefined */
-import { MemoryCacheMap } from '@fjell/cache';
-import { ComKey, Dictionary, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
+import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
 import { act, render, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { ReactNode } from 'react';
@@ -34,16 +33,12 @@ describe('PItemQuery - Comprehensive Tests', () => {
     }
   };
 
-  let cacheMap: CacheMap<TestItem, 'test'>;
   let testItemCache: TestItemAdapterContextType;
   let TestItemAdapterContext: PItemAdapter.Context<TestItem, 'test'>;
   let TestItemContext: PItem.Context<TestItem, 'test'>;
 
   beforeEach(() => {
     vi.resetAllMocks();
-
-    cacheMap = new MemoryCacheMap<TestItem, 'test'>(['test']);
-    (cacheMap as Dictionary<ComKey<'test'>, TestItem>).set(testItem.key, testItem);
 
     testItemCache = {
       name: 'test',
@@ -60,7 +55,6 @@ describe('PItemQuery - Comprehensive Tests', () => {
       set: vi.fn().mockResolvedValue(testItem),
       find: vi.fn().mockResolvedValue([testItem]),
       reset: vi.fn().mockResolvedValue(undefined),
-      cacheMap: cacheMap,
       facet: vi.fn().mockResolvedValue({ facetData: 'test' }),
     } as unknown as TestItemAdapterContextType;
 
@@ -146,16 +140,15 @@ describe('PItemQuery - Comprehensive Tests', () => {
     });
 
     // Mock the cache map to return the created item
-    const mockCacheMap = {
+    testItemCache.cacheMap = {
       get: vi.fn().mockImplementation((key) => {
         if (key.pk === '3-3-3-3-3') {
           return createItem;
         }
         return null;
       }),
-      clone: vi.fn().mockReturnThis(),
+      clone: vi.fn().mockReturnThis()
     };
-    testItemCache.cacheMap = mockCacheMap as any;
 
     const wrapper: React.FC<{ children: ReactNode }> = ({ children }) => (
       <TestItemAdapterContext.Provider value={testItemCache}>
