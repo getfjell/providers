@@ -8,7 +8,6 @@ import { CItemLoad } from '../../src/contained/CItemLoad';
 import { ContextType as CItemContextType } from '../../src/contained/CItem';
 import { ContextType as AItemContextType } from '../../src/AItem';
 import { ContextType as CItemAdapterContextType } from '../../src/contained/CItemAdapter';
-import { CacheMap } from '@fjell/cache';
 
 // Mock the logger
 vi.mock('../../src/logger', () => ({
@@ -76,7 +75,6 @@ describe('CItemLoad', () => {
     },
   };
 
-  let mockCacheMap: CacheMap<TestItem, 'test', 'container'>;
   let mockRetrieve: ReturnType<typeof vi.fn>;
   let mockRemove: ReturnType<typeof vi.fn>;
   let mockUpdate: ReturnType<typeof vi.fn>;
@@ -98,10 +96,6 @@ describe('CItemLoad', () => {
     vi.mocked(isValidComKey).mockImplementation((key) => key && typeof key === 'object' && 'pk' in key && 'kt' in key);
     vi.mocked(ikToLKA).mockImplementation((key) => (key && 'loc' in key) ? key.loc || [] as any : [] as any);
 
-    // Setup cache map
-    mockCacheMap = new CacheMap<TestItem, 'test', 'container'>(['test']);
-    mockCacheMap.set(itemKey, testItem);
-
     // Setup adapter methods
     mockRetrieve = vi.fn().mockResolvedValue(testItem);
     mockRemove = vi.fn().mockResolvedValue(undefined);
@@ -120,21 +114,44 @@ describe('CItemLoad', () => {
     // Setup the mocked hooks
     const { useCItemAdapter } = await import('../../src/contained/CItemAdapter');
     vi.mocked(useCItemAdapter).mockReturnValue({
-      cacheMap: mockCacheMap,
       pkTypes: ['test'],
+      name: 'test',
+      all: vi.fn().mockResolvedValue([testItem]),
+      one: vi.fn().mockResolvedValue(testItem),
+      create: vi.fn().mockResolvedValue(testItem),
+      get: vi.fn().mockResolvedValue(testItem),
       retrieve: mockRetrieve,
       remove: mockRemove,
       update: mockUpdate,
       action: mockAction,
       facet: mockFacet,
       set: mockSet,
+      allAction: vi.fn().mockResolvedValue([testItem]),
+      allFacet: vi.fn().mockResolvedValue({ data: 'facet-result' }),
+      find: vi.fn().mockResolvedValue([testItem]),
+      findOne: vi.fn().mockResolvedValue(testItem),
       addActions: mockAddActions,
       addFacets: mockAddFacets,
+      addAllActions: vi.fn().mockReturnValue({}),
+      addAllFacets: vi.fn().mockReturnValue({}),
     });
 
     const { useAItem } = await import('../../src/AItem');
     vi.mocked(useAItem).mockReturnValue({
+      name: 'parent',
+      key: parentItem.key,
+      locations: [],
+      pkTypes: ['container'],
+      parentItem: null,
       item: parentItem,
+      isLoading: false,
+      isUpdating: false,
+      isRemoving: false,
+      actions: {},
+      remove: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(parentItem),
+      set: vi.fn().mockResolvedValue(parentItem),
+      action: vi.fn().mockResolvedValue(parentItem),
     });
   });
 

@@ -46,7 +46,6 @@ describe('CItemFacet', () => {
 
     mockAdapterContext = {
       name: 'TestAdapter',
-      cacheMap: {} as any,
       pkTypes: ['test', 'container'] as any,
       all: vi.fn(),
       one: vi.fn(),

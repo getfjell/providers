@@ -1,5 +1,4 @@
 /* eslint-disable no-undefined */
-import { CacheMap } from "@fjell/cache";
 import { Item } from "@fjell/core";
 import { renderHook } from '@testing-library/react';
 import React from 'react';
@@ -23,7 +22,6 @@ describe('useAItemAdapter', () => {
 
     mockContextValue = {
       name: 'test',
-      cacheMap: new CacheMap<TestItem, 'test', 'container'>(['test', 'container']),
       pkTypes: ['test', 'container'],
       all: vi.fn().mockResolvedValue([]),
       one: vi.fn().mockResolvedValue(null),

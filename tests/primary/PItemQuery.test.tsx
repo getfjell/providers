@@ -1,6 +1,5 @@
 /* eslint-disable no-undefined */
-import { CacheMap } from '@fjell/cache';
-import { ComKey, Dictionary, Item, PriKey, UUID } from '@fjell/core';
+import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { ReactNode } from 'react';
@@ -36,16 +35,12 @@ describe('PItemQueryProvider', () => {
     }
   };
 
-  let cacheMap: CacheMap<TestItem, 'test'>;
   let testItemCache: TestItemAdapterContextType;
   let TestItemAdapterContext: PItemAdapterContext<TestItem, 'test'>;
   let TestItemContext: PItemContext<TestItem, 'test'>;
 
   beforeEach(() => {
     vi.resetAllMocks();
-
-    cacheMap = new CacheMap<TestItem, 'test'>(['test']);
-    (cacheMap as Dictionary<ComKey<'test'>, TestItem>).set(testItem.key, testItem);
 
     testItemCache = {
       name: 'test',
@@ -62,7 +57,6 @@ describe('PItemQueryProvider', () => {
       set: vi.fn().mockResolvedValue(testItem),
       find: vi.fn().mockResolvedValue([testItem]),
       reset: vi.fn().mockResolvedValue(undefined),
-      cacheMap: cacheMap,
     } as unknown as TestItemAdapterContextType;
 
     TestItemAdapterContext = React.createContext<TestItemAdapterContextType | undefined>(undefined);
@@ -110,7 +104,6 @@ describe('PItemQueryProvider', () => {
 
     testItemCache.one = vi.fn().mockResolvedValue(null);
     testItemCache.create = vi.fn().mockImplementation(async () => {
-      (cacheMap as Dictionary<ComKey<'test'>, TestItem>).set(newItem.key, newItem);
       return newItem;
     });
     testItemCache.retrieve = vi.fn().mockResolvedValue(newItem);

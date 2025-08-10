@@ -60,7 +60,6 @@ describe('CItemsProvider', () => {
     // Mock the adapter context
     mockAdapterContext = {
       name: 'TestItems',
-      cacheMap: {} as any,
       pkTypes: ['test', 'container'],
       all: vi.fn().mockResolvedValue([testItem]),
       one: vi.fn().mockResolvedValue(testItem),

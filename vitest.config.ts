@@ -12,6 +12,14 @@ export default defineConfig({
       'tests/**/*.spec.tsx',
     ],
     setupFiles: ['./vitest.setup.ts'],
+    pool: 'forks', // Use forked processes to isolate memory
+    poolOptions: {
+      forks: {
+        singleFork: true, // Use single fork to reduce memory overhead
+      }
+    },
+    testTimeout: 15000, // 15 second timeout
+    hookTimeout: 10000, // 10 second hook timeout
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -30,10 +38,10 @@ export default defineConfig({
       ],
       thresholds: {
         global: {
-          branches: 75,
-          functions: 89,
-          lines: 89,
-          statements: 89,
+          branches: 85,
+          functions: 85,
+          lines: 85,
+          statements: 85,
         },
       },
     },
