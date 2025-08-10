@@ -406,19 +406,6 @@ describe('PItemsFacet', () => {
       return <div>Test Child</div>;
     };
 
-    // Mock PItems.usePItems to first throw (no existing context), then work normally
-    const originalUsePItems = PItems.usePItems;
-    let shouldThrow = true;
-
-    vi.spyOn(PItems, 'usePItems').mockImplementation((contextObj, contextName) => {
-      if (shouldThrow) {
-        shouldThrow = false; // Only throw on first call
-        throw new Error('No context found');
-      }
-      // Use the original implementation for subsequent calls
-      return originalUsePItems(contextObj, contextName);
-    });
-
     render(
       <TestAdapterContext.Provider value={mockAdapterContext}>
         <PItemsFacet<TestItem, 'test'>
@@ -446,18 +433,9 @@ describe('PItemsFacet', () => {
     await waitFor(() => {
       expect(capturedContext?.isLoading).toBe(false);
     });
-
-    // Restore original function
-    vi.spyOn(PItems, 'usePItems').mockImplementation(originalUsePItems);
   });
 
   it('should create new provider when no existing context', () => {
-    // Mock PItems.usePItems to throw (simulating no existing context)
-    const originalUsePItems = PItems.usePItems;
-    vi.spyOn(PItems, 'usePItems').mockImplementation(() => {
-      throw new Error('No context found');
-    });
-
     const { getByText } = render(
       <TestAdapterContext.Provider value={mockAdapterContext}>
         <PItemsFacet<TestItem, 'test'>
@@ -474,9 +452,6 @@ describe('PItemsFacet', () => {
     );
 
     expect(getByText('Test children')).toBeDefined();
-
-    // Restore original function
-    vi.spyOn(PItems, 'usePItems').mockImplementation(originalUsePItems);
   });
 
   it('should only re-run effect when facetParamsString changes', async () => {
