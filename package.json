@@ -30,7 +30,7 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.5",
+    "@fjell/cache": "^4.7.6",
     "@fjell/client-api": "^4.4.25",
     "@fjell/core": "^4.4.35",
     "@fjell/logging": "^4.4.41",
