@@ -39,9 +39,19 @@ export function useCacheItem<
     }
 
     // Get current item from cache
-    const cachedItem = cache.cacheMap.get(key);
-    setItem(cachedItem);
-    setIsLoading(false);
+    const loadInitialItem = async () => {
+      try {
+        const cachedItem = await cache.cacheMap.get(key);
+        setItem(cachedItem);
+      } catch (error) {
+        console.error('Error loading initial item:', error);
+        setItem(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialItem();
   }, [cache, key]);
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
@@ -116,7 +126,7 @@ export function useCacheItem<
 
     setIsLoading(true);
     try {
-      const [, result] = await cache.operations.get(key);
+      const result = await cache.operations.get(key);
       setItem(result);
       return result;
     } catch (error) {
