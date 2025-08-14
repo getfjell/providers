@@ -112,7 +112,7 @@ export const Adapter = <
   const [resolvedSourceCache, setResolvedSourceCache] = React.useState<Cache<V, S, L1, L2, L3, L4, L5> | null>(null);
 
   // State to trigger re-renders when cache events occur
-  const [, setCacheVersion] = React.useState(0);
+  const [cacheVersion, setCacheVersion] = React.useState(0);
 
   React.useEffect(() => {
     if (sourceCache) {
@@ -249,7 +249,7 @@ export const Adapter = <
     }
     const item = await resolvedSourceCache.operations.retrieve(key);
     return item as V;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError, cacheVersion]); // Add cacheVersion to force recreation on cache events
 
   const update = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
@@ -397,6 +397,7 @@ export const Adapter = <
     addFacets,
     addAllActions,
     addAllFacets,
+    cacheVersion, // Add cacheVersion to force context recreation when cache events occur
 
   ]);
 

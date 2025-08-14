@@ -107,6 +107,22 @@ export const PItemLoad = <
     }
   }, [itemKey, providedItem, retrieveItem]);
 
+  // Force a re-fetch when cache version changes (handled by PItemAdapter)
+  // This is a simple dependency that will cause re-fetch when PItemAdapter detects cache changes
+  useEffect(() => {
+    if (!itemKey || !isValidPriKey(itemKey) || providedItem) {
+      return;
+    }
+
+    // Re-fetch the item from cache when adapter context changes
+    // This will pick up updates made by other components
+    retrieveItem(itemKey as PriKey<S>).then(retrievedItem => {
+      setItemState(retrievedItem as V | null);
+    }).catch(error => {
+      logger.debug(`${name}: Error re-fetching item:`, error);
+    });
+  }, [retrieveItem]); // retrieveItem changes when PItemAdapter cache version changes
+
   const locations: LocKeyArray<S> | null = useMemo(() => {
     logger.debug(`${name}: Computing locations memoization`, { hasItem: !!item });
 
