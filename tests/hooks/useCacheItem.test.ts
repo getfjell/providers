@@ -39,24 +39,24 @@ describe('useCacheItem', () => {
         kta: ['test-user']
       },
       cacheMap: {
-        get: vi.fn(),
+        get: vi.fn().mockResolvedValue(null),
         set: vi.fn(),
         clone: vi.fn(() => mockCache.cacheMap)
       },
       operations: {
-        get: vi.fn().mockResolvedValue([null, null]),
-        set: vi.fn().mockResolvedValue([null, null]),
-        update: vi.fn().mockResolvedValue([null, null]),
+        get: vi.fn().mockResolvedValue(null),
+        set: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue(null),
         remove: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue([null, null]),
-        retrieve: vi.fn().mockResolvedValue([null, null]),
-        one: vi.fn().mockResolvedValue([null, null]),
-        all: vi.fn().mockResolvedValue([null, []]),
-        action: vi.fn().mockResolvedValue([null, null]),
-        allAction: vi.fn().mockResolvedValue([null, []]),
-        facet: vi.fn().mockResolvedValue([null, null]),
-        allFacet: vi.fn().mockResolvedValue([null, null]),
-        find: vi.fn().mockResolvedValue([null, []]),
+        create: vi.fn().mockResolvedValue(null),
+        retrieve: vi.fn().mockResolvedValue(null),
+        one: vi.fn().mockResolvedValue(null),
+        all: vi.fn().mockResolvedValue([]),
+        action: vi.fn().mockResolvedValue(null),
+        allAction: vi.fn().mockResolvedValue([]),
+        facet: vi.fn().mockResolvedValue(null),
+        allFacet: vi.fn().mockResolvedValue(null),
+        find: vi.fn().mockResolvedValue([]),
       },
       subscribe: vi.fn((listener, options) => {
         eventListeners.push(listener);
@@ -101,7 +101,7 @@ describe('useCacheItem', () => {
       expect(typeof result.current.refetch).toBe('function');
     });
 
-    it('should load item from cache on mount', () => {
+    it('should load item from cache on mount', async () => {
       const testUser: TestUser = {
         id: 'test-user-1',
         name: 'Test User',
@@ -109,23 +109,33 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
-      mockCache.cacheMap.get = vi.fn().mockReturnValue(testUser);
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(testUser);
 
       const { result } = renderHook(() =>
         useCacheItem(mockCache, { pk: 'test-user-1' })
       );
+
+      // Wait for the async operation to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       expect(result.current.item).toEqual(testUser);
       expect(result.current.isLoading).toBe(false);
       expect(mockCache.cacheMap.get).toHaveBeenCalledWith({ pk: 'test-user-1' });
     });
 
-    it('should return null when item not found in cache', () => {
-      mockCache.cacheMap.get = vi.fn().mockReturnValue(null);
+    it('should return null when item not found in cache', async () => {
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
 
       const { result } = renderHook(() =>
         useCacheItem(mockCache, { pk: 'test-user-1' })
       );
+
+      // Wait for the async operation to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       expect(result.current.item).toBe(null);
       expect(result.current.isLoading).toBe(false);
@@ -156,7 +166,15 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Simulate item_created event
       await act(async () => {
@@ -183,7 +201,15 @@ describe('useCacheItem', () => {
         status: 'inactive'
       };
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Simulate item_updated event
       await act(async () => {
@@ -210,7 +236,15 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Simulate item_retrieved event
       await act(async () => {
@@ -237,7 +271,15 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Simulate item_set event
       await act(async () => {
@@ -264,8 +306,15 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
-      mockCache.cacheMap.get = vi.fn().mockReturnValue(testUser);
+      // Mock initial cache load to return the test user
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(testUser);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Initial item should be loaded
       expect(result.current.item).toEqual(testUser);
@@ -294,8 +343,15 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
-      mockCache.cacheMap.get = vi.fn().mockReturnValue(testUser);
+      // Mock initial cache load to return the test user
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(testUser);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Initial item should be loaded
       expect(result.current.item).toEqual(testUser);
@@ -330,8 +386,15 @@ describe('useCacheItem', () => {
         status: 'inactive'
       };
 
-      mockCache.cacheMap.get = vi.fn().mockReturnValue(testUser);
+      // Mock initial cache load to return the test user
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(testUser);
+
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Initial item should be loaded
       expect(result.current.item).toEqual(testUser);
@@ -365,7 +428,15 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
+
       const { result } = renderHook(() => useCacheItem(mockCache, compositeKey));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Simulate event with matching composite key
       await act(async () => {
@@ -394,9 +465,17 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
-      mockCache.operations.get = vi.fn().mockResolvedValue([null, testUser]);
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
+      // Mock operations.get to return the test user
+      mockCache.operations.get = vi.fn().mockResolvedValue(testUser);
 
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       let refetchResult: TestUser | null = null;
       await act(async () => {
@@ -417,12 +496,19 @@ describe('useCacheItem', () => {
         status: 'active'
       };
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
       // Mock a delayed response
       mockCache.operations.get = vi.fn().mockImplementation(() =>
-        new Promise(resolve => setTimeout(() => resolve([null, testUser]), 50))
+        new Promise(resolve => setTimeout(() => resolve(testUser), 50))
       );
 
       const { result } = renderHook(() => useCacheItem(mockCache, key));
+
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       // Start refetch
       act(() => {
@@ -444,14 +530,18 @@ describe('useCacheItem', () => {
       const key = { pk: 'test-user-1' };
       const error = new Error('Fetch failed');
 
+      // Mock initial cache load to return null
+      mockCache.cacheMap.get = vi.fn().mockResolvedValue(null);
       mockCache.operations.get = vi.fn().mockRejectedValue(error);
-      // Mock cache.get to return null when no item found
-      mockCache.cacheMap.get = vi.fn().mockReturnValue(null);
 
       const { result } = renderHook(() => useCacheItem(mockCache, key));
 
-      // Initial item will be undefined from cache.get(), then set to null by setItem(cachedItem || null)
-      // Let's check what it actually is
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Initial item will be null from cache.get()
       const initialItem = result.current.item;
 
       let refetchResult: TestUser | null = null;
@@ -539,7 +629,7 @@ describe('useCacheItem', () => {
       );
     });
 
-    it('should reload item from cache when key changes', () => {
+    it('should reload item from cache when key changes', async () => {
       const key1 = { pk: 'test-user-1' };
       const key2 = { pk: 'test-user-2' };
       const user1: TestUser = {
@@ -555,19 +645,30 @@ describe('useCacheItem', () => {
         status: 'inactive'
       };
 
+      // Mock cache.get to return different values for different keys
       mockCache.cacheMap.get = vi.fn()
-        .mockReturnValueOnce(user1)
-        .mockReturnValueOnce(user2);
+        .mockResolvedValueOnce(user1)
+        .mockResolvedValueOnce(user2);
 
       const { result, rerender } = renderHook(
         ({ key }) => useCacheItem(mockCache, key),
         { initialProps: { key: key1 } }
       );
 
+      // Wait for initial loading to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
       expect(result.current.item).toEqual(user1);
 
       // Change key
       rerender({ key: key2 });
+
+      // Wait for the new key to load
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       expect(result.current.item).toEqual(user2);
       expect(mockCache.cacheMap.get).toHaveBeenCalledWith(key1);
