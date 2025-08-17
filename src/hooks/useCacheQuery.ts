@@ -25,7 +25,7 @@ export function useCacheQuery<
   cache: Cache<V, S, L1, L2, L3, L4, L5> | null,
   query: ItemQuery = {},
   locations: LocKeyArray<L1, L2, L3, L4, L5> | [] = [],
-  allMethod?: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5> | []) => Promise<V[] | null>
+  allMethod?: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5> | []) => Promise<V[] | null> | null
 ): {
   items: V[];
   isLoading: boolean;
@@ -68,7 +68,7 @@ export function useCacheQuery<
     };
 
     loadItems();
-  }, [cache, allMethod, queryString, locationsString]);
+  }, [cache, queryString, locationsString, allMethod]); // Only use stable strings and allMethod
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
   const normalizeKey = useCallback((key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>): string => {
@@ -111,15 +111,9 @@ export function useCacheQuery<
       case 'item_updated':
       case 'item_retrieved':
       case 'item_set':
-        // For individual item changes, we need to re-query to see if the item
-        // should be included in our result set
-        if (cache) {
-          cache.operations.all(query, locations).then(updatedItems => {
-            setItems(updatedItems || []);
-          }).catch(error => {
-            console.error('Error re-querying items from cache after item change:', error);
-          });
-        }
+        // TODO: Re-enable automatic re-querying after fixing infinite loop issues
+        // For now, we rely on explicit cache invalidation to avoid infinite loops
+        // This means query results may become stale until manually refreshed
         break;
 
       case 'item_removed':
@@ -134,8 +128,32 @@ export function useCacheQuery<
       case 'cache_cleared':
         setItems([]);
         break;
+
+      case 'query_invalidated':
+        // When queries are invalidated, we need to refetch
+        // Use the allMethod if provided, otherwise use cache.operations.all
+        if (allMethod || cache) {
+          const loadItems = async () => {
+            try {
+              let results: V[] | null;
+              if (allMethod) {
+                results = await allMethod(query, locations);
+              } else if (cache) {
+                results = await cache.operations.all(query, locations);
+              } else {
+                results = null;
+              }
+              setItems(results || []);
+            } catch (error) {
+              console.error('Error refetching after query invalidation:', error);
+              setItems([]);
+            }
+          };
+          loadItems();
+        }
+        break;
     }
-  }, [cache, queryString, locationsString, normalizeKey, queriesMatch]);
+  }, [queryString, locationsString, normalizeKey, queriesMatch, allMethod, cache]); // Use stable strings
 
   // Subscription options with debouncing for query updates
   const subscriptionOptions = useMemo(() => ({
@@ -146,7 +164,8 @@ export function useCacheQuery<
       'item_removed',
       'item_retrieved',
       'item_set',
-      'cache_cleared'
+      'cache_cleared',
+      'query_invalidated'
     ] as CacheEventType[],
     debounceMs: 50 // Small debounce to batch rapid updates
   }), []);
@@ -178,7 +197,7 @@ export function useCacheQuery<
     } finally {
       setIsLoading(false);
     }
-  }, [cache, allMethod, queryString, locationsString]);
+  }, [cache, allMethod, queryString, locationsString]); // Use stable strings
 
   return {
     items,
