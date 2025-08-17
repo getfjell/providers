@@ -63,7 +63,7 @@ export function useCacheSubscription<
         subscriptionRef.current = null;
       }
     };
-  }, [cache, stableListener, options]); // Recreate when cache or options change
+  }, [cache, stableListener]); // Only recreate when cache changes, not when options change
 
   return subscriptionRef.current;
 }
