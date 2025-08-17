@@ -646,8 +646,14 @@ describe('useCacheItem', () => {
 
       // Mock cache.get to return different values for different keys
       mockCache.cacheMap.get = vi.fn()
-        .mockResolvedValueOnce(user1)
-        .mockResolvedValueOnce(user2);
+        .mockImplementation((key) => {
+          if (key.pk === 'test-user-1') {
+            return Promise.resolve(user1);
+          } else if (key.pk === 'test-user-2') {
+            return Promise.resolve(user2);
+          }
+          return Promise.resolve(null);
+        });
 
       const { result, rerender } = renderHook(
         ({ key }) => useCacheItem(mockCache, key),

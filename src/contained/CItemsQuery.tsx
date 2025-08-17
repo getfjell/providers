@@ -44,8 +44,6 @@ export const CItemsQuery = <
   }
   ) => {
 
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-
   // Since we pass this to the actions constructor, don't destructure it yet
   const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
@@ -53,88 +51,106 @@ export const CItemsQuery = <
   const {
     all: allItems,
     one: oneItem,
+    cache,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const parentContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
-    name: parentName,
     locations: parentLocations,
-    item: parentItem,
   } = useMemo(() => parentContext, [parentContext]);
 
   const queryString = useMemo(() => createStableHash(query), [query]);
+  const [items, setItems] = useState<V[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Load items when query changes or when cache events occur
+  useEffect(() => {
+    (async () => {
+      if (!parentLocations) {
+        setItems([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        logger.trace('useEffect[queryString] %s', createStableHash(query));
+        setIsLoading(true);
+        const results = await allItems(query, parentLocations);
+        setItems(results as V[] || []);
+        setIsLoading(false);
+      } catch (error) {
+        logger.error(`${name}: Error loading items:`, error);
+        setItems([]);
+        setIsLoading(false);
+      }
+    })();
+  }, [queryString, allItems, parentLocations, name]);
+
+  // Listen for cache invalidation events to refetch data
+  useEffect(() => {
+    if (!cache || !parentLocations) return;
+
+    const handleCacheInvalidation = async () => {
+      try {
+        logger.trace('Cache invalidation event received, refetching items');
+        setIsLoading(true);
+        const results = await allItems(query, parentLocations);
+        setItems(results as V[] || []);
+        setIsLoading(false);
+      } catch (error) {
+        logger.error(`${name}: Error refetching items after cache invalidation:`, error);
+        // Keep existing items on error
+        setIsLoading(false);
+      }
+    };
+
+    // Subscribe to cache events
+    const subscription = cache.subscribe(handleCacheInvalidation, {
+      eventTypes: ['query_invalidated'],
+      debounceMs: 50
+    });
+
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, [cache, allItems, query, parentLocations, name]);
 
   const all = useCallback(async () => {
     if (parentLocations) {
       logger.debug(`${name}: all`, { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-      setIsLoading(true);
       try {
         const result = await allItems(query, parentLocations) as V[] | null;
         return result;
       } catch (error) {
         logger.error(`${name}: Error getting all items`, error);
         throw error;
-      } finally {
-        setIsLoading(false);
       }
     } else {
       logger.default(`${name}: No parent locations present to query for all containeditems`,
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for all containeditems in ${name}`);
     }
-  }, [allItems, parentLocations, queryString]);
+  }, [allItems, parentLocations, query, name]);
 
   const one = useCallback(async () => {
     if (parentLocations) {
       logger.trace('one', { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-      setIsLoading(true);
       try {
         const result = await oneItem(query, parentLocations) as V | null;
         return result;
       } catch (error) {
         logger.error(`${name}: Error getting one item`, error);
         throw error;
-      } finally {
-        setIsLoading(false);
       }
     } else {
       logger.default(`${name}: No parent locations present to query for one containeditem`,
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for one containeditem in ${name}`);
     }
-  }, [oneItem, parentLocations, queryString]);
-
-  const [items, setItems] = useState<V[] | null>(null);
-
-  // Load items when query or parent context changes
-  useEffect(() => {
-    logger.trace('useEffect[queryString, parentLocations, parentName, item]',
-      { queryString, parentLocations: abbrevLKA(parentLocations as any), parentName, parentItem });
-    (async () => {
-      try {
-        if (parentLocations) {
-          logger.trace('useEffect[queryString]',
-            { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-          setIsLoading(true);
-          const results = await allItems(query, parentLocations);
-          setItems(results as V[] | null);
-          setIsLoading(false);
-        } else {
-          logger.warning(`${name}: useEffect[queryString, parentLocations] without parent locations`,
-            { query: abbrevQuery(query) });
-          setItems(null);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        logger.error(`${name}: Error in useEffect`, error);
-        setItems(null);
-        setIsLoading(false);
-        // Don't throw here as this would be lost in the async context
-        // Let the all/one override functions handle error throwing
-      }
-    })();
-  }, [queryString, parentLocations, parentName, parentItem, allItems, name]);
+  }, [oneItem, parentLocations, query, name]);
 
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,
@@ -143,7 +159,7 @@ export const CItemsQuery = <
     context,
     contextName,
     renderEach,
-    items,
+    items: items || null,
     isLoadingParam: isLoading,
     parent,
     parentContextName,
