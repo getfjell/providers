@@ -10,6 +10,7 @@ import { createStableHash, deepEqual } from '../utils';
  * @param cache The cache instance
  * @param query The query to execute
  * @param locations Optional locations to query in
+ * @param allMethod Optional adapter all method to use instead of cache.operations.all
  * @returns The current query results and loading state
  */
 export function useCacheQuery<
@@ -23,7 +24,8 @@ export function useCacheQuery<
 >(
   cache: Cache<V, S, L1, L2, L3, L4, L5> | null,
   query: ItemQuery = {},
-  locations: LocKeyArray<L1, L2, L3, L4, L5> | [] = []
+  locations: LocKeyArray<L1, L2, L3, L4, L5> | [] = [],
+  allMethod?: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5> | []) => Promise<V[] | null>
 ): {
   items: V[];
   isLoading: boolean;
@@ -38,22 +40,35 @@ export function useCacheQuery<
 
   // Load initial items from cache
   useEffect(() => {
-    if (!cache) {
+    if (!cache && !allMethod) {
       setItems([]);
       setIsLoading(false);
       return;
     }
 
-    // Get current items from cache using all operation
-    cache.operations.all(query, locations).then(cachedItems => {
-      setItems(cachedItems || []);
-      setIsLoading(false);
-    }).catch(error => {
-      console.error('Error querying items from cache:', error);
-      setItems([]);
-      setIsLoading(false);
-    });
-  }, [cache, queryString, locationsString]);
+    const loadItems = async () => {
+      try {
+        let cachedItems: V[] | null;
+        if (allMethod) {
+          // Use the adapter method if provided (includes error handling, logging, etc.)
+          cachedItems = await allMethod(query, locations);
+        } else if (cache) {
+          // Fallback to direct cache access
+          cachedItems = await cache.operations.all(query, locations);
+        } else {
+          cachedItems = null;
+        }
+        setItems(cachedItems || []);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error querying items from cache:', error);
+        setItems([]);
+        setIsLoading(false);
+      }
+    };
+
+    loadItems();
+  }, [cache, allMethod, queryString, locationsString]);
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
   const normalizeKey = useCallback((key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>): string => {
@@ -141,13 +156,20 @@ export function useCacheQuery<
 
   // Refetch function to manually reload the query
   const refetch = useCallback(async (): Promise<V[]> => {
-    if (!cache) {
+    if (!cache && !allMethod) {
       return [];
     }
 
     setIsLoading(true);
     try {
-      const results = await cache.operations.all(query, locations);
+      let results: V[] | null;
+      if (allMethod) {
+        results = await allMethod(query, locations);
+      } else if (cache) {
+        results = await cache.operations.all(query, locations);
+      } else {
+        results = null;
+      }
       setItems(results || []);
       return results || [];
     } catch (error) {
@@ -156,7 +178,7 @@ export function useCacheQuery<
     } finally {
       setIsLoading(false);
     }
-  }, [cache, queryString, locationsString]);
+  }, [cache, allMethod, queryString, locationsString]);
 
   return {
     items,

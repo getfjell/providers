@@ -24,7 +24,10 @@ export type ContextType<
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
-> = AItemAdapter.ContextType<V, S, L1, L2, L3, L4, L5>;
+> = AItemAdapter.ContextType<V, S, L1, L2, L3, L4, L5> & {
+  /** The resolved cache instance for direct access */
+  cache: Cache<V, S, L1, L2, L3, L4, L5> | null;
+};
 
 export type Context<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -358,6 +361,7 @@ export const Adapter = <
   const contextValue: ContextType<V, S, L1, L2, L3, L4, L5> = React.useMemo(() => ({
     name,
     pkTypes: pkTypes || ([] as any),
+    cache: resolvedSourceCache,
     all,
     one,
     create,
@@ -379,6 +383,7 @@ export const Adapter = <
   }), [
     name,
     pkTypes,
+    resolvedSourceCache,
     all,
     one,
     create,
