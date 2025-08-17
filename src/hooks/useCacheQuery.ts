@@ -167,7 +167,7 @@ export function useCacheQuery<
       'cache_cleared',
       'query_invalidated'
     ] as CacheEventType[],
-    debounceMs: 50 // Small debounce to batch rapid updates
+    debounceMs: 0 // No debounce - execute immediately to avoid race conditions
   }), []);
 
   // Subscribe to cache events
