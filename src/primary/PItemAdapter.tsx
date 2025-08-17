@@ -19,6 +19,8 @@ export interface ContextType<
   > extends AItemAdapter.ContextType<V, S> {
     name: string;
     pkTypes: AllItemTypeArrays<S>;
+    /** The resolved cache instance for direct access */
+    cache: Cache<V, S> | null;
     addFacets?: (facet: Faceted.FacetMethod) => Record<string, Faceted.AddedFacetMethod>;
     addAllFacets?: (allFacet: Faceted.AllFacetMethod) => Record<string, Faceted.AddedFacetMethod>;
   }
@@ -329,6 +331,7 @@ export const Adapter = <
   const contextValue: ContextType<V, S> = useMemo(() => ({
     name,
     pkTypes: pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>),
+    cache: resolvedSourceCache,
     all,
     one,
     create,
@@ -350,6 +353,7 @@ export const Adapter = <
   }), [
     name,
     pkTypes,
+    resolvedSourceCache,
     all,
     one,
     create,
