@@ -274,7 +274,7 @@ describe('useCacheQuery', () => {
             'cache_cleared',
             'query_invalidated'
           ]),
-          debounceMs: 50
+          debounceMs: 0
         })
       );
     });

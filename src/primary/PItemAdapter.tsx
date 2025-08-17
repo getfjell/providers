@@ -148,7 +148,7 @@ export const Adapter = <
           'location_invalidated',
           'query_invalidated'
         ],
-        debounceMs: 50 // Small debounce to batch rapid updates
+        debounceMs: 0 // No debounce - execute immediately to avoid race conditions
       });
 
       return () => {
