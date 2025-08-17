@@ -585,15 +585,12 @@ describe('useEffect Behavior', () => {
     });
 
     expect(mockLogger.trace).toHaveBeenCalledWith(
-      expect.stringContaining('useEffect[queryString]'),
-      expect.objectContaining({
-        query: expect.any(String),
-        parentLocations: expect.any(String),
-      })
+      'useEffect[queryString] %s',
+      '{"name":"test","limit":5}'
     );
   });
 
-  it('should log warning during useEffect when parent locations are missing', async () => {
+  it('should handle missing parent locations gracefully during useEffect', async () => {
     const mockParentContextWithoutLocations = {
       ...mockParentContext,
       locations: null,
@@ -608,10 +605,13 @@ describe('useEffect Behavior', () => {
 
     render(<TestWrapper />);
 
+    // When parent locations are missing, items should be set to empty array
     await waitFor(() => {
-      expect(mockLogger.warning).toHaveBeenCalledWith(
-        expect.stringContaining('useEffect[queryString, parentLocations] without parent locations'),
-        expect.any(Object)
+      expect(mockCItemsProvider).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          items: [],
+          isLoadingParam: false,
+        })
       );
     });
   });
@@ -631,7 +631,7 @@ describe('useEffect Behavior', () => {
 
     await waitFor(() => {
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Error in useEffect'),
+        'TestItemsQuery: Error loading items:',
         error
       );
     });
@@ -720,7 +720,7 @@ describe('Memoization Behavior', () => {
     });
   });
 
-  it('should return null items when parent locations are missing', () => {
+  it('should return empty array when parent locations are missing', () => {
     const mockParentContextWithoutLocations = {
       ...mockParentContext,
       locations: null,
@@ -737,12 +737,9 @@ describe('Memoization Behavior', () => {
 
     expect(mockCItemsProvider).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        items: null,
+        items: [],
+        isLoadingParam: false,
       })
-    );
-    expect(mockLogger.warning).toHaveBeenCalledWith(
-      expect.stringContaining('useEffect[queryString, parentLocations] without parent locations'),
-      expect.any(Object)
     );
   });
 
