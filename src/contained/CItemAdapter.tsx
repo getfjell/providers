@@ -258,13 +258,35 @@ export const Adapter = <
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     item: Partial<Item<S, L1, L2, L3, L4, L5>>,
   ): Promise<V> => {
+    console.log(`[ORDERDATES] ${name}: CItemAdapter update called`, {
+      key: abbrevIK(key),
+      keyType: key.kt,
+      keyId: key.pk,
+      item,
+      hasCache: !!resolvedSourceCache,
+      cacheType: resolvedSourceCache?.constructor?.name
+    });
     logger.trace('update', { key: abbrevIK(key), item });
     if (!resolvedSourceCache) {
+      console.error(`[ORDERDATES] ${name}: No cache available for update`);
       return handleCacheError('update');
     }
+    console.log(`[ORDERDATES] ${name}: Calling cache update operation`, {
+      operationsType: resolvedSourceCache.operations?.constructor?.name,
+      hasUpdate: !!resolvedSourceCache.operations?.update,
+      operationsMethods: Object.keys(resolvedSourceCache.operations || {}),
+      cacheCoordinate: resolvedSourceCache.coordinate?.kta
+    });
     const newItem = await resolvedSourceCache.operations.update(key, item);
+    console.log(`[ORDERDATES] ${name}: Cache update operation completed`, {
+      updatedItem: {
+        id: (newItem as any)?.id,
+        targetDate: (newItem as any)?.targetDate,
+        key: (newItem as any)?.key
+      }
+    });
     return newItem as V;
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError, name]);
 
   const action = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
@@ -358,29 +380,42 @@ export const Adapter = <
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
-  const contextValue: ContextType<V, S, L1, L2, L3, L4, L5> = React.useMemo(() => ({
-    name,
-    pkTypes: pkTypes || ([] as any),
-    cache: resolvedSourceCache,
-    all,
-    one,
-    create,
-    get,
-    remove,
-    retrieve,
-    update,
-    action,
-    allAction,
-    facet,
-    allFacet,
-    find,
-    findOne,
-    set,
-    addActions,
-    addFacets,
-    addAllActions,
-    addAllFacets
-  }), [
+  const contextValue: ContextType<V, S, L1, L2, L3, L4, L5> = React.useMemo(() => {
+    console.log(`[ORDERDATES] ${name}: CItemAdapter context value created`, {
+      hasCache: !!resolvedSourceCache,
+      cacheType: resolvedSourceCache?.constructor?.name,
+      cacheCoordinate: resolvedSourceCache?.coordinate?.kta,
+      cacheVersion,
+      hasOperations: !!resolvedSourceCache?.operations,
+      operationsType: resolvedSourceCache?.operations?.constructor?.name,
+      cacheKeys: Object.keys(resolvedSourceCache || {}),
+      operationsKeys: Object.keys(resolvedSourceCache?.operations || {})
+    });
+
+    return {
+      name,
+      pkTypes: pkTypes || ([] as any),
+      cache: resolvedSourceCache,
+      all,
+      one,
+      create,
+      get,
+      remove,
+      retrieve,
+      update,
+      action,
+      allAction,
+      facet,
+      allFacet,
+      find,
+      findOne,
+      set,
+      addActions,
+      addFacets,
+      addAllActions,
+      addAllFacets
+    };
+  }, [
     name,
     pkTypes,
     resolvedSourceCache,
