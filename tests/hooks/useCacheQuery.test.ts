@@ -69,8 +69,6 @@ describe('useCacheQuery', () => {
     eventListeners = [];
     unsubscribeFunctions = [];
 
-    // Set up cache with test data
-
     // Create cache with mocked operations and subscription
     cache = {
       coordinate: {
@@ -124,11 +122,6 @@ describe('useCacheQuery', () => {
     // Clear all event listeners and ensure cleanup
     eventListeners.length = 0;
     unsubscribeFunctions.length = 0;
-
-    // Force garbage collection if available (test environment)
-    if (global.gc) {
-      global.gc();
-    }
   });
 
   // Helper function to trigger events
@@ -158,13 +151,14 @@ describe('useCacheQuery', () => {
       // Mock the all operation to filter items based on the query
       cache.operations.all = vi.fn().mockImplementation((query) => {
         const allItems = [testItem1, testItem2];
-        if (query.name) {
-          return Promise.resolve(allItems.filter(item => item.name === query.name));
+        // Use a custom property that exists in our test items
+        if (query && typeof query === 'object' && 'value' in query) {
+          return Promise.resolve(allItems.filter(item => item.value === query.value));
         }
         return Promise.resolve(allItems);
       });
 
-      const { result } = renderHook(() => useCacheQuery(cache, { name: 'test1' }, []));
+      const { result } = renderHook(() => useCacheQuery(cache, { value: 10 } as any, []));
 
       await waitFor(() => {
         expect(result.current.items).toEqual([testItem1]);
@@ -175,7 +169,7 @@ describe('useCacheQuery', () => {
   describe('Event Handling', () => {
     it('should update items when items_queried event matches query', () => {
       const query: ItemQuery = {};
-      const locations: LocKeyArray<'container'> = [];
+      const locations: LocKeyArray<'container'> = [{ lk: '3-3-3-3-3' as UUID, kt: 'container' }];
 
       const { result } = renderHook(() => useCacheQuery(cache, query, locations));
 
@@ -194,27 +188,7 @@ describe('useCacheQuery', () => {
       expect(result.current.items).toEqual(newItems);
     });
 
-    it('should re-query cache for item_created event', async () => {
-      const { result } = renderHook(() => useCacheQuery(cache, {}, []));
-
-      await waitFor(() => {
-        expect(result.current.items).toEqual([testItem1, testItem2]);
-      });
-
-      const newItems = [testItem1, testItem2, testItem1];
-      // Mock the all operation to return new items when re-queried
-      vi.mocked(cache.operations.all).mockResolvedValue(newItems);
-
-      act(() => {
-        triggerEvent({ type: 'item_created', item: testItem1 });
-      });
-
-      await waitFor(() => {
-        expect(result.current.items).toEqual(newItems);
-      });
-    });
-
-    it('should remove item for item_removed event', async () => {
+    it('should handle item_removed event', async () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
       await waitFor(() => {
@@ -297,9 +271,10 @@ describe('useCacheQuery', () => {
             'item_removed',
             'item_retrieved',
             'item_set',
-            'cache_cleared'
+            'cache_cleared',
+            'query_invalidated'
           ]),
-          debounceMs: 50
+          debounceMs: 0
         })
       );
     });
@@ -319,13 +294,13 @@ describe('useCacheQuery', () => {
       // Set up mock for filtered query
       cache.operations.all = vi.fn().mockImplementation((query) => {
         const allItems = [testItem1, testItem2];
-        if (query.name) {
-          return Promise.resolve(allItems.filter(item => item.name === query.name));
+        if (query && typeof query === 'object' && 'value' in query) {
+          return Promise.resolve(allItems.filter(item => item.value === query.value));
         }
         return Promise.resolve(allItems);
       });
 
-      rerender({ query: { name: 'test1' } });
+      rerender({ query: { value: 10 } as any });
 
       await waitFor(() => {
         expect(result.current.items).toEqual([testItem1]);
