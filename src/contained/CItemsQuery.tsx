@@ -44,8 +44,6 @@ export const CItemsQuery = <
   }
   ) => {
 
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-
   // Since we pass this to the actions constructor, don't destructure it yet
   const adapterContext = useCItemAdapter<V, S, L1, L2, L3, L4, L5>(adapter, contextName);
 
@@ -53,88 +51,188 @@ export const CItemsQuery = <
   const {
     all: allItems,
     one: oneItem,
+    cache,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const parentContext = AItem.useAItem<Item<L1, L2, L3, L4, L5>, L1, L2, L3, L4, L5>(parent, parentContextName);
 
   const {
-    name: parentName,
     locations: parentLocations,
-    item: parentItem,
   } = useMemo(() => parentContext, [parentContext]);
 
   const queryString = useMemo(() => createStableHash(query), [query]);
+  const [items, setItems] = useState<V[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Load items when query changes or when cache events occur
+  useEffect(() => {
+    (async () => {
+      console.log(`[ORDERDATES] ${name}: Initial data loading effect triggered`, {
+        hasParentLocations: !!parentLocations,
+        parentLocationsCount: parentLocations?.length || 0,
+        queryString,
+        query: JSON.stringify(query)
+      });
+
+      if (!parentLocations) {
+        console.log(`[ORDERDATES] ${name}: No parent locations, setting empty items`);
+        setItems([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        console.log(`[ORDERDATES] ${name}: Starting initial data load`);
+        logger.trace('useEffect[queryString] %s', createStableHash(query));
+        setIsLoading(true);
+        console.log(`[ORDERDATES] ${name}: About to call allItems for initial load`, {
+          query: JSON.stringify(query),
+          parentLocations: parentLocations?.map(l => `${l.kt}:${l.lk}`),
+          allItemsType: allItems?.constructor?.name,
+          hasAllItems: !!allItems
+        });
+        const results = await allItems(query, parentLocations);
+        console.log(`[ORDERDATES] ${name}: Initial data load completed`, {
+          itemsCount: results?.length || 0,
+          items: results?.map((item: any) => ({
+            id: item.id,
+            targetDate: item.targetDate,
+            phaseCode: item.phase?.code
+          })) || []
+        });
+        setItems(results as V[] || []);
+        setIsLoading(false);
+      } catch (error) {
+        console.error(`[ORDERDATES] ${name}: Error loading items:`, error);
+        logger.error(`${name}: Error loading items:`, error);
+        setItems([]);
+        setIsLoading(false);
+      }
+    })();
+  }, [queryString, allItems, parentLocations, name]);
+
+  // Store cache reference to detect changes
+  const cacheRef = React.useRef(cache);
+  const parentLocationsRef = React.useRef(parentLocations);
+  const allItemsRef = React.useRef(allItems);
+
+  // Listen for cache invalidation events to refetch data
+  useEffect(() => {
+    console.log(`[ORDERDATES] ${name}: Cache event subscription useEffect triggered`, {
+      hasCache: !!cache,
+      hasParentLocations: !!parentLocations,
+      parentLocationsLength: parentLocations?.length,
+      queryString: JSON.stringify(query),
+      allItemsRef: !!allItems,
+      nameRef: name,
+      cacheChanged: cacheRef.current !== cache,
+      parentLocationsChanged: parentLocationsRef.current !== parentLocations,
+      allItemsChanged: allItemsRef.current !== allItems
+    });
+
+    // Update refs
+    cacheRef.current = cache;
+    parentLocationsRef.current = parentLocations;
+    allItemsRef.current = allItems;
+
+    if (!cache || !parentLocations) {
+      console.log(`[ORDERDATES] ${name}: Cache event subscription skipped - cache:`, !!cache, 'parentLocations:', !!parentLocations);
+      return;
+    }
+
+    console.log(`[ORDERDATES] ${name}: Setting up cache event subscription`, {
+      cacheType: cache.constructor.name,
+      parentLocations: parentLocations.length,
+      query: JSON.stringify(query)
+    });
+
+    const handleCacheInvalidation = async () => {
+      try {
+        console.log(`[ORDERDATES] ${name}: Cache invalidation event received, refetching items`, {
+          currentItemsCount: items.length,
+          query: JSON.stringify(query),
+          parentLocations: parentLocations.length
+        });
+        logger.trace('Cache invalidation event received, refetching items');
+        setIsLoading(true);
+        console.log(`[ORDERDATES] ${name}: About to call allItems for refetch`, {
+          query: JSON.stringify(query),
+          parentLocations: parentLocations?.map(l => `${l.kt}:${l.lk}`),
+          allItemsType: allItems?.constructor?.name,
+          hasAllItems: !!allItems
+        });
+        const results = await allItems(query, parentLocations);
+        console.log(`[ORDERDATES] ${name}: Cache invalidation refetch completed`, {
+          newItemsCount: results?.length || 0,
+          previousItemsCount: items.length,
+          hasChanged: (results?.length || 0) !== items.length,
+          resultsData: results?.map((item: any) => ({
+            id: item.id,
+            targetDate: item.targetDate,
+            phaseCode: item.phase?.code,
+            key: item.key
+          })) || []
+        });
+        setItems(results as V[] || []);
+        setIsLoading(false);
+      } catch (error) {
+        console.error(`[ORDERDATES] ${name}: Error refetching items after cache invalidation:`, error);
+        logger.error(`${name}: Error refetching items after cache invalidation:`, error);
+        // Keep existing items on error
+        setIsLoading(false);
+      }
+    };
+
+    // Subscribe to cache events
+    console.log(`[ORDERDATES] ${name}: Subscribing to cache events with eventTypes: ['query_invalidated']`);
+    const subscription = cache.subscribe(handleCacheInvalidation, {
+      eventTypes: ['query_invalidated'],
+      debounceMs: 0  // No debounce - execute immediately
+    });
+
+    console.log(`[ORDERDATES] ${name}: Cache subscription created:`, !!subscription);
+
+    return () => {
+      console.log(`[ORDERDATES] ${name}: Unsubscribing from cache events`);
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, [cache, allItems, query, parentLocations, name]);
 
   const all = useCallback(async () => {
     if (parentLocations) {
       logger.debug(`${name}: all`, { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-      setIsLoading(true);
       try {
         const result = await allItems(query, parentLocations) as V[] | null;
         return result;
       } catch (error) {
         logger.error(`${name}: Error getting all items`, error);
         throw error;
-      } finally {
-        setIsLoading(false);
       }
     } else {
       logger.default(`${name}: No parent locations present to query for all containeditems`,
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for all containeditems in ${name}`);
     }
-  }, [allItems, parentLocations, queryString]);
+  }, [allItems, parentLocations, query, name]);
 
   const one = useCallback(async () => {
     if (parentLocations) {
       logger.trace('one', { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-      setIsLoading(true);
       try {
         const result = await oneItem(query, parentLocations) as V | null;
         return result;
       } catch (error) {
         logger.error(`${name}: Error getting one item`, error);
         throw error;
-      } finally {
-        setIsLoading(false);
       }
     } else {
       logger.default(`${name}: No parent locations present to query for one containeditem`,
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for one containeditem in ${name}`);
     }
-  }, [oneItem, parentLocations, queryString]);
-
-  const [items, setItems] = useState<V[] | null>(null);
-
-  // Load items when query or parent context changes
-  useEffect(() => {
-    logger.trace('useEffect[queryString, parentLocations, parentName, item]',
-      { queryString, parentLocations: abbrevLKA(parentLocations as any), parentName, parentItem });
-    (async () => {
-      try {
-        if (parentLocations) {
-          logger.trace('useEffect[queryString]',
-            { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
-          setIsLoading(true);
-          const results = await allItems(query, parentLocations);
-          setItems(results as V[] | null);
-          setIsLoading(false);
-        } else {
-          logger.warning(`${name}: useEffect[queryString, parentLocations] without parent locations`,
-            { query: abbrevQuery(query) });
-          setItems(null);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        logger.error(`${name}: Error in useEffect`, error);
-        setItems(null);
-        setIsLoading(false);
-        // Don't throw here as this would be lost in the async context
-        // Let the all/one override functions handle error throwing
-      }
-    })();
-  }, [queryString, parentLocations, parentName, parentItem, allItems, name]);
+  }, [oneItem, parentLocations, query, name]);
 
   return CItemsProvider<V, S, L1, L2, L3, L4, L5>({
     name,
@@ -143,7 +241,7 @@ export const CItemsQuery = <
     context,
     contextName,
     renderEach,
-    items,
+    items: items || null,
     isLoadingParam: isLoading,
     parent,
     parentContextName,

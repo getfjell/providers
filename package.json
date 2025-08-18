@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.5.39",
+  "version": "4.5.40",
   "license": "Apache-2.0",
   "keywords": [
     "react-providers",
@@ -30,10 +30,10 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.8",
-    "@fjell/client-api": "^4.4.26",
-    "@fjell/core": "^4.4.37",
-    "@fjell/logging": "^4.4.43",
+    "@fjell/cache": "^4.7.9",
+    "@fjell/client-api": "^4.4.27",
+    "@fjell/core": "^4.4.38",
+    "@fjell/logging": "^4.4.44",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
@@ -43,7 +43,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.33.0",
-    "@fjell/eslint-config": "^1.1.20",
+    "@fjell/eslint-config": "^1.1.21",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",

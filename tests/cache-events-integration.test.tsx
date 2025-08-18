@@ -107,7 +107,7 @@ describe('Cache Events Integration', () => {
           'location_invalidated',
           'query_invalidated'
         ]),
-        debounceMs: 50
+        debounceMs: 0
       })
     );
   });
