@@ -30,30 +30,6 @@ export function useCacheItem<
   const [item, setItem] = useState<V | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load initial item from cache
-  useEffect(() => {
-    if (!cache || !key) {
-      setItem(null);
-      setIsLoading(false);
-      return;
-    }
-
-    // Get current item from cache
-    const loadInitialItem = async () => {
-      try {
-        const cachedItem = await cache.cacheMap.get(key);
-        setItem(cachedItem);
-      } catch (error) {
-        console.error('Error loading initial item:', error);
-        setItem(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadInitialItem();
-  }, [cache, key]);
-
   // Normalize a key for comparison (same logic as CacheEventEmitter)
   const normalizeKey = useCallback((key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>): string => {
     // Normalize string/number values in the key (same logic as CacheEventEmitter) first,
@@ -117,6 +93,33 @@ export function useCacheItem<
 
   // Subscribe to cache events
   useCacheSubscription(cache, eventListener, subscriptionOptions);
+
+  // Load initial item from cache - this effect should run whenever cache or key changes
+  useEffect(() => {
+    if (!cache || !key) {
+      setItem(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // Reset loading state when key changes
+    setIsLoading(true);
+
+    // Get current item from cache
+    const loadInitialItem = async () => {
+      try {
+        const cachedItem = await cache.cacheMap.get(key);
+        setItem(cachedItem);
+      } catch (error) {
+        console.error('Error loading initial item:', error);
+        setItem(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialItem();
+  }, [cache, key]);
 
   // Refetch function to manually reload the item
   const refetch = useCallback(async (): Promise<V | null> => {

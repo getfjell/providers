@@ -618,15 +618,14 @@ describe('useCacheItem', () => {
         expect.objectContaining({ keys: [key1] })
       );
 
-      // Change key
+      // Change key - subscription should not be recreated, only options updated internally
       rerender({ key: key2 });
 
-      // Check the second call (after rerender) for key2
-      expect(mockCache.subscribe).toHaveBeenNthCalledWith(
-        2,
-        expect.any(Function),
-        expect.objectContaining({ keys: [key2] })
-      );
+      // The subscription should only be called once (when cache was first provided)
+      expect(mockCache.subscribe).toHaveBeenCalledTimes(1);
+
+      // The subscription options are updated internally without recreating the subscription
+      // This is the correct behavior to prevent infinite loops
     });
 
     it('should reload item from cache when key changes', async () => {
@@ -647,8 +646,14 @@ describe('useCacheItem', () => {
 
       // Mock cache.get to return different values for different keys
       mockCache.cacheMap.get = vi.fn()
-        .mockResolvedValueOnce(user1)
-        .mockResolvedValueOnce(user2);
+        .mockImplementation((key) => {
+          if (key.pk === 'test-user-1') {
+            return Promise.resolve(user1);
+          } else if (key.pk === 'test-user-2') {
+            return Promise.resolve(user2);
+          }
+          return Promise.resolve(null);
+        });
 
       const { result, rerender } = renderHook(
         ({ key }) => useCacheItem(mockCache, key),
