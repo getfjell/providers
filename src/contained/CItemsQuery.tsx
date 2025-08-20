@@ -67,43 +67,19 @@ export const CItemsQuery = <
   // Load items when query changes or when cache events occur
   useEffect(() => {
     (async () => {
-      console.log(`[ORDERDATES] ${name}: Initial data loading effect triggered`, {
-        hasParentLocations: !!parentLocations,
-        parentLocationsCount: parentLocations?.length || 0,
-        queryString,
-        query: JSON.stringify(query)
-      });
-
       if (!parentLocations) {
-        console.log(`[ORDERDATES] ${name}: No parent locations, setting empty items`);
         setItems([]);
         setIsLoading(false);
         return;
       }
 
       try {
-        console.log(`[ORDERDATES] ${name}: Starting initial data load`);
         logger.trace('useEffect[queryString] %s', createStableHash(query));
         setIsLoading(true);
-        console.log(`[ORDERDATES] ${name}: About to call allItems for initial load`, {
-          query: JSON.stringify(query),
-          parentLocations: parentLocations?.map(l => `${l.kt}:${l.lk}`),
-          allItemsType: allItems?.constructor?.name,
-          hasAllItems: !!allItems
-        });
         const results = await allItems(query, parentLocations);
-        console.log(`[ORDERDATES] ${name}: Initial data load completed`, {
-          itemsCount: results?.length || 0,
-          items: results?.map((item: any) => ({
-            id: item.id,
-            targetDate: item.targetDate,
-            phaseCode: item.phase?.code
-          })) || []
-        });
         setItems(results as V[] || []);
         setIsLoading(false);
       } catch (error) {
-        console.error(`[ORDERDATES] ${name}: Error loading items:`, error);
         logger.error(`${name}: Error loading items:`, error);
         setItems([]);
         setIsLoading(false);
@@ -118,65 +94,23 @@ export const CItemsQuery = <
 
   // Listen for cache invalidation events to refetch data
   useEffect(() => {
-    console.log(`[ORDERDATES] ${name}: Cache event subscription useEffect triggered`, {
-      hasCache: !!cache,
-      hasParentLocations: !!parentLocations,
-      parentLocationsLength: parentLocations?.length,
-      queryString: JSON.stringify(query),
-      allItemsRef: !!allItems,
-      nameRef: name,
-      cacheChanged: cacheRef.current !== cache,
-      parentLocationsChanged: parentLocationsRef.current !== parentLocations,
-      allItemsChanged: allItemsRef.current !== allItems
-    });
-
     // Update refs
     cacheRef.current = cache;
     parentLocationsRef.current = parentLocations;
     allItemsRef.current = allItems;
 
     if (!cache || !parentLocations) {
-      console.log(`[ORDERDATES] ${name}: Cache event subscription skipped - cache:`, !!cache, 'parentLocations:', !!parentLocations);
       return;
     }
 
-    console.log(`[ORDERDATES] ${name}: Setting up cache event subscription`, {
-      cacheType: cache.constructor.name,
-      parentLocations: parentLocations.length,
-      query: JSON.stringify(query)
-    });
-
     const handleCacheInvalidation = async () => {
       try {
-        console.log(`[ORDERDATES] ${name}: Cache invalidation event received, refetching items`, {
-          currentItemsCount: items.length,
-          query: JSON.stringify(query),
-          parentLocations: parentLocations.length
-        });
         logger.trace('Cache invalidation event received, refetching items');
         setIsLoading(true);
-        console.log(`[ORDERDATES] ${name}: About to call allItems for refetch`, {
-          query: JSON.stringify(query),
-          parentLocations: parentLocations?.map(l => `${l.kt}:${l.lk}`),
-          allItemsType: allItems?.constructor?.name,
-          hasAllItems: !!allItems
-        });
         const results = await allItems(query, parentLocations);
-        console.log(`[ORDERDATES] ${name}: Cache invalidation refetch completed`, {
-          newItemsCount: results?.length || 0,
-          previousItemsCount: items.length,
-          hasChanged: (results?.length || 0) !== items.length,
-          resultsData: results?.map((item: any) => ({
-            id: item.id,
-            targetDate: item.targetDate,
-            phaseCode: item.phase?.code,
-            key: item.key
-          })) || []
-        });
         setItems(results as V[] || []);
         setIsLoading(false);
       } catch (error) {
-        console.error(`[ORDERDATES] ${name}: Error refetching items after cache invalidation:`, error);
         logger.error(`${name}: Error refetching items after cache invalidation:`, error);
         // Keep existing items on error
         setIsLoading(false);
@@ -184,16 +118,12 @@ export const CItemsQuery = <
     };
 
     // Subscribe to cache events
-    console.log(`[ORDERDATES] ${name}: Subscribing to cache events with eventTypes: ['query_invalidated']`);
     const subscription = cache.subscribe(handleCacheInvalidation, {
       eventTypes: ['query_invalidated'],
       debounceMs: 0  // No debounce - execute immediately
     });
 
-    console.log(`[ORDERDATES] ${name}: Cache subscription created:`, !!subscription);
-
     return () => {
-      console.log(`[ORDERDATES] ${name}: Unsubscribing from cache events`);
       if (subscription && typeof subscription.unsubscribe === 'function') {
         subscription.unsubscribe();
       }
