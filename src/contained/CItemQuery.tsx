@@ -18,7 +18,7 @@ import { CItemLoad } from "./CItemLoad";
 import { useAsyncError } from "../useAsyncError";
 
 // TODO: ALign the null iks and debugging statement changes made on 9/12 in PItemProvider with this.
-const logger = LibLogger.get('CItemQueryProvider');
+const logger = LibLogger.get('CItemQuery');
 
 export const CItemQuery = <
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -132,7 +132,7 @@ export const CItemQuery = <
           }
         } else {
           // istanbul ignore next
-          logger.warning(`${name}: No parent locations provided`, { query, optional });
+          logger.debug(`${name}: No parent locations provided`, { query, optional });
           // throw new Error(`No parent locations provided in ${name}`);
         }
       })();
