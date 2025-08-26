@@ -1,6 +1,6 @@
 
 import { Item } from "@fjell/core";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import { createStableHash } from '../utils';
 import * as PItemAdapter from "./PItemAdapter";
@@ -36,10 +36,11 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
 
   const finderParamsString = useMemo(() => createStableHash(finderParams), [finderParams]);
 
-  useEffect(() => {
+  // Function to execute the finder
+  const executeFinder = useCallback(async () => {
     if (finder && finderParams && adapterContext) {
-      (async () => {
-        if( adapterContext.find ) {
+      try {
+        if (adapterContext.find) {
           const result = await adapterContext.find(finder, finderParams);
           setItems(result as V[] | null);
           setIsLoading(false);
@@ -47,9 +48,48 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
           setItems(null);
           setIsLoading(false);
         }
-      })();
+      } catch (error) {
+        console.error('Find operation failed:', error);
+        setItems(null);
+        setIsLoading(false);
+      }
     }
-  }, [finder, finderParamsString]);
+  }, [finder, finderParams, adapterContext]);
+
+  // Initial execution and refetch when dependencies change
+  useEffect(() => {
+    executeFinder();
+  }, [finder, finderParamsString, adapterContext]);
+
+  // Subscribe to cache events to react to cache invalidations
+  useEffect(() => {
+    if (!adapterContext?.cache) {
+      return;
+    }
+
+    const handleCacheInvalidation = async () => {
+      // Refetch data when cache is invalidated
+      await executeFinder();
+    };
+
+    // Subscribe to cache events that should trigger a refetch
+    const subscription = adapterContext.cache.subscribe(handleCacheInvalidation, {
+      eventTypes: [
+        'query_invalidated',  // When query results are invalidated
+        'item_created',       // When new items are created
+        'item_updated',       // When existing items are updated
+        'item_removed',       // When items are removed
+        'cache_cleared'       // When entire cache is cleared
+      ],
+      debounceMs: 50  // Small debounce to batch rapid updates
+    });
+
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, [adapterContext?.cache, executeFinder]);
 
   return PItemsProvider<V, S>({
     name,
