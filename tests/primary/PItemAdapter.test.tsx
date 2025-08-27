@@ -961,4 +961,5 @@ describe('PItemAdapter', () => {
 
     expect(testItemCache.operations.one).toHaveBeenCalledWith(undefined);
   });
+
 });

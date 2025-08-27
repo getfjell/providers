@@ -39,6 +39,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   const {
     all: allItems,
     one: oneItem,
+    cache,
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const queryString = useMemo(() => createStableHash(query), [query]);
@@ -62,6 +63,47 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
       }
     })();
   }, [queryString, allItems, name]);
+
+  // Store cache reference to detect changes
+  const cacheRef = React.useRef(cache);
+  const allItemsRef = React.useRef(allItems);
+
+  // Listen for cache invalidation events to refetch data
+  useEffect(() => {
+    // Update refs
+    cacheRef.current = cache;
+    allItemsRef.current = allItems;
+
+    if (!cache) {
+      return;
+    }
+
+    const handleCacheInvalidation = async () => {
+      try {
+        logger.trace('Cache invalidation event received, refetching items');
+        setIsLoading(true);
+        const results = await allItems(query, []);
+        setItems(results as V[] || []);
+        setIsLoading(false);
+      } catch (error) {
+        logger.error(`${name}: Error refetching items after cache invalidation:`, error);
+        // Keep existing items on error
+        setIsLoading(false);
+      }
+    };
+
+    // Subscribe to cache events
+    const subscription = cache.subscribe(handleCacheInvalidation, {
+      eventTypes: ['query_invalidated'],
+      debounceMs: 0  // No debounce - execute immediately
+    });
+
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, [cache, allItems, query, name]);
 
   const all = useCallback(async () => {
     try {
