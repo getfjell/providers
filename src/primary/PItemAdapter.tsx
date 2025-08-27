@@ -229,7 +229,7 @@ export const Adapter = <
     logger.trace('remove', { key: abbrevIK(key) });
     const cache = ensureCache('remove');
     await cache.operations.remove(key);
-  }, [ensureCache]);
+  }, [ensureCache, cacheVersion]); // Add cacheVersion to force recreation on cache events
 
   const retrieve = useCallback(async (
     key: PriKey<S>,
