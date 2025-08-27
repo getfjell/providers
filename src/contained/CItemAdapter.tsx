@@ -27,6 +27,8 @@ export type ContextType<
 > = AItemAdapter.ContextType<V, S, L1, L2, L3, L4, L5> & {
   /** The resolved cache instance for direct access */
   cache: Cache<V, S, L1, L2, L3, L4, L5> | null;
+  /** Cache version that increments when cache events occur - use as dependency for re-fetching */
+  cacheVersion: number;
 };
 
 export type Context<
@@ -241,7 +243,7 @@ export const Adapter = <
       return handleCacheError('remove');
     }
     await resolvedSourceCache.operations.remove(key);
-  }, [resolvedSourceCache, handleCacheError]);
+  }, [resolvedSourceCache, handleCacheError, cacheVersion]); // Add cacheVersion to force recreation on cache events
 
   const retrieve = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
