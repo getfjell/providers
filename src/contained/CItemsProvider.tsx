@@ -180,12 +180,12 @@ export const CItemsProvider = <
     }
   }, [oneItem, parentLocations]);
 
-  const allAction = useCallback(async (action: string, body: any = {}) => {
+  const allAction = useCallback(async (action: string, body: any = {}): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     if (parentLocations) {
       logger.info('allAction', { action, body, parentLocations: abbrevLKA(parentLocations as any) });
       setIsUpdating(true);
       try {
-        const result = await allActionItem(action, body, parentLocations) as V[] | null;
+        const result = await allActionItem(action, body, parentLocations);
         return result;
       } catch (error) {
         logger.error(`${name}: Error in allAction`, error);
@@ -221,12 +221,12 @@ export const CItemsProvider = <
       key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
       action: string,
       body: any = {},
-    ): Promise<V> => {
+    ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
       if (parentLocations) {
         logger.info('action', { key, action, body, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);
         try {
-          const result = await actionItem(key, action, body, parentLocations) as V;
+          const result = await actionItem(key, action, body, parentLocations);
           return result;
         } finally {
           setIsUpdating(false);

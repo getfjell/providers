@@ -9,6 +9,7 @@ import {
   isValidComKey,
   Item,
   LocKeyArray,
+  PriKey,
 } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
@@ -232,12 +233,12 @@ export const CItemLoad = <
   const action = useCallback(async (
     actionName: string,
     body?: any,
-  ): Promise<V> => {
+  ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsUpdating(true);
       try {
         logger.trace('action', { itemKey: abbrevIK(itemKey), actionName, body });
-        const retItem = await actionItem(itemKey, actionName, body) as V;
+        const retItem = await actionItem(itemKey, actionName, body);
         return retItem;
       } catch (error) {
         logger.error(`${name}: Error executing action '${actionName}'`, error);
