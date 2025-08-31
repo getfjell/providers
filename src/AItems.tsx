@@ -1,4 +1,4 @@
-import { AllItemTypeArrays, Item, LocKeyArray } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
 import * as React from "react";
 import * as AItemAdapter from "./AItemAdapter";
 import * as Faceted from "./Faceted";
@@ -47,7 +47,7 @@ export type AllActionMethod<
     action: string,
     body?: any,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
-  ) => Promise<V[] | null>;
+  ) => Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]>;
 
 export type AddedAllActionMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -60,7 +60,7 @@ export type AddedAllActionMethod<
   > = (
     body?: any,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
-  ) => Promise<V[] | null>;
+  ) => Promise<V[]>;
 
 export interface ContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,

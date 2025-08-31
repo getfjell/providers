@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { abbrevIK, AllItemTypeArrays, Item, ItemQuery, PriKey } from "@fjell/core";
+import { abbrevIK, AllItemTypeArrays, ComKey, Item, ItemQuery, LocKeyArray, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
 import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
@@ -254,21 +254,21 @@ export const Adapter = <
     key: PriKey<S>,
     action: string,
     body?: any,
-  ): Promise<V> => {
+  ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
     const cache = ensureCache('action');
     const newItem = await cache.operations.action(key, action, body);
-    return newItem as V;
+    return newItem;
   }, [ensureCache]);
 
   const allAction = useCallback(async (
     action: string,
     body?: any,
-  ): Promise<V[] | null> => {
+  ): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('allAction', { action, body });
     const cache = ensureCache('allAction');
     const newItems = await cache.operations.allAction(action, body);
-    return newItems as V[];
+    return newItems;
   }, [ensureCache]);
 
   const facet = useCallback(async (
