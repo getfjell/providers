@@ -272,20 +272,20 @@ export const Adapter = <
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     action: string,
     body?: any,
-  ): Promise<V> => {
+  ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('action', { key: abbrevIK(key), action, body });
     if (!resolvedSourceCache) {
       return handleCacheError('action');
     }
     const newItem = await resolvedSourceCache.operations.action(key, action, body);
-    return newItem as V;
+    return newItem;
   }, [resolvedSourceCache, handleCacheError]);
 
   const allAction = React.useCallback(async (
     action: string,
     body?: any,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
-  ): Promise<V[]> => {
+  ): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('allAction', {
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
       action,
@@ -295,7 +295,7 @@ export const Adapter = <
       return handleCacheError('allAction');
     }
     const newItems = await resolvedSourceCache.operations.allAction(action, body, locations);
-    return newItems as V[];
+    return newItems;
   }, [resolvedSourceCache, handleCacheError]);
 
   const facet = React.useCallback(async (
@@ -365,6 +365,7 @@ export const Adapter = <
       name,
       pkTypes: pkTypes || ([] as any),
       cache: resolvedSourceCache,
+      cacheVersion,
       all,
       one,
       create,
@@ -388,6 +389,7 @@ export const Adapter = <
     name,
     pkTypes,
     resolvedSourceCache,
+    cacheVersion,
     all,
     one,
     create,
@@ -405,9 +407,7 @@ export const Adapter = <
     addActions,
     addFacets,
     addAllActions,
-    addAllFacets,
-    cacheVersion, // Add cacheVersion to force context recreation when cache events occur
-
+    addAllFacets
   ]);
 
   return React.createElement(
