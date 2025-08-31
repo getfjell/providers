@@ -14,7 +14,7 @@ export type ActionMethod<
   action: string,
   body?: any,
   locations?: LocKeyArray<L1, L2, L3, L4, L5>
-) => Promise<V | null>;
+) => Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]>;
 
 export type AddedActionMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
@@ -24,7 +24,7 @@ export type AddedActionMethod<
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
-> = (body?: any, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V | null>;
+> = (body?: any, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V>;
 
 export type UpdateMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
