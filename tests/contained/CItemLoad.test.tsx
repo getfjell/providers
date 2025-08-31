@@ -93,7 +93,31 @@ describe('CItemLoad', () => {
 
     // Reset mocked functions
     vi.mocked(isComKey).mockImplementation((key) => key && typeof key === 'object' && 'pk' in key && 'kt' in key);
-    vi.mocked(isValidComKey).mockImplementation((key) => key && typeof key === 'object' && 'pk' in key && 'kt' in key);
+    vi.mocked(isValidComKey).mockImplementation((key) => {
+      if (!key || typeof key !== 'object' || !('pk' in key) || !('kt' in key) || !('loc' in key)) {
+        return false;
+      }
+      // Check that pk and kt are valid (not null, undefined, empty string, or 'null')
+      if (!key.pk || key.pk === '' || key.pk === 'null' || !key.kt || key.kt === '' || key.kt === 'null') {
+        return false;
+      }
+      // Check that loc is an array and each location key is valid
+      if (!Array.isArray(key.loc)) {
+        return false;
+      }
+      return key.loc.every((locKey: any) =>
+        locKey &&
+        typeof locKey === 'object' &&
+        'lk' in locKey &&
+        'kt' in locKey &&
+        locKey.lk &&
+        locKey.lk !== '' &&
+        locKey.lk !== 'null' &&
+        locKey.kt &&
+        locKey.kt !== '' &&
+        locKey.kt !== 'null'
+      );
+    });
     vi.mocked(ikToLKA).mockImplementation((key) => (key && 'loc' in key) ? key.loc || [] as any : [] as any);
 
     // Setup adapter methods

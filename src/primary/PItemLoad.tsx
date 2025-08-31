@@ -2,6 +2,7 @@
 import LibLogger from "../logger";
 import {
   AllItemTypeArrays,
+  ComKey,
   ikToLKA,
   isValidPriKey,
   Item,
@@ -246,11 +247,12 @@ export const PItemLoad = <
   const action = useCallback(async (
     actionName: string,
     body?: any,
-  ) => {
+  ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     if (itemKey && isValidPriKey(itemKey)) {
       setIsUpdating(true);
       try {
-        return await actionItem(itemKey, actionName, body) as V;
+        const retItem = await actionItem(itemKey, actionName, body);
+        return retItem;
       } finally {
         setIsUpdating(false);
       }

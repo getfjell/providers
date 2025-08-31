@@ -1,4 +1,4 @@
-import { AllItemTypeArrays, Item, PriKey } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
@@ -113,11 +113,11 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     return result;
   }, [removeItem]);
 
-  const allAction = useCallback(async (action: string, body: any = {}) => {
+  const allAction = useCallback(async (action: string, body: any = {}): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('allAction', { action, body });
     setIsUpdating(true);
     try {
-      const result = await allItemAction(action, body) as V[] | null;
+      const result = await allItemAction(action, body);
       return result;
     } finally {
       setIsUpdating(false);
@@ -135,11 +135,11 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     }
   }, [allItemFacet]);
 
-  const action = useCallback(async (key: PriKey<S>, action: string, body: any) => {
+  const action = useCallback(async (key: PriKey<S>, action: string, body: any): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('action', { key, action, body });
     setIsUpdating(true);
     try {
-      const result = await actionItem(key, action, body) as V;
+      const result = await actionItem(key, action, body);
       return result;
     } finally {
       setIsUpdating(false);
