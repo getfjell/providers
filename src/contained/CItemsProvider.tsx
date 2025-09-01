@@ -102,7 +102,7 @@ export const CItemsProvider = <
         const result = await createItem(item, parentLocations) as V;
         return result;
       } catch (error) {
-        logger.error(`${name}: Error creating item`, error);
+        logger.error(`${name}: Error creating item with data:`, { item, error });
         throw error;
       } finally {
         setIsCreating(false);
@@ -121,7 +121,7 @@ export const CItemsProvider = <
       const result = await updateItem(key, item) as V;
       return result;
     } catch (error) {
-      logger.error(`${name}: Error updating item`, error);
+      logger.error(`${name}: Error updating item with key:`, { key: abbrevIK(key), item, error });
       throw error;
     } finally {
       setIsUpdating(false);
@@ -135,7 +135,7 @@ export const CItemsProvider = <
       const result = await removeItem(key);
       return result;
     } catch (error) {
-      logger.error(`${name}: Error removing item`, error);
+      logger.error(`${name}: Error removing item with key:`, { key: abbrevIK(key), error });
       throw error;
     } finally {
       setIsRemoving(false);
@@ -169,7 +169,7 @@ export const CItemsProvider = <
         const result = await oneItem({}, parentLocations) as V | null;
         return result;
       } catch (error) {
-        logger.error(`${name}: Error getting one item`, error);
+        logger.error(`${name}: Error getting one item with query:`, { query: {}, parentLocations: abbrevLKA(parentLocations as any), error });
         throw error;
       } finally {
         setIsLoading(false);
@@ -188,7 +188,7 @@ export const CItemsProvider = <
         const result = await allActionItem(action, body, parentLocations);
         return result;
       } catch (error) {
-        logger.error(`${name}: Error in allAction`, error);
+        logger.error(`${name}: Error in allAction "${action}" with body:`, { action, body, error });
         throw error;
       } finally {
         setIsUpdating(false);
@@ -228,6 +228,9 @@ export const CItemsProvider = <
         try {
           const result = await actionItem(key, action, body, parentLocations);
           return result;
+        } catch (error) {
+          logger.error(`${name}: Error in action "${action}" with key:`, { key: abbrevIK(key), action, body, error });
+          throw error;
         } finally {
           setIsUpdating(false);
         }
@@ -248,6 +251,9 @@ export const CItemsProvider = <
         try {
           const result = await facetItem(key, facet, params, parentLocations) as any;
           return result;
+        } catch (error) {
+          logger.error(`${name}: Error in facet "${facet}" with key:`, { key: abbrevIK(key), facet, params, error });
+          throw error;
         } finally {
           setIsUpdating(false);
         }

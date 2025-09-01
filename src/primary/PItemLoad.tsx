@@ -100,7 +100,7 @@ export const PItemLoad = <
       retrieveItem(itemKey as PriKey<S>).then(retrievedItem => {
         setItemState(retrievedItem as V | null);
       }).catch(error => {
-        logger.error('Error retrieving item:', error);
+        logger.error(`${name}: Error retrieving item with key:`, { itemKey, error });
         setItemState(null);
       });
     } else {
@@ -152,7 +152,7 @@ export const PItemLoad = <
       setIsLoading(true); // Set loading to true when we are about to fetch
       retrieveItem(ik)
         .catch((error) => {
-          logger.error(`${name}: Error retrieving item`, error);
+          logger.error(`${name}: Error retrieving item with key:`, { itemKey: ik, error });
           throwAsyncError(error as Error);
         })
         .finally(() => {
