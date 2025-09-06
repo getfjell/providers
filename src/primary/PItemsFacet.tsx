@@ -1,6 +1,6 @@
 
 import { Item } from "@fjell/core";
-import React, { useEffect, useMemo } from "react";
+import React, { useContext, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import { createStableHash } from '../utils';
 import * as PItemAdapter from "./PItemAdapter";
@@ -38,12 +38,7 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
   const adapterContextName = adapterContext || `${contextName}Adapter`;
 
   // Try to get existing context first
-  let existingContext: PItems.ContextType<V, S> | undefined;
-  try {
-    existingContext = PItems.usePItems(itemsContext, contextName);
-  } catch {
-    // No existing context, we'll create a new provider
-  }
+  const existingContext = useContext(itemsContext);
 
   // Since we pass this to the actions constructor, don't destructure it yet
   const adapterContextInstance = usePItemAdapter<V, S>(adapter, adapterContextName);
@@ -99,14 +94,17 @@ export const PItemsFacet = <V extends Item<S>, S extends string>(
     initialFacetResults[facet] = { [facetParamsString]: result };
   }
 
-  return PItemsProvider<V, S>({
-    name,
-    adapter,
-    children,
-    context: itemsContext,
-    contextName: contextName,
-    renderEach,
-    facetResults: initialFacetResults,
-    isLoadingParam: isLoading,
-  });
+  return (
+    <PItemsProvider<V, S>
+      name={name}
+      adapter={adapter}
+      context={itemsContext}
+      contextName={contextName}
+      renderEach={renderEach}
+      facetResults={initialFacetResults}
+      isLoadingParam={isLoading}
+    >
+      {children}
+    </PItemsProvider>
+  );
 }
