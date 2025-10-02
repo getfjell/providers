@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

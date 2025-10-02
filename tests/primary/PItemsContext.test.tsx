@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { cPK, Item, PriKey } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';
