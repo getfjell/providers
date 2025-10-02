@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { ComKey, ikToLKA, isComKey, isValidComKey, Item, UUID } from '@fjell/core';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

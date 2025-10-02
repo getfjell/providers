@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import * as React from 'react';
 import { Adapter, ContextType } from '../../src/primary/PItemAdapter';
 import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';

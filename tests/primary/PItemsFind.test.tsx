@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import * as React from 'react';
 import { PItemsFind } from '../../src/primary/PItemsFind';
 import { ContextType as PItemAdapterContextType } from '../../src/primary/PItemAdapter';

@@ -1,5 +1,5 @@
 // @ts-nocheck
-/* eslint-disable no-undefined */
+ 
 import * as React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from '@fjell/core';

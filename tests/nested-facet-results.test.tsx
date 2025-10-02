@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { Item, PriKey, UUID } from '@fjell/core';
 import { act, render, waitFor } from '@testing-library/react';
 import * as React from 'react';
