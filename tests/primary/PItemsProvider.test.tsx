@@ -25,12 +25,10 @@ const testItem: TestItem = {
     deleted: { at: null }
   }
 };
-
-// eslint-disable-next-line no-undefined
+ 
 const TestItemsProviderContext = React.createContext<PItems.ContextType<TestItem, 'test'> | undefined>(undefined);
 TestItemsProviderContext.displayName = 'TestItemsProviderContext';
-
-// eslint-disable-next-line no-undefined
+ 
 const TestItemAdapterContext = React.createContext<PItemAdapter.ContextType<TestItem, 'test'> | undefined>(undefined);
 TestItemAdapterContext.displayName = 'TestItemAdapterContext';
 

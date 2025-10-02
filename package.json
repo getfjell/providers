@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.5.49",
+  "version": "4.5.50",
   "license": "Apache-2.0",
   "keywords": [
     "react-providers",
@@ -23,6 +23,7 @@
     "lint": "eslint . --ext .ts --fix",
     "clean": "rm -rf dist",
     "test": "npm run lint && vitest run --coverage",
+    "precommit": "npm run clean && npm run lint && npm run build && npm run test",
     "prepublishOnly": "npm run clean && npm run build",
     "docs:dev": "cd docs && npm run dev",
     "docs:build": "cd docs && npm run build",
@@ -30,10 +31,10 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.19",
-    "@fjell/client-api": "^4.4.32",
-    "@fjell/core": "^4.4.41",
-    "@fjell/logging": "^4.4.46",
+    "@fjell/cache": "^4.7.20",
+    "@fjell/client-api": "^4.4.33",
+    "@fjell/core": "^4.4.42",
+    "@fjell/logging": "^4.4.47",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
@@ -43,7 +44,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.33.0",
-    "@fjell/eslint-config": "^1.1.24",
+    "@fjell/eslint-config": "^1.1.25",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",

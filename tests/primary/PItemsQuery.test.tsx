@@ -22,11 +22,10 @@ const testItem: TestItem = {
 } as any;
 
 // Create mock contexts with any typing to bypass strict checks
-// eslint-disable-next-line no-undefined
+ 
 const TestItemsProviderContext = React.createContext<any>(undefined);
 TestItemsProviderContext.displayName = 'TestItemsProviderContext';
-
-// eslint-disable-next-line no-undefined
+ 
 const TestItemAdapterContext = React.createContext<any>(undefined);
 TestItemAdapterContext.displayName = 'TestItemAdapterContext';
 

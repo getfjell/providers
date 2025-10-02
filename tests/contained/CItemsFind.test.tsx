@@ -1,5 +1,5 @@
 // @ts-nocheck
-/* eslint-disable no-undefined */
+ 
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

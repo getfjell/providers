@@ -69,7 +69,7 @@ describe('Code Review Fixes', () => {
 
     it('should handle primitive values', () => {
       expect(createStableHash(null)).toBe('null');
-      // eslint-disable-next-line no-undefined
+       
       expect(createStableHash(undefined)).toBe('undefined');
       expect(createStableHash(42)).toBe('42');
       expect(createStableHash('hello')).toBe('hello');
@@ -106,7 +106,7 @@ describe('Code Review Fixes', () => {
 
     it('should correctly identify non-promises', () => {
       expect(isPromise(null)).toBe(false);
-      // eslint-disable-next-line no-undefined
+       
       expect(isPromise(undefined)).toBe(false);
       expect(isPromise(42)).toBe(false);
       expect(isPromise('string')).toBe(false);
@@ -176,7 +176,7 @@ describe('Code Review Fixes', () => {
       );
 
       const fn2 = withAsyncErrorHandling(
-        // eslint-disable-next-line no-undefined
+         
         async () => { throw undefined; },
         mockThrowAsyncError,
         false
