@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { ComKey, Item, PriKey, UUID } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';

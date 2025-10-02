@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import * as React from 'react';
 import { Adapter, ContextType, useCItemAdapter } from '../../src/contained/CItemAdapter';
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
