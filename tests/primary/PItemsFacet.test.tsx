@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { Item } from '@fjell/core';
 import { render, waitFor } from '@testing-library/react';
 import * as React from 'react';

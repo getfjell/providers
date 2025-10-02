@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 import { Item } from "@fjell/core";
 import { renderHook } from '@testing-library/react';
 import React from 'react';

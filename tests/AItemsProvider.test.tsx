@@ -1,4 +1,4 @@
-/* eslint-disable no-undefined */
+ 
 /// <reference types="vitest/globals" />
 import { Item } from '@fjell/core';
 import { renderHook } from '@testing-library/react';
