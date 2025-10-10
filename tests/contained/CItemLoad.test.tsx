@@ -1,4 +1,4 @@
- 
+
 import { ComKey, ikToLKA, isComKey, isValidComKey, Item, UUID } from '@fjell/core';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -556,7 +556,7 @@ describe('CItemLoad', () => {
       );
 
       render(<TestComponent />);
-      await waitFor(() => expect(contextValue).toBeDefined());
+      await waitFor(() => expect(contextValue?.item).toBeDefined());
 
       if (contextValue) {
         expect(contextValue.name).toBe('TestItem');
