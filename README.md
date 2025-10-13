@@ -189,3 +189,4 @@ Apache-2.0
 This package is part of the Fjell ecosystem. For contributing guidelines and development setup, please refer to the main Fjell documentation.
 
 Built by the Fjell team.
+TEST
