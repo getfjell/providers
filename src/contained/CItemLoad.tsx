@@ -8,6 +8,7 @@ import {
   isComKey,
   isValidComKey,
   Item,
+  LocKey,
   LocKeyArray,
   PriKey,
 } from "@fjell/core";
@@ -87,17 +88,28 @@ export const CItemLoad = <
 
   const {
     item: parentItem,
+    locations: parentLocations,
   } = useMemo(() => parentItemAdapter, [parentItemAdapter]);
 
   const [item, setItemState] = React.useState<V | null>(null);
 
   const locations: LocKeyArray<S, L1, L2, L3, L4> | null = useMemo(() => {
-    if (item) {
-      return ikToLKA(item.key);
-    } else {
+    if (!item) {
       return null;
     }
-  }, [item])
+    // For composite items, combine parent locations with the current item's location
+    // Location arrays must be ordered: immediate parent FIRST, root LAST
+    // The current item is the immediate parent for any child items
+    if (parentLocations && isComKey(item.key)) {
+      const itemLocKey = { kt: item.key.kt, lk: item.key.pk } as LocKey<S>;
+      // Prepend the current item (immediate parent) to parent locations (ancestors)
+      return [itemLocKey, ...parentLocations] as unknown as LocKeyArray<S, L1, L2, L3, L4>;
+    } else {
+      // Fallback to item's own location keys if no parent locations available
+      // For primary keys, ikToLKA returns [{ kt: itemType, lk: itemId }]
+      return ikToLKA(item.key);
+    }
+  }, [item, parentLocations])
 
   // Set item key from ik or provided item
   useEffect(() => {
