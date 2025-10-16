@@ -574,9 +574,27 @@ describe('CItemLoad', () => {
       }
     });
 
-    it('should create locations from item key', async () => {
-      const mockLocations = [{ lk: '2-2-2-2-2' as UUID, kt: 'container' }] as any;
-      vi.mocked(ikToLKA).mockReturnValue(mockLocations);
+    it('should create locations including full hierarchy for composite items', async () => {
+      const mockParentLocations = [{ lk: '2-2-2-2-2' as UUID, kt: 'container' }] as any;
+
+      // Mock parent with locations
+      const { useAItem } = await import('../../src/AItem');
+      vi.mocked(useAItem).mockReturnValue({
+        name: 'parent',
+        key: parentItem.key,
+        locations: mockParentLocations,
+        pkTypes: ['container'],
+        parentItem: null,
+        item: parentItem,
+        isLoading: false,
+        isUpdating: false,
+        isRemoving: false,
+        actions: {},
+        remove: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(parentItem),
+        set: vi.fn().mockResolvedValue(parentItem),
+        action: vi.fn().mockResolvedValue(parentItem),
+      });
 
       let contextValue: TestItemContextType | undefined;
 
@@ -604,6 +622,66 @@ describe('CItemLoad', () => {
       await waitFor(() => expect(contextValue).toBeDefined());
 
       if (contextValue) {
+        // Should combine parent locations with the current item's location
+        // Location arrays must be ordered: immediate parent FIRST, root LAST
+        const expectedLocations = [
+          { lk: '1-1-1-1-1' as UUID, kt: 'test' },       // current item (immediate parent for children)
+          { lk: '2-2-2-2-2' as UUID, kt: 'container' }  // parent location (ancestor/root)
+        ];
+        expect(contextValue.locations).toEqual(expectedLocations);
+      }
+    });
+
+    it('should fallback to item key locations when no parent locations available', async () => {
+      const mockLocations = [{ lk: '2-2-2-2-2' as UUID, kt: 'container' }] as any;
+      vi.mocked(ikToLKA).mockReturnValue(mockLocations);
+
+      // Mock parent without locations (null)
+      const { useAItem } = await import('../../src/AItem');
+      vi.mocked(useAItem).mockReturnValue({
+        name: 'parent',
+        key: parentItem.key,
+        locations: null,
+        pkTypes: ['container'],
+        parentItem: null,
+        item: parentItem,
+        isLoading: false,
+        isUpdating: false,
+        isRemoving: false,
+        actions: {},
+        remove: vi.fn().mockResolvedValue(undefined),
+        update: vi.fn().mockResolvedValue(parentItem),
+        set: vi.fn().mockResolvedValue(parentItem),
+        action: vi.fn().mockResolvedValue(parentItem),
+      });
+
+      let contextValue: TestItemContextType | undefined;
+
+      const TestComponent = () => (
+        <CItemLoad
+          name="TestItem"
+          adapter={AdapterContext}
+          children={
+            <TestContext.Consumer>
+              {(value) => {
+                contextValue = value as TestItemContextType;
+                return <div>Test Child</div>;
+              }}
+            </TestContext.Consumer>
+          }
+          context={TestContext}
+          contextName="TestItemContext"
+          ik={itemKey}
+          parent={ParentContext}
+          parentContextName="ParentContext"
+        />
+      );
+
+      render(<TestComponent />);
+      await waitFor(() => expect(contextValue).toBeDefined());
+
+      if (contextValue) {
+        // Should fallback to ikToLKA when parent locations are null
         expect(contextValue.locations).toBe(mockLocations);
         expect(ikToLKA).toHaveBeenCalledWith(itemKey);
       }
