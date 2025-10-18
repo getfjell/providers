@@ -1,12 +1,16 @@
 import { useCallback, useState } from 'react';
+import { defaultErrorTransformer, UserError } from './utils/errorTransform';
 
 /**
  * Custom hook for handling async errors in React components.
  * This ensures that async errors are properly caught by React Error Boundaries
  * by setting them to state and throwing during render.
+ *
+ * Now enhanced to work with FjellHttpError and provide UserError information.
  */
 export const useAsyncError = () => {
   const [error, setError] = useState<Error | null>(null);
+  const [userError, setUserError] = useState<UserError | null>(null);
 
   // Throw error during render so React Error Boundaries can catch it
   if (error) {
@@ -15,13 +19,18 @@ export const useAsyncError = () => {
 
   const throwAsyncError = useCallback((error: Error) => {
     setError(error);
+
+    // Transform to UserError for display
+    const transformed = defaultErrorTransformer.transform(error);
+    setUserError(transformed);
   }, []);
 
   const clearError = useCallback(() => {
     setError(null);
+    setUserError(null);
   }, []);
 
-  return { throwAsyncError, clearError };
+  return { throwAsyncError, clearError, userError };
 };
 
 /**
