@@ -24,5 +24,9 @@ export * from "./primary/PItemsProvider";
 export * from "./primary/PItemsQuery";
 export * from "./useAsyncError";
 export * from "./utils";
+export * from "./utils/errorTransform";
 export * from "./types";
 export * from "./hooks";
+
+// Re-export FjellHttpError for convenience
+export { FjellHttpError, isFjellHttpError, extractErrorInfo, type ErrorInfo } from '@fjell/client-api';
