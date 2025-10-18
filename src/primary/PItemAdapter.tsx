@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { abbrevIK, AllItemTypeArrays, ComKey, Item, ItemQuery, LocKeyArray, PriKey } from "@fjell/core";
+import { abbrevIK, AllItemTypeArrays, ComKey, Item, ItemQuery, LocKeyArray, OperationParams, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
 import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
@@ -253,21 +253,21 @@ export const Adapter = <
   const action = useCallback(async (
     key: PriKey<S>,
     action: string,
-    body?: any,
+    params?: OperationParams,
   ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
-    logger.trace('action', { key: abbrevIK(key), action, body });
+    logger.trace('action', { key: abbrevIK(key), action, params });
     const cache = ensureCache('action');
-    const newItem = await cache.operations.action(key, action, body);
+    const newItem = await cache.operations.action(key, action, params);
     return newItem;
   }, [ensureCache]);
 
   const allAction = useCallback(async (
     action: string,
-    body?: any,
+    params?: OperationParams,
   ): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
-    logger.trace('allAction', { action, body });
+    logger.trace('allAction', { action, params });
     const cache = ensureCache('allAction');
-    const newItems = await cache.operations.allAction(action, body);
+    const newItems = await cache.operations.allAction(action, params);
     return newItems;
   }, [ensureCache]);
 
