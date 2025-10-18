@@ -1,6 +1,39 @@
-# Fjell Providers
+# @fjell/providers
 
-React providers for the Fjell ecosystem, providing seamless integration with Fjell's core functionality through React context and hooks.
+React providers for Fjell operations.
+
+## v3.0.0 Breaking Changes
+
+Providers now align with `@fjell/core` Operations interfaces:
+- **AItems** → Collection operations (maps to `CollectionOperations`)
+- **AItem** → Instance operations (maps to `InstanceOperations`)
+- **AItemAdapter** → Full operations interface
+
+### The Provider Pattern
+
+```typescript
+// Collection Provider (working with arrays)
+<ItemsProvider>
+  {({ items, create, all }) => (
+    // items: V[]
+    // create, all, etc. - collection operations
+  )}
+</ItemsProvider>
+
+// Instance Provider (working with single item)
+<ItemProvider itemKey={key}>
+  {({ item, update, remove }) => (
+    // item: V | null
+    // update, remove, etc. - instance operations
+  )}
+</ItemProvider>
+```
+
+This pattern directly reflects core's specialized Operations interfaces.
+
+### Migration from v2.x
+
+No code changes required. The provider APIs remain backward compatible.
 
 ## Overview
 
@@ -189,4 +222,3 @@ Apache-2.0
 This package is part of the Fjell ecosystem. For contributing guidelines and development setup, please refer to the main Fjell documentation.
 
 Built by the Fjell team.
-TEST
