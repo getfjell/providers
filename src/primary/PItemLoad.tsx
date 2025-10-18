@@ -7,6 +7,7 @@ import {
   isValidPriKey,
   Item,
   LocKeyArray,
+  OperationParams,
   PriKey,
 } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo, useState } from "react";
@@ -246,12 +247,12 @@ export const PItemLoad = <
 
   const action = useCallback(async (
     actionName: string,
-    body?: any,
+    params?: OperationParams,
   ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     if (itemKey && isValidPriKey(itemKey)) {
       setIsUpdating(true);
       try {
-        const retItem = await actionItem(itemKey, actionName, body);
+        const retItem = await actionItem(itemKey, actionName, params);
         return retItem;
       } finally {
         setIsUpdating(false);

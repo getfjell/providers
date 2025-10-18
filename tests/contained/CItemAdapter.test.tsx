@@ -1,4 +1,4 @@
- 
+
 import * as React from 'react';
 import { Adapter, ContextType, useCItemAdapter } from '../../src/contained/CItemAdapter';
 import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
@@ -144,7 +144,7 @@ describe('CItemAdapter', () => {
       await result.current.create({ name: 'new test' }, locKeyArray);
     });
     expect(testItemCache.operations.create).toHaveBeenCalledTimes(1);
-    expect(testItemCache.operations.create).toHaveBeenCalledWith({ name: 'new test' }, locKeyArray);
+    expect(testItemCache.operations.create).toHaveBeenCalledWith({ name: 'new test' }, { locations: locKeyArray });
   });
 
   it('should get an item by key', async () => {
