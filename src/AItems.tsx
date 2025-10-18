@@ -1,40 +1,22 @@
-import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
+import {
+  AffectedKeys,
+  OperationParams
+} from "@fjell/core";
+import { AllItemTypeArrays, Item, LocKeyArray } from "@fjell/core";
 import * as React from "react";
 import * as AItemAdapter from "./AItemAdapter";
 import * as Faceted from "./Faceted";
 
-export type CreateMethod<
-  V extends Item<S, L1, L2, L3, L4, L5>,
-  S extends string,
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-  > = (
-    item: Partial<Item<S, L1, L2, L3, L4, L5>>,
-  ) => Promise<V>;
+// Re-export core types
+export type { OperationParams, AffectedKeys };
 
-export type AllMethod<
-  V extends Item<S, L1, L2, L3, L4, L5>,
-  S extends string,
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-  > = () => Promise<V[] | null>;
+/**
+ * Exported action types for dynamic action registration (used by addAllActions helper).
+ */
 
-export type OneMethod<
-  V extends Item<S, L1, L2, L3, L4, L5>,
-  S extends string,
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-  > = () => Promise<V | null>;
-
+/**
+ * AllAction method - uses OperationParams from core, aligned with CoreAllActionOperationMethod
+ */
 export type AllActionMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -45,10 +27,13 @@ export type AllActionMethod<
   L5 extends string = never
   > = (
     action: string,
-    body?: any,
+    params?: OperationParams,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
-  ) => Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]>;
+  ) => Promise<[V[], AffectedKeys]>;
 
+/**
+ * Added all-action method (for dynamic action registration) - bound to action name
+ */
 export type AddedAllActionMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -58,10 +43,16 @@ export type AddedAllActionMethod<
   L4 extends string = never,
   L5 extends string = never
   > = (
-    body?: any,
+    params?: OperationParams,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ) => Promise<V[]>;
 
+/**
+ * AItems ContextType - extends core CollectionOperations.
+ * Optimized for working with groups of items.
+ *
+ * Adds React-specific state (items, isLoading, etc.) to core operations.
+ */
 export interface ContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -72,6 +63,8 @@ export interface ContextType<
   L5 extends string = never
   > extends Omit<Faceted.ContextType<L1, L2, L3, L4, L5>, 'facet'> {
     name: string;
+
+    // React-specific state
     items: V[];
     locations?: LocKeyArray<S, L1, L2, L3, L4> | null;
     isLoading: boolean;
@@ -80,17 +73,21 @@ export interface ContextType<
     isRemoving: boolean;
     pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
 
-      allActions?: Record<string, AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
-  allFacets?: Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
-  finders?: Record<string, (...params: any[]) => Promise<V[] | V | null>>;
+    // Collection operations - context-bound (no query/locations parameters)
+    create: (item: Partial<Item<S, L1, L2, L3, L4, L5>>) => Promise<V>;
+    all: () => Promise<V[] | null>;
+    one: () => Promise<V | null>;
+    allAction: AllActionMethod<V, S, L1, L2, L3, L4, L5>;
 
-    create: CreateMethod<V, S, L1, L2, L3, L4, L5>;
-    all: AllMethod<V, S, L1, L2, L3, L4, L5>;
-    one: OneMethod<V, S, L1, L2, L3, L4, L5>;
-      allAction: AllActionMethod<V, S, L1, L2, L3, L4, L5>;
-  allFacet: Faceted.AllFacetMethod<L1, L2, L3, L4, L5>;
-  facet: AItemAdapter.FacetMethod<S, L1, L2, L3, L4, L5>;
-  set: AItemAdapter.SetMethod<V, S, L1, L2, L3, L4, L5>;
+    // Additional methods
+    allActions?: Record<string, AddedAllActionMethod<V, S, L1, L2, L3, L4, L5>>;
+    allFacets?: Record<string, Faceted.AddedFacetMethod<L1, L2, L3, L4, L5>>;
+    finders?: Record<string, (...params: any[]) => Promise<V[] | V | null>>;
+
+    // Instance operations (for working with individual items from collection)
+    allFacet: Faceted.AllFacetMethod<L1, L2, L3, L4, L5>;
+    facet: AItemAdapter.FacetMethod<S, L1, L2, L3, L4, L5>;
+    set: AItemAdapter.SetMethod<V, S, L1, L2, L3, L4, L5>;
     find: AItemAdapter.FindMethod<V, S, L1, L2, L3, L4, L5>;
     findOne: AItemAdapter.FindOneMethod<V, S, L1, L2, L3, L4, L5>;
     update: AItemAdapter.UpdateMethod<V, S, L1, L2, L3, L4, L5>;

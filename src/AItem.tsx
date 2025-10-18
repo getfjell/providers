@@ -1,7 +1,23 @@
+import {
+  AffectedKeys,
+  OperationParams
+} from "@fjell/core";
 import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
 import * as Faceted from "./Faceted";
 import * as React from "react";
 
+// Re-export core types
+export type { OperationParams, AffectedKeys };
+
+/**
+ * Exported action types for dynamic action registration (used by addActions helper).
+ * These are context-bound - the item key is already known from context.
+ */
+
+/**
+ * Action method for item context - key omitted since it's bound to context.
+ * Uses OperationParams from core for type safety.
+ */
 export type ActionMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -12,10 +28,13 @@ export type ActionMethod<
   L5 extends string = never
 > = (
   action: string,
-  body?: any,
+  params?: OperationParams,
   locations?: LocKeyArray<L1, L2, L3, L4, L5>
-) => Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]>;
+) => Promise<[V, AffectedKeys]>;
 
+/**
+ * Added action method (for dynamic action registration) - bound to both action name and item key
+ */
 export type AddedActionMethod<
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -24,34 +43,14 @@ export type AddedActionMethod<
   L3 extends string = never,
   L4 extends string = never,
   L5 extends string = never
-> = (body?: any, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V>;
+> = (params?: OperationParams, locations?: LocKeyArray<L1, L2, L3, L4, L5>) => Promise<V>;
 
-export type UpdateMethod<
-  V extends Item<S, L1, L2, L3, L4, L5>,
-  S extends string,
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-> = (
-  item: Partial<Item<S, L1, L2, L3, L4, L5>>,
-) => Promise<V>;
-
-export type SetMethod<
-  V extends Item<S, L1, L2, L3, L4, L5>,
-  S extends string,
-  L1 extends string = never,
-  L2 extends string = never,
-  L3 extends string = never,
-  L4 extends string = never,
-  L5 extends string = never
-> = (
-  item: V,
-) => Promise<V>;
-
-export type RemoveMethod = () => Promise<void>;
-
+/**
+ * AItem ContextType - extends core InstanceOperations.
+ * Optimized for working with a single specific item.
+ *
+ * Adds React-specific state (item, isUpdating, etc.) to core operations.
+ */
 export interface ContextType<
   V extends Item<S, L1, L2, L3, L4, L5>,
   S extends string,
@@ -67,18 +66,20 @@ export interface ContextType<
   pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
   parentItem: Item<L1, L2, L3, L4, L5> | null;
 
+  // React-specific state
   item: V | null;
   isLoading: boolean;
   isUpdating: boolean;
   isRemoving: boolean;
 
-  actions?: Record<string, AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
-
-  remove: RemoveMethod;
-  update: UpdateMethod<V, S, L1, L2, L3, L4, L5>;
-  set: SetMethod<V, S, L1, L2, L3, L4, L5>;
-
+  // Instance operations - context-bound (key is already known from context)
+  remove: () => Promise<void>;
+  update: (item: Partial<Item<S, L1, L2, L3, L4, L5>>) => Promise<V>;
+  set: (item: V) => Promise<V>;
   action: ActionMethod<V, S, L1, L2, L3, L4, L5>;
+
+  // Additional actions/facets
+  actions?: Record<string, AddedActionMethod<V, S, L1, L2, L3, L4, L5>>;
 }
 
 export type Context<
