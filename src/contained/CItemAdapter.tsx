@@ -6,7 +6,7 @@ import {
   abbrevIK, abbrevLKA, abbrevQuery,
   ComKey,
   Item,
-  ItemQuery, LocKey, LocKeyArray, PriKey
+  ItemQuery, LocKey, LocKeyArray, OperationParams, PriKey
 } from "@fjell/core";
 import * as React from "react";
 import * as AItem from "../AItem";
@@ -220,7 +220,7 @@ export const Adapter = <
     if (!resolvedSourceCache) {
       return handleCacheError('create');
     }
-    const newItem = await resolvedSourceCache.operations.create(item, locations);
+    const newItem = await resolvedSourceCache.operations.create(item, locations ? { locations } : undefined);
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -271,30 +271,30 @@ export const Adapter = <
   const action = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     action: string,
-    body?: any,
+    params?: OperationParams,
   ): Promise<[V, Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
-    logger.trace('action', { key: abbrevIK(key), action, body });
+    logger.trace('action', { key: abbrevIK(key), action, params });
     if (!resolvedSourceCache) {
       return handleCacheError('action');
     }
-    const newItem = await resolvedSourceCache.operations.action(key, action, body);
+    const newItem = await resolvedSourceCache.operations.action(key, action, params);
     return newItem;
   }, [resolvedSourceCache, handleCacheError]);
 
   const allAction = React.useCallback(async (
     action: string,
-    body?: any,
+    params?: OperationParams,
     locations?: LocKeyArray<L1, L2, L3, L4, L5>
   ): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('allAction', {
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
       action,
-      body,
+      params,
     });
     if (!resolvedSourceCache) {
       return handleCacheError('allAction');
     }
-    const newItems = await resolvedSourceCache.operations.allAction(action, body, locations);
+    const newItems = await resolvedSourceCache.operations.allAction(action, params, locations);
     return newItems;
   }, [resolvedSourceCache, handleCacheError]);
 
