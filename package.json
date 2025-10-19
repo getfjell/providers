@@ -35,6 +35,10 @@
     "@fjell/client-api": "^4.4.45",
     "@fjell/core": "^4.4.49",
     "@fjell/logging": "^4.4.49",
+    "@fjell/cache": "^4.7.34",
+    "@fjell/client-api": "^4.4.45",
+    "@fjell/core": "^4.4.49",
+    "@fjell/logging": "^4.4.49",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
