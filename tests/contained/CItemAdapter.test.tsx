@@ -141,7 +141,7 @@ describe('CItemAdapter', () => {
     });
 
     await act(async () => {
-      await result.current.create({ name: 'new test' }, locKeyArray);
+      await result.current.create({ name: 'new test' }, { locations: locKeyArray });
     });
     expect(testItemCache.operations.create).toHaveBeenCalledTimes(1);
     expect(testItemCache.operations.create).toHaveBeenCalledWith({ name: 'new test' }, { locations: locKeyArray });
@@ -331,7 +331,7 @@ describe('CItemAdapter', () => {
     });
 
     expect(testItemCache.operations.facet).toHaveBeenCalledTimes(1);
-    expect(testItemCache.operations.facet).toHaveBeenCalledWith(itemKey, 'testFacet');
+    expect(testItemCache.operations.facet).toHaveBeenCalledWith(itemKey, 'testFacet', undefined);
     expect(facetResult).toEqual(mockFacetResponse);
   });
 
@@ -351,11 +351,11 @@ describe('CItemAdapter', () => {
     const facetParams = { status: 'active', limit: 10 };
     let allFacetResult: any;
     await act(async () => {
-      allFacetResult = await result.current.allFacet('summaryFacet', facetParams);
+      allFacetResult = await result.current.allFacet('summaryFacet', facetParams, undefined);
     });
 
     expect(testItemCache.operations.allFacet).toHaveBeenCalledTimes(1);
-    expect(testItemCache.operations.allFacet).toHaveBeenCalledWith('summaryFacet', facetParams);
+    expect(testItemCache.operations.allFacet).toHaveBeenCalledWith('summaryFacet', facetParams, undefined);
     expect(allFacetResult).toEqual(mockAllFacetResponse);
   });
 

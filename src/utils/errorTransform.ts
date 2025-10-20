@@ -30,11 +30,12 @@ export class ErrorTransformer {
   /**
    * Transform any error into UserError
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   transform(error: any, context?: { operation?: string; itemType?: string }): UserError {
     const errorInfo = this.extractErrorInfo(error);
 
     if (!errorInfo) {
-      return this.createGenericError(error, context);
+      return this.createGenericError(error);
     }
 
     // Check for custom transformer

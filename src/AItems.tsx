@@ -1,6 +1,12 @@
 import {
   AffectedKeys,
-  OperationParams
+  ActionOperationMethod as CoreActionMethod,
+  FacetOperationMethod as CoreFacetMethod,
+  FindMethod as CoreFindMethod,
+  FindOneMethod as CoreFindOneMethod,
+  RemoveMethod as CoreRemoveMethod,
+  UpdateMethod as CoreUpdateMethod,
+  OperationParams,
 } from "@fjell/core";
 import { AllItemTypeArrays, Item, LocKeyArray } from "@fjell/core";
 import * as React from "react";
@@ -86,13 +92,13 @@ export interface ContextType<
 
     // Instance operations (for working with individual items from collection)
     allFacet: Faceted.AllFacetMethod<L1, L2, L3, L4, L5>;
-    facet: AItemAdapter.FacetMethod<S, L1, L2, L3, L4, L5>;
+    facet: CoreFacetMethod<S, L1, L2, L3, L4, L5>;
     set: AItemAdapter.SetMethod<V, S, L1, L2, L3, L4, L5>;
-    find: AItemAdapter.FindMethod<V, S, L1, L2, L3, L4, L5>;
-    findOne: AItemAdapter.FindOneMethod<V, S, L1, L2, L3, L4, L5>;
-    update: AItemAdapter.UpdateMethod<V, S, L1, L2, L3, L4, L5>;
-    remove: AItemAdapter.RemoveMethod<S, L1, L2, L3, L4, L5>;
-    action: AItemAdapter.ActionMethod<V, S, L1, L2, L3, L4, L5>;
+    find: CoreFindMethod<V, S, L1, L2, L3, L4, L5>;
+    findOne: CoreFindOneMethod<V, S, L1, L2, L3, L4, L5>;
+    update: CoreUpdateMethod<V, S, L1, L2, L3, L4, L5>;
+    remove: CoreRemoveMethod<never, S, L1, L2, L3, L4, L5>;
+    action: CoreActionMethod<V, S, L1, L2, L3, L4, L5>;
   }
 
 export type Context<

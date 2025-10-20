@@ -185,7 +185,7 @@ describe('CItemQuery', () => {
     });
 
     expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
-    expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+    expect(mockAdapter.create).toHaveBeenCalledWith(createData, { locations: locKeyArray });
   });
 
   it('should show children when item not found and optional', async () => {
@@ -236,7 +236,7 @@ describe('CItemQuery', () => {
     });
 
     expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
-    expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+    expect(mockAdapter.create).toHaveBeenCalledWith(createData, { locations: locKeyArray });
   });
 
   it('should handle query errors by rendering children if optional', async () => {
@@ -506,7 +506,7 @@ describe('CItemQuery', () => {
     );
 
     await waitFor(() => {
-      expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+      expect(mockAdapter.create).toHaveBeenCalledWith(createData, { locations: locKeyArray });
     });
   });
 
@@ -521,7 +521,7 @@ describe('CItemQuery', () => {
     );
 
     await waitFor(() => {
-      expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+      expect(mockAdapter.create).toHaveBeenCalledWith(createData, { locations: locKeyArray });
     });
 
     expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
@@ -538,7 +538,7 @@ describe('CItemQuery', () => {
     );
 
     await waitFor(() => {
-      expect(mockAdapter.create).toHaveBeenCalledWith(createData, locKeyArray);
+      expect(mockAdapter.create).toHaveBeenCalledWith(createData, { locations: locKeyArray });
     });
 
     expect(mockAdapter.one).toHaveBeenCalledWith(defaultQuery, locKeyArray);
