@@ -181,17 +181,17 @@ export const Adapter = <
 
   const all = useCallback(async (
     query?: ItemQuery,
-  ): Promise<V[] | null> => {
+  ): Promise<V[]> => {
     logger.trace('all', { query: query && query.toString() });
     const cache = ensureCache('all');
     const result = await cache.operations.all(query);
-    // Validate that result is an array or null, return null for invalid results
+    // Validate that result is an array, return empty array for invalid results
     if (result === null || result === undefined) {
-      return null;
+      return [];
     }
     if (!Array.isArray(result)) {
-      logger.debug('Invalid result from cache.operations.all: expected array or null, got %s', typeof result);
-      return null;
+      logger.debug('Invalid result from cache.operations.all: expected array, got %s', typeof result);
+      return [];
     }
     return result as V[];
   }, [ensureCache, name]);
@@ -297,7 +297,7 @@ export const Adapter = <
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-  ): Promise<V[] | null> => {
+  ): Promise<V[]> => {
     logger.trace('find', { finder, finderParams });
     const cache = ensureCache('find');
     const newItems = await cache.operations.find(finder, finderParams);
