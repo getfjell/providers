@@ -306,7 +306,7 @@ describe('CItemsProvider', () => {
         expect(result).toEqual(testItem);
       });
 
-      expect(mockAdapterContext.create).toHaveBeenCalledWith(newItem, locKeyArray);
+      expect(mockAdapterContext.create).toHaveBeenCalledWith(newItem, { locations: locKeyArray });
     });
 
     it('should call update with key and item data', async () => {
@@ -513,7 +513,7 @@ describe('CItemsProvider', () => {
         expect(result).toEqual(testItem);
       });
 
-      expect(mockAdapterContext.action).toHaveBeenCalledWith(itemKey, action, body, locKeyArray);
+      expect(mockAdapterContext.action).toHaveBeenCalledWith(itemKey, action, body);
     });
 
     it('should call facet with key, facet, params and parent locations', async () => {
@@ -525,7 +525,7 @@ describe('CItemsProvider', () => {
         expect(result).toEqual({ result: 'success' });
       });
 
-      expect(mockAdapterContext.facet).toHaveBeenCalledWith(itemKey, facet, params, locKeyArray);
+      expect(mockAdapterContext.facet).toHaveBeenCalledWith(itemKey, facet, params);
     });
 
     it('should throw error for allAction without parent locations', async () => {

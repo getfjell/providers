@@ -323,7 +323,7 @@ describe('PItemAdapter - Core Operations', () => {
 
     await act(async () => {
       const items = await result.current.all();
-      expect(items).toBeNull();
+      expect(items).toEqual([]);
     });
   });
 

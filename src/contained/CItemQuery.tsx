@@ -98,7 +98,7 @@ export const CItemQuery = <
               setQueryRunning(false);
             } else if (create) {
               logger.default('Creating new item', { create, parentLocations: abbrevLKA(parentLocations as any) });
-              const newItem = await createItem(create, parentLocations);
+              const newItem = await createItem(create, { locations: parentLocations });
               logger.default(`${name}: Setting Item Key After createItem`, { itemKey: newItem.key });
               setItemKey(newItem.key);
               setQueryRunning(false);
@@ -116,7 +116,7 @@ export const CItemQuery = <
             if (create && parentLocations) {
               logger.default('Creating new item after exception throw for NotFound',
                 { err, create, parentLocations: abbrevLKA(parentLocations as any) });
-              const newItem = await createItem(create, parentLocations);
+              const newItem = await createItem(create, { locations: parentLocations });
               logger.default(`${name}: Setting Item Key After createItem during Exception`, { itemKey: newItem.key });
               setItemKey(newItem.key);
               setQueryRunning(false);

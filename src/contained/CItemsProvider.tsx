@@ -99,7 +99,7 @@ export const CItemsProvider = <
       logger.debug(`${name}: create`, { item, parentLocations: abbrevLKA(parentLocations as any) });
       setIsCreating(true);
       try {
-        const result = await createItem(item, parentLocations) as V;
+        const result = await createItem(item, { locations: parentLocations }) as V;
         return result;
       } catch (error) {
         logger.error(`${name}: Error creating item with data:`, { item, error });
@@ -187,8 +187,18 @@ export const CItemsProvider = <
       try {
         const result = await allActionItem(action, body, parentLocations);
         return result;
-      } catch (error) {
-        logger.error(`${name}: Error in allAction "${action}" with body:`, { action, body, error });
+      } catch (error: any) {
+        // Simple string-based logging to avoid serialization issues
+        const errorMsg = error?.message || String(error);
+        const errorCode = error?.fjellError?.code || error?.errorInfo?.code || error?.code;
+        const validOpts = error?.fjellError?.details?.validOptions || error?.errorInfo?.details?.validOptions;
+
+        console.error(
+          `${name}: Error in allAction "${action}":`,
+          `Message: ${errorMsg}`,
+          errorCode ? `Code: ${errorCode}` : '',
+          validOpts ? `Valid options: ${validOpts.join(', ')}` : ''
+        );
         throw error;
       } finally {
         setIsUpdating(false);
@@ -205,7 +215,7 @@ export const CItemsProvider = <
       logger.info('allFacet', { facet, params, parentLocations: abbrevLKA(parentLocations as any) });
       setIsUpdating(true);
       try {
-        const result = await allFacetItem(facet, params, parentLocations) as any;
+        const result = await allFacetItem(facet, params, parentLocations as LocKeyArray<L1, L2, L3, L4, L5>) as any;
         return result;
       } finally {
         setIsUpdating(false);
@@ -226,10 +236,20 @@ export const CItemsProvider = <
         logger.info('action', { key, action, body, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);
         try {
-          const result = await actionItem(key, action, body, parentLocations);
+          const result = await actionItem(key, action, body);
           return result;
-        } catch (error) {
-          logger.error(`${name}: Error in action "${action}" with key:`, { key: abbrevIK(key), action, body, error });
+        } catch (error: any) {
+          // Simple string-based logging to avoid serialization issues
+          const errorMsg = error?.message || String(error);
+          const errorCode = error?.fjellError?.code || error?.errorInfo?.code || error?.code;
+          const validOpts = error?.fjellError?.details?.validOptions || error?.errorInfo?.details?.validOptions;
+
+          console.error(
+            `${name}: Error in action "${action}":`,
+            `Message: ${errorMsg}`,
+            errorCode ? `Code: ${errorCode}` : '',
+            validOpts ? `Valid options: ${validOpts.join(', ')}` : ''
+          );
           throw error;
         } finally {
           setIsUpdating(false);
@@ -249,10 +269,20 @@ export const CItemsProvider = <
         logger.info('facet', { key, facet, params, parentLocations: abbrevLKA(parentLocations as any) });
         setIsUpdating(true);
         try {
-          const result = await facetItem(key, facet, params, parentLocations) as any;
+          const result = await facetItem(key, facet, params) as any;
           return result;
-        } catch (error) {
-          logger.error(`${name}: Error in facet "${facet}" with key:`, { key: abbrevIK(key), facet, params, error });
+        } catch (error: any) {
+          // Simple string-based logging to avoid serialization issues
+          const errorMsg = error?.message || String(error);
+          const errorCode = error?.fjellError?.code || error?.errorInfo?.code || error?.code;
+          const validOpts = error?.fjellError?.details?.validOptions || error?.errorInfo?.details?.validOptions;
+
+          console.error(
+            `${name}: Error in facet "${facet}":`,
+            `Message: ${errorMsg}`,
+            errorCode ? `Code: ${errorCode}` : '',
+            validOpts ? `Valid options: ${validOpts.join(', ')}` : ''
+          );
           throw error;
         } finally {
           setIsUpdating(false);
