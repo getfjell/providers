@@ -2,39 +2,36 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   server: {
-    port: 3000
+    port: 3000,
   },
   test: {
-    include: [
-      'tests/**/*.test.ts',
-      'tests/**/*.spec.ts',
-      'tests/**/*.test.tsx',
-      'tests/**/*.spec.tsx',
-    ],
+    globals: true,
+    environment: 'jsdom',
+    include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     setupFiles: ['./vitest.setup.ts'],
-    pool: 'forks', // Use forked processes to isolate memory
+    testTimeout: 15000,
+    hookTimeout: 10000,
+    pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: true, // Use single fork to reduce memory overhead
-      }
+        singleFork: true,
+      },
     },
-    testTimeout: 15000, // 15 second timeout
-    hookTimeout: 10000, // 10 second hook timeout
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       reportsDirectory: './coverage',
       exclude: [
-        'node_modules/',
-        'tests/',
+        'node_modules/**',
+        'tests/**',
         'src/index.ts',
         '**/*.d.ts',
         'dist/**',
-        'eslint.config.mjs',
-        'vite.config.ts',
-        'vitest.config.ts',
         'build.js',
         'docs/**',
+        'coverage/**',
+        'eslint.config.mjs',
+        'vitest.config.ts',
       ],
       thresholds: {
         global: {
@@ -45,6 +42,5 @@ export default defineConfig({
         },
       },
     },
-    environment: 'jsdom',
   },
 });
