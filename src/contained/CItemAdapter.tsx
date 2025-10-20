@@ -5,6 +5,7 @@ import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
   ComKey,
+  CreateOptions,
   Item,
   ItemQuery, LocKey, LocKeyArray, OperationParams, PriKey
 } from "@fjell/core";
@@ -179,7 +180,7 @@ export const Adapter = <
 
   const all = React.useCallback(async (
     query?: ItemQuery,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
   ): Promise<V[]> => {
     logger.trace('all', {
       query: query && abbrevQuery(query),
@@ -196,7 +197,7 @@ export const Adapter = <
 
   const one = React.useCallback(async (
     query?: ItemQuery,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
   ): Promise<V> => {
     logger.trace('one', {
       query: query && abbrevQuery(query),
@@ -211,16 +212,16 @@ export const Adapter = <
 
   const create = React.useCallback(async (
     item: Partial<Item<S, L1, L2, L3, L4, L5>>,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+    options?: CreateOptions<S, L1, L2, L3, L4, L5>
   ): Promise<V> => {
     logger.trace('create', {
       item,
-      locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
+      locations: abbrevLKA(options && 'locations' in options ? options.locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>> : null),
     });
     if (!resolvedSourceCache) {
       return handleCacheError('create');
     }
-    const newItem = await resolvedSourceCache.operations.create(item, locations ? { locations } : undefined);
+    const newItem = await resolvedSourceCache.operations.create(item, options);
     return newItem as V;
   }, [resolvedSourceCache, handleCacheError]);
 
@@ -284,7 +285,7 @@ export const Adapter = <
   const allAction = React.useCallback(async (
     action: string,
     params?: OperationParams,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
   ): Promise<[V[], Array<PriKey<any> | ComKey<any, any, any, any, any, any> | LocKeyArray<any, any, any, any, any>>]> => {
     logger.trace('allAction', {
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
@@ -301,31 +302,33 @@ export const Adapter = <
   const facet = React.useCallback(async (
     key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>,
     facet: string,
+    params?: OperationParams,
   ): Promise<any> => {
-    logger.trace('facet', { key: abbrevIK(key), facet });
+    logger.trace('facet', { key: abbrevIK(key), facet, params });
     if (!resolvedSourceCache) {
       return handleCacheError('facet');
     }
-    const response = await resolvedSourceCache.operations.facet(key, facet);
+    const response = await resolvedSourceCache.operations.facet(key, facet, params);
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
   const allFacet = React.useCallback(async (
     facet: string,
     params?: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
   ): Promise<any> => {
     logger.trace('allFacet', { facet, params });
     if (!resolvedSourceCache) {
       return handleCacheError('allFacet');
     }
-    const response = await resolvedSourceCache.operations.allFacet(facet, params);
+    const response = await resolvedSourceCache.operations.allFacet(facet, params, locations);
     return response as any;
   }, [resolvedSourceCache, handleCacheError]);
 
   const find = React.useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
   ): Promise<V[]> => {
     logger.trace('find', { finder, finderParams, locations });
     if (!resolvedSourceCache) {
@@ -338,7 +341,7 @@ export const Adapter = <
   const findOne = React.useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5>
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
   ): Promise<V | null> => {
     logger.trace('findOne', { finder, finderParams, locations });
     if (!resolvedSourceCache) {
