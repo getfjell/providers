@@ -3,6 +3,9 @@ import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
 import { ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
 import { createStableHash, deepEqual } from '../utils';
+import LibLogger from '../logger';
+
+const logger = LibLogger.get('useCacheQuery');
 
 /**
  * React hook for subscribing to cache query results
@@ -47,20 +50,40 @@ export function useCacheQuery<
     }
 
     const loadItems = async () => {
+      logger.debug('QUERY_CACHE: useCacheQuery.loadItems() called', {
+        query: JSON.stringify(query),
+        locations: JSON.stringify(locations),
+        hasAllMethod: !!allMethod,
+        hasCache: !!cache
+      });
       try {
         let cachedItems: V[] | null;
         if (allMethod) {
           // Use the adapter method if provided (includes error handling, logging, etc.)
+          logger.debug('QUERY_CACHE: Using allMethod adapter', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
           cachedItems = await allMethod(query, locations);
         } else if (cache) {
           // Fallback to direct cache access
+          logger.debug('QUERY_CACHE: Using cache.operations.all()', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
           cachedItems = await cache.operations.all(query, locations);
         } else {
+          logger.debug('QUERY_CACHE: No cache or allMethod available', {});
           cachedItems = null;
         }
+        logger.debug('QUERY_CACHE: loadItems completed', {
+          itemCount: cachedItems?.length || 0,
+          query: JSON.stringify(query),
+          locations: JSON.stringify(locations)
+        });
         setItems(cachedItems || []);
         setIsLoading(false);
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error('QUERY_CACHE: Error querying items from cache', {
+          error: errorMessage,
+          query: JSON.stringify(query),
+          locations: JSON.stringify(locations)
+        });
         console.error('Error querying items from cache:', error);
         setItems([]);
         setIsLoading(false);
@@ -131,20 +154,37 @@ export function useCacheQuery<
 
       case 'query_invalidated':
         // When queries are invalidated, we need to refetch
+        logger.debug('QUERY_CACHE: Query invalidated event received, refetching', {
+          query: JSON.stringify(query),
+          locations: JSON.stringify(locations)
+        });
         // Use the allMethod if provided, otherwise use cache.operations.all
         if (allMethod || cache) {
           const loadItems = async () => {
             try {
               let results: V[] | null;
               if (allMethod) {
+                logger.debug('QUERY_CACHE: Refetching using allMethod after invalidation', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
                 results = await allMethod(query, locations);
               } else if (cache) {
+                logger.debug('QUERY_CACHE: Refetching using cache.operations.all() after invalidation', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
                 results = await cache.operations.all(query, locations);
               } else {
                 results = null;
               }
+              logger.debug('QUERY_CACHE: Refetch completed after invalidation', {
+                itemCount: results?.length || 0,
+                query: JSON.stringify(query),
+                locations: JSON.stringify(locations)
+              });
               setItems(results || []);
             } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              logger.error('QUERY_CACHE: Error refetching after query invalidation', {
+                error: errorMessage,
+                query: JSON.stringify(query),
+                locations: JSON.stringify(locations)
+              });
               console.error('Error refetching after query invalidation:', error);
               setItems([]);
             }
@@ -175,7 +215,15 @@ export function useCacheQuery<
 
   // Refetch function to manually reload the query
   const refetch = useCallback(async (): Promise<V[]> => {
+    logger.debug('QUERY_CACHE: useCacheQuery.refetch() called', {
+      query: JSON.stringify(query),
+      locations: JSON.stringify(locations),
+      hasAllMethod: !!allMethod,
+      hasCache: !!cache
+    });
+    
     if (!cache && !allMethod) {
+      logger.debug('QUERY_CACHE: No cache or allMethod available for refetch', {});
       return [];
     }
 
@@ -183,15 +231,28 @@ export function useCacheQuery<
     try {
       let results: V[] | null;
       if (allMethod) {
+        logger.debug('QUERY_CACHE: Refetching using allMethod', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
         results = await allMethod(query, locations);
       } else if (cache) {
+        logger.debug('QUERY_CACHE: Refetching using cache.operations.all()', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
         results = await cache.operations.all(query, locations);
       } else {
         results = null;
       }
+      logger.debug('QUERY_CACHE: Refetch completed', {
+        itemCount: results?.length || 0,
+        query: JSON.stringify(query),
+        locations: JSON.stringify(locations)
+      });
       setItems(results || []);
       return results || [];
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('QUERY_CACHE: Error refetching query', {
+        error: errorMessage,
+        query: JSON.stringify(query),
+        locations: JSON.stringify(locations)
+      });
       console.error('Error refetching query:', error);
       return [];
     } finally {
