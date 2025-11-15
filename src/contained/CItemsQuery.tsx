@@ -91,6 +91,7 @@ export const CItemsQuery = <
   const cacheRef = React.useRef(cache);
   const parentLocationsRef = React.useRef(parentLocations);
   const allItemsRef = React.useRef(allItems);
+  const queryRef = React.useRef(query);  // CRITICAL FIX: Track current query
 
   // Listen for cache invalidation events to refetch data
   useEffect(() => {
@@ -98,6 +99,7 @@ export const CItemsQuery = <
     cacheRef.current = cache;
     parentLocationsRef.current = parentLocations;
     allItemsRef.current = allItems;
+    queryRef.current = query;  // CRITICAL FIX: Update query ref
 
     if (!cache || !parentLocations) {
       return;
@@ -107,8 +109,19 @@ export const CItemsQuery = <
       try {
         logger.trace('Cache invalidation event received, refetching items');
         setIsLoading(true);
-        const results = await allItems(query, parentLocations);
-        setItems(results as V[] || []);
+
+        // CRITICAL FIX: Use current query from ref, not stale closure query
+        const currentQuery = queryRef.current;
+        const currentParentLocations = parentLocationsRef.current;
+        const currentAllItems = allItemsRef.current;
+
+        if (currentParentLocations && currentAllItems) {
+          const results = await currentAllItems(currentQuery, currentParentLocations);
+          setItems(results as V[] || []);
+        } else {
+          logger.error(`${name}: Missing current refs during cache invalidation`);
+          setItems([]);
+        }
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error refetching items after cache invalidation:`, error);
