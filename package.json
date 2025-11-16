@@ -31,10 +31,10 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.43",
-    "@fjell/client-api": "^4.4.53",
-    "@fjell/core": "^4.4.60",
-    "@fjell/logging": "^4.4.57",
+    "@fjell/cache": "^4.7.44",
+    "@fjell/client-api": "^4.4.54",
+    "@fjell/core": "^4.4.61",
+    "@fjell/logging": "^4.4.58",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
