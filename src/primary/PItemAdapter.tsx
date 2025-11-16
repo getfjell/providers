@@ -208,20 +208,60 @@ export const Adapter = <
   const create = useCallback(async (
     item: Partial<Item<S>>,
   ): Promise<V> => {
+    const startTime = Date.now();
+    
     logger.trace('create', { item });
+    logger.debug('PROVIDER: create() started', {
+      adapterName: name,
+      hasPartialData: !!item
+    });
+    
     const cache = ensureCache('create');
+    
+    const cacheStartTime = Date.now();
     const newItem = await cache.operations.create(item);
+    const cacheDuration = Date.now() - cacheStartTime;
+    
+    const totalDuration = Date.now() - startTime;
+    logger.debug('PROVIDER: create() completed', {
+      adapterName: name,
+      itemKey: newItem ? JSON.stringify(newItem.key) : null,
+      cacheDuration,
+      totalDuration
+    });
+    
     return newItem as V;
-  }, [ensureCache]);
+  }, [ensureCache, name]);
 
   const get = useCallback(async (
     key: PriKey<S>,
   ): Promise<V | null> => {
+    const startTime = Date.now();
+    const keyStr = JSON.stringify(key);
+    
     logger.trace('get', { key: abbrevIK(key) });
+    logger.debug('PROVIDER: get() started', {
+      adapterName: name,
+      key: keyStr
+    });
+    
     const cache = ensureCache('get');
+    
+    const cacheStartTime = Date.now();
     const item = await cache.operations.get(key);
+    const cacheDuration = Date.now() - cacheStartTime;
+    
+    const totalDuration = Date.now() - startTime;
+    logger.debug('PROVIDER: get() completed', {
+      adapterName: name,
+      key: keyStr,
+      found: !!item,
+      cacheDuration,
+      totalDuration
+    });
+    
     return item as V | null;
-  }, [ensureCache]);
+  }, [ensureCache, name]);
 
   const remove = useCallback(async (
     key: PriKey<S>,
@@ -244,11 +284,32 @@ export const Adapter = <
     key: PriKey<S>,
     item: Partial<Item<S>>,
   ): Promise<V> => {
+    const startTime = Date.now();
+    const keyStr = JSON.stringify(key);
+    
     logger.trace('update', { key: abbrevIK(key), item });
+    logger.debug('PROVIDER: update() started', {
+      adapterName: name,
+      key: keyStr,
+      hasPartialData: !!item
+    });
+    
     const cache = ensureCache('update');
+    
+    const cacheStartTime = Date.now();
     const newItem = await cache.operations.update(key, item);
+    const cacheDuration = Date.now() - cacheStartTime;
+    
+    const totalDuration = Date.now() - startTime;
+    logger.debug('PROVIDER: update() completed', {
+      adapterName: name,
+      key: keyStr,
+      cacheDuration,
+      totalDuration
+    });
+    
     return newItem as V;
-  }, [ensureCache]);
+  }, [ensureCache, name]);
 
   const action = useCallback(async (
     key: PriKey<S>,
@@ -298,11 +359,32 @@ export const Adapter = <
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
   ): Promise<V[]> => {
+    const startTime = Date.now();
+    
     logger.trace('find', { finder, finderParams });
+    logger.debug('PROVIDER: find() started', {
+      adapterName: name,
+      finder,
+      finderParams: JSON.stringify(finderParams)
+    });
+    
     const cache = ensureCache('find');
+    
+    const cacheStartTime = Date.now();
     const newItems = await cache.operations.find(finder, finderParams);
+    const cacheDuration = Date.now() - cacheStartTime;
+    
+    const totalDuration = Date.now() - startTime;
+    logger.debug('PROVIDER: find() completed', {
+      adapterName: name,
+      finder,
+      itemCount: newItems.length,
+      cacheDuration,
+      totalDuration
+    });
+    
     return newItems as V[];
-  }, [ensureCache]);
+  }, [ensureCache, name]);
 
   const findOne = useCallback(async (
     finder: string,
