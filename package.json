@@ -33,7 +33,7 @@
   "dependencies": {
     "@fjell/cache": "^4.7.47",
     "@fjell/client-api": "^4.4.56",
-    "@fjell/core": "^4.4.62",
+    "@fjell/core": "^4.4.63",
     "@fjell/logging": "^4.4.58",
     "react-error-boundary": "^6.0.0"
   },
