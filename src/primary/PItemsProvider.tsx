@@ -74,7 +74,8 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
   const all = useCallback(async () => {
     logger.trace('all');
     setIsLoading(true);
-    const items = await allItems({}) as V[] | null;
+    const result = await allItems({});
+    const items = result?.items || [];
     setIsLoading(false);
     logger.debug('Items Returned for All', { items });
     return items;

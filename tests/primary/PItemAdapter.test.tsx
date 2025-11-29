@@ -1,7 +1,7 @@
  
 import * as React from 'react';
 import { Adapter, ContextType, usePItemAdapter } from '../../src/primary/PItemAdapter';
-import { ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
+import { AllOperationResult, ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';
@@ -48,7 +48,7 @@ describe('PItemAdapter', () => {
       api: {},
       subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
       operations: {
-        all: vi.fn().mockResolvedValue([testItem]),
+        all: vi.fn().mockResolvedValue({ items: [testItem], metadata: { total: 1, returned: 1, offset: 0, hasMore: false } } as AllOperationResult<TestItem>),
         one: vi.fn().mockResolvedValue(testItem),
         create: vi.fn().mockResolvedValue(testItem),
         get: vi.fn().mockResolvedValue(testItem),
@@ -58,7 +58,10 @@ describe('PItemAdapter', () => {
         action: vi.fn().mockResolvedValue(testItem),
         allAction: vi.fn().mockResolvedValue([testItem]),
         set: vi.fn().mockResolvedValue(testItem),
-        find: vi.fn().mockResolvedValue([testItem]),
+        find: vi.fn().mockResolvedValue({
+          items: [testItem],
+          metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+        } as AllOperationResult<TestItem>),
         facet: vi.fn().mockResolvedValue({ facetData: 'test' }),
         allFacet: vi.fn().mockResolvedValue({ allFacetData: 'test' }),
         reset: vi.fn().mockResolvedValue(undefined),
@@ -303,11 +306,11 @@ describe('PItemAdapter', () => {
 
     const query: ItemQuery = {};
     await act(async () => {
-      const items = await result.current.all(query);
-      expect(items).toEqual([testItem]);
+      const allResult = await result.current.all(query);
+      expect(allResult.items).toEqual([testItem]);
     });
 
-    expect(testItemCache.operations.all).toHaveBeenCalledWith(query);
+    expect(testItemCache.operations.all).toHaveBeenCalledWith(query, undefined, undefined);
   });
 
   it('should get one item', async () => {
@@ -385,7 +388,7 @@ describe('PItemAdapter', () => {
       <TestItemAdapter>{children}</TestItemAdapter>
     );
 
-    const { result } = renderHook(() => {
+    const { result: hookResult } = renderHook(() => {
       const context = React.useContext(TestItemContext);
       if (!context) throw new Error('Context not found');
       return context;
@@ -397,11 +400,12 @@ describe('PItemAdapter', () => {
 
     const finderParams = { name: 'test' };
     await act(async () => {
-      const items = await result.current.find('testFinder', finderParams);
-      expect(items).toEqual([testItem]);
+      const findResult = await hookResult.current.find('testFinder', finderParams);
+      expect(findResult.items).toEqual([testItem]);
+      expect(findResult.metadata.total).toBe(1);
     });
 
-    expect(testItemCache.operations.find).toHaveBeenCalledWith('testFinder', finderParams);
+    expect(testItemCache.operations.find).toHaveBeenCalledWith('testFinder', finderParams, [], undefined);
   });
 
   it('should find one item', async () => {
@@ -425,7 +429,8 @@ describe('PItemAdapter', () => {
       expect(item).toEqual(testItem);
     });
 
-    expect(testItemCache.operations.find).toHaveBeenCalledWith('testFinder', finderParams);
+    // findOne calls find with limit: 1, so findOptions is { limit: 1 }, not undefined
+    expect(testItemCache.operations.find).toHaveBeenCalledWith('testFinder', finderParams, [], { limit: 1 });
   });
 
   it('should set an item', async () => {
@@ -613,8 +618,8 @@ describe('PItemAdapter', () => {
     });
 
     await act(async () => {
-      const items = await result.current.all();
-      expect(items).toEqual([]);
+      const allResult = await result.current.all();
+      expect(allResult.items).toEqual([]);
     });
   });
 
@@ -656,8 +661,8 @@ describe('PItemAdapter', () => {
       expect(item).toBeNull();
     });
 
-    // Verify the correct mock was called
-    expect(emptyFindCache.operations.find).toHaveBeenCalledWith('testFinder', { name: 'test' });
+    // Verify the correct mock was called - findOne calls find with { limit: 1 }
+    expect(emptyFindCache.operations.find).toHaveBeenCalledWith('testFinder', { name: 'test' }, [], { limit: 1 });
   });
 
   it('should handle async cache initialization', async () => {
@@ -932,11 +937,11 @@ describe('PItemAdapter', () => {
     });
 
     await act(async () => {
-      const items = await result.current.all();
-      expect(items).toEqual([testItem]);
+      const allResult = await result.current.all();
+      expect(allResult.items).toEqual([testItem]);
     });
 
-    expect(testItemCache.operations.all).toHaveBeenCalledWith(undefined);
+    expect(testItemCache.operations.all).toHaveBeenCalledWith(undefined, undefined, undefined);
   });
 
   it('should handle one operation without query parameter', async () => {

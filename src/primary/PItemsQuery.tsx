@@ -51,8 +51,8 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
       try {
         logger.trace('useEffect[queryString] %s', createStableHash(query));
         setIsLoading(true);
-        const results = await allItems(query, []);
-        setItems(results as V[] || []);
+        const result = await allItems(query, []);
+        setItems(result?.items || []);
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error loading items:`, error);
@@ -82,8 +82,8 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
       try {
         logger.trace('Cache invalidation event received, refetching items');
         setIsLoading(true);
-        const results = await allItems(query, []);
-        setItems(results as V[] || []);
+        const result = await allItems(query, []);
+        setItems(result?.items || []);
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error refetching items after cache invalidation:`, error);
@@ -109,7 +109,8 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     try {
       logger.trace('all', { query });
       setIsLoading(true);
-      const items = await allItems(query, []) as V[] | null;
+      const result = await allItems(query, []);
+      const items = result?.items || null;
       setIsLoading(false);
       logger.debug('Items Returned for All', { items });
       return items;

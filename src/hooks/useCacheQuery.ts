@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
-import { ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
+import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
 import { createStableHash, deepEqual } from '../utils';
 import LibLogger from '../logger';
@@ -28,7 +28,7 @@ export function useCacheQuery<
   cache: Cache<V, S, L1, L2, L3, L4, L5> | null,
   query: ItemQuery = {},
   locations: LocKeyArray<L1, L2, L3, L4, L5> | [] = [],
-  allMethod?: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5> | []) => Promise<V[] | null> | null
+  allMethod?: (query?: ItemQuery, locations?: LocKeyArray<L1, L2, L3, L4, L5> | []) => Promise<AllOperationResult<V> | V[] | null> | null
 ): {
   items: V[];
   isLoading: boolean;
@@ -57,15 +57,22 @@ export function useCacheQuery<
         hasCache: !!cache
       });
       try {
-        let cachedItems: V[] | null;
+        let cachedItems: V[] | null = null;
         if (allMethod) {
           // Use the adapter method if provided (includes error handling, logging, etc.)
           logger.debug('QUERY_CACHE: Using allMethod adapter', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-          cachedItems = await allMethod(query, locations);
+          const result = await allMethod(query, locations);
+          // Handle AllOperationResult or array
+          if (result && typeof result === 'object' && 'items' in result) {
+            cachedItems = (result as AllOperationResult<V>).items;
+          } else if (Array.isArray(result)) {
+            cachedItems = result;
+          }
         } else if (cache) {
           // Fallback to direct cache access
           logger.debug('QUERY_CACHE: Using cache.operations.all()', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-          cachedItems = await cache.operations.all(query, locations);
+          const result = await cache.operations.all(query, locations);
+          cachedItems = result.items;
         } else {
           logger.debug('QUERY_CACHE: No cache or allMethod available', {});
           cachedItems = null;
@@ -162,13 +169,20 @@ export function useCacheQuery<
         if (allMethod || cache) {
           const loadItems = async () => {
             try {
-              let results: V[] | null;
+              let results: V[] | null = null;
               if (allMethod) {
                 logger.debug('QUERY_CACHE: Refetching using allMethod after invalidation', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-                results = await allMethod(query, locations);
+                const result = await allMethod(query, locations);
+                // Handle AllOperationResult or array
+                if (result && typeof result === 'object' && 'items' in result) {
+                  results = (result as AllOperationResult<V>).items;
+                } else if (Array.isArray(result)) {
+                  results = result;
+                }
               } else if (cache) {
                 logger.debug('QUERY_CACHE: Refetching using cache.operations.all() after invalidation', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-                results = await cache.operations.all(query, locations);
+                const result = await cache.operations.all(query, locations);
+                results = result.items;
               } else {
                 results = null;
               }
@@ -229,13 +243,20 @@ export function useCacheQuery<
 
     setIsLoading(true);
     try {
-      let results: V[] | null;
+      let results: V[] | null = null;
       if (allMethod) {
         logger.debug('QUERY_CACHE: Refetching using allMethod', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-        results = await allMethod(query, locations);
+        const result = await allMethod(query, locations);
+        // Handle AllOperationResult or array
+        if (result && typeof result === 'object' && 'items' in result) {
+          results = (result as AllOperationResult<V>).items;
+        } else if (Array.isArray(result)) {
+          results = result;
+        }
       } else if (cache) {
         logger.debug('QUERY_CACHE: Refetching using cache.operations.all()', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-        results = await cache.operations.all(query, locations);
+        const result = await cache.operations.all(query, locations);
+        results = result.items;
       } else {
         results = null;
       }
