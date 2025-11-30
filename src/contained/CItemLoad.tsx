@@ -273,12 +273,40 @@ export const CItemLoad = <
     if (itemKey && isValidComKey(itemKey as ComKey<S, L1, L2, L3, L4, L5>)) {
       setIsUpdating(true);
       try {
-        logger.trace('facet', { itemKey: abbrevIK(itemKey), facetName });
+        logger.trace('facet', { itemKey: abbrevIK(itemKey), facetName, params });
         const response = await facetItem(itemKey, facetName, params) as any;
+
+        // Log response for debugging
+        logger.debug(`${name}: Facet '${facetName}' response received`, {
+          facetName,
+          responseType: typeof response,
+          isNull: response === null,
+          isUndefined: response === undefined,
+          isEmptyObject: response && typeof response === 'object' && Object.keys(response).length === 0,
+          responseKeys: response && typeof response === 'object' ? Object.keys(response) : []
+        });
+
         return response;
-      } catch (error) {
-        logger.error(`${name}: Error executing facet '${facetName}'`, error);
-        throw error;
+      } catch (error: any) {
+        // Provide better error information
+        const errorMessage = error?.message || String(error);
+        const errorDetails = {
+          facetName,
+          itemKey: abbrevIK(itemKey),
+          params,
+          errorType: error?.constructor?.name || typeof error,
+          errorMessage,
+          errorString: String(error),
+          errorKeys: error && typeof error === 'object' ? Object.keys(error) : []
+        };
+        logger.error(`${name}: Error executing facet '${facetName}'`, errorDetails);
+
+        // Re-throw with better context if possible
+        if (error instanceof Error) {
+          throw error;
+        } else {
+          throw new Error(`Error executing facet '${facetName}': ${errorMessage}`);
+        }
       } finally {
         setIsUpdating(false);
       }
