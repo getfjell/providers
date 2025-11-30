@@ -1,5 +1,5 @@
 
-import { Item, ItemQuery, PriKey } from '@fjell/core';
+import { AllOperationResult, Item, ItemQuery, PriKey } from '@fjell/core';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,7 +37,7 @@ describe('PItemsQuery', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    mockAll = vi.fn().mockResolvedValue([testItem]);
+    mockAll = vi.fn().mockResolvedValue({ items: [testItem], metadata: { total: 1, returned: 1, offset: 0, hasMore: false } } as AllOperationResult<TestItem>);
     mockOne = vi.fn().mockResolvedValue(testItem);
 
     mockAdapter = {

@@ -4,8 +4,12 @@ import LibLogger from "../logger";
 import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
 import {
   abbrevIK, abbrevLKA, abbrevQuery,
+  AllOperationResult,
+  AllOptions,
   ComKey,
   CreateOptions,
+  FindOperationResult,
+  FindOptions,
   Item,
   ItemQuery, LocKey, LocKeyArray, OperationParams, PriKey
 } from "@fjell/core";
@@ -180,19 +184,21 @@ export const Adapter = <
 
   const all = React.useCallback(async (
     query?: ItemQuery,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
-  ): Promise<V[]> => {
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | [],
+    allOptions?: AllOptions
+  ): Promise<AllOperationResult<V>> => {
     logger.trace('all', {
       query: query && abbrevQuery(query),
       cache: cache?.coordinate.kta,
       locations: abbrevLKA(locations as unknown as Array<LocKey<S | L1 | L2 | L3 | L4 | L5>>),
+      allOptions,
     });
     if (!resolvedSourceCache) {
       return handleCacheError('all');
     }
     logger.debug('Fetching Items from sourceCache.all');
-    const items = await resolvedSourceCache.operations.all(query, locations);
-    return items as V[];
+    const result = await resolvedSourceCache.operations.all(query, locations, allOptions);
+    return result as AllOperationResult<V>;
   }, [resolvedSourceCache, handleCacheError]);
 
   const one = React.useCallback(async (
@@ -328,14 +334,15 @@ export const Adapter = <
   const find = React.useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-    locations?: LocKeyArray<L1, L2, L3, L4, L5> | []
-  ): Promise<V[]> => {
-    logger.trace('find', { finder, finderParams, locations });
+    locations?: LocKeyArray<L1, L2, L3, L4, L5> | [],
+    findOptions?: FindOptions
+  ): Promise<AllOperationResult<V>> => {
+    logger.trace('find', { finder, finderParams, locations, findOptions });
     if (!resolvedSourceCache) {
       return handleCacheError('find');
     }
-    const newItems = await resolvedSourceCache.operations.find(finder, finderParams, locations);
-    return newItems as V[];
+    const result = await (resolvedSourceCache.operations.find as any)(finder, finderParams, locations, findOptions) as FindOperationResult<V>;
+    return result;
   }, [resolvedSourceCache, handleCacheError]);
 
   const findOne = React.useCallback(async (

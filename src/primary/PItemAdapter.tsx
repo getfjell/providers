@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { abbrevIK, AllItemTypeArrays, ComKey, Item, ItemQuery, LocKeyArray, OperationParams, PriKey } from "@fjell/core";
+import { abbrevIK, AllItemTypeArrays, AllOperationResult, AllOptions, ComKey, FindOperationResult, FindOptions, Item, ItemQuery, LocKeyArray, OperationParams, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
 import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
@@ -181,19 +181,21 @@ export const Adapter = <
 
   const all = useCallback(async (
     query?: ItemQuery,
-  ): Promise<V[]> => {
-    logger.trace('all', { query: query && query.toString() });
+    locations?: [],
+    allOptions?: AllOptions
+  ): Promise<AllOperationResult<V>> => {
+    logger.trace('all', { query: query && query.toString(), allOptions });
     const cache = ensureCache('all');
-    const result = await cache.operations.all(query);
-    // Validate that result is an array, return empty array for invalid results
+    const result = await cache.operations.all(query, locations, allOptions);
+    // Validate that result has items array
     if (result === null || result === undefined) {
-      return [];
+      return { items: [], metadata: { total: 0, returned: 0, offset: 0, hasMore: false } };
     }
-    if (!Array.isArray(result)) {
-      logger.debug('Invalid result from cache.operations.all: expected array, got %s', typeof result);
-      return [];
+    if (!result.items || !Array.isArray(result.items)) {
+      logger.debug('Invalid result from cache.operations.all: expected AllOperationResult, got %s', typeof result);
+      return { items: [], metadata: { total: 0, returned: 0, offset: 0, hasMore: false } };
     }
-    return result as V[];
+    return result as AllOperationResult<V>;
   }, [ensureCache, name]);
 
   const one = useCallback(async (
@@ -358,32 +360,36 @@ export const Adapter = <
   const find = useCallback(async (
     finder: string,
     finderParams: Record<string, string | number | boolean | Date | Array<string | number | boolean | Date>>,
-  ): Promise<V[]> => {
+    locations?: [],
+    findOptions?: FindOptions
+  ): Promise<FindOperationResult<V>> => {
     const startTime = Date.now();
     
-    logger.trace('find', { finder, finderParams });
+    logger.trace('find', { finder, finderParams, findOptions });
     logger.debug('PROVIDER: find() started', {
       adapterName: name,
       finder,
-      finderParams: JSON.stringify(finderParams)
+      finderParams: JSON.stringify(finderParams),
+      findOptions
     });
     
     const cache = ensureCache('find');
     
     const cacheStartTime = Date.now();
-    const newItems = await cache.operations.find(finder, finderParams);
+    const result = await (cache.operations.find as any)(finder, finderParams, locations || [], findOptions) as FindOperationResult<V>;
     const cacheDuration = Date.now() - cacheStartTime;
     
     const totalDuration = Date.now() - startTime;
     logger.debug('PROVIDER: find() completed', {
       adapterName: name,
       finder,
-      itemCount: newItems.length,
+      itemCount: result.items.length,
+      total: result.metadata.total,
       cacheDuration,
       totalDuration
     });
     
-    return newItems as V[];
+    return result;
   }, [ensureCache, name]);
 
   const findOne = useCallback(async (
@@ -392,12 +398,13 @@ export const Adapter = <
   ): Promise<V | null> => {
     logger.trace('findOne', { finder, finderParams });
     const cache = ensureCache('findOne');
-    const newItems = await cache.operations.find(finder, finderParams);
+    const effectiveFindOptions = { limit: 1 };
+    const result = await (cache.operations.find as any)(finder, finderParams, [], effectiveFindOptions) as FindOperationResult<V>;
     // findOne should return the first item from find results, or null if no results
-    if (!Array.isArray(newItems) || newItems.length === 0) {
+    if (!result.items || result.items.length === 0) {
       return null;
     }
-    return newItems[0] as V;
+    return result.items[0] as V;
   }, [ensureCache]);
 
   const set = useCallback(async (
