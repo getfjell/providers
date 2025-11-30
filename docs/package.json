@@ -12,7 +12,7 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
-    "@fjell/docs-template": "^1.0.36",
+    "@fjell/docs-template": "^1.0.41",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -28,7 +28,7 @@
     "@vitest/ui": "^3.2.4",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
-    "vite": "^7.1.10",
+    "vite": "^7.1.12",
     "vitest": "^3.2.4"
   }
 }
