@@ -56,7 +56,10 @@ describe('PItemsFind', () => {
       update: vi.fn().mockResolvedValue(testItem),
       allAction: vi.fn().mockResolvedValue([testItem]),
       allFacet: vi.fn().mockResolvedValue({ allFacetData: 'test' }),
-      find: vi.fn().mockResolvedValue([testItem]),
+      find: vi.fn().mockResolvedValue({
+        items: [testItem],
+        metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+      }),
       findOne: vi.fn().mockResolvedValue(testItem),
       set: vi.fn().mockResolvedValue(testItem),
       action: vi.fn().mockResolvedValue(testItem),
@@ -81,7 +84,10 @@ describe('PItemsFind', () => {
       allFacet: vi.fn().mockResolvedValue({ allFacetData: 'test' }),
       facet: vi.fn().mockResolvedValue({ facetData: 'test' }),
       set: vi.fn().mockResolvedValue(testItem),
-      find: vi.fn().mockResolvedValue([testItem]),
+      find: vi.fn().mockResolvedValue({
+        items: [testItem],
+        metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+      }),
       findOne: vi.fn().mockResolvedValue(testItem),
       update: vi.fn().mockResolvedValue(testItem),
       remove: vi.fn().mockResolvedValue(undefined),
@@ -130,11 +136,13 @@ describe('PItemsFind', () => {
 
     // Test direct call to the find method
     await act(async () => {
-      const items = await result.current.find('test', { name: 'test' });
-      expect(items).toEqual([testItem]);
+      const findResult = await result.current.find('test', { name: 'test' });
+      expect(findResult.items).toEqual([testItem]);
+      expect(findResult.metadata.total).toBe(1);
     });
 
     expect(testItemAdapter.find).toHaveBeenCalledTimes(2);
+    // The find method can be called with 2 arguments (locations and findOptions are optional)
     expect(testItemAdapter.find).toHaveBeenCalledWith('test', { name: 'test' });
   });
 });

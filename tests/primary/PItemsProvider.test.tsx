@@ -1,4 +1,4 @@
-import { Item, PriKey } from '@fjell/core';
+import { AllOperationResult, Item, PriKey } from '@fjell/core';
 import { act, render, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,7 +36,7 @@ const TestItemsAdapter = ({ children }: { children: React.ReactNode }) => {
   const adapter = {
     name: 'test',
     pkTypes: ['test'] as const,
-    all: vi.fn().mockResolvedValue([testItem]),
+    all: vi.fn().mockResolvedValue({ items: [testItem], metadata: { total: 1, returned: 1, offset: 0, hasMore: false } } as AllOperationResult<TestItem>),
     one: vi.fn().mockResolvedValue(testItem),
     create: vi.fn().mockResolvedValue(testItem),
     get: vi.fn().mockResolvedValue(testItem),

@@ -61,7 +61,12 @@ export const CItemsFind = <
     if (finder && finderParams && parentLocations && adapterContext) {
       try {
         const result = await adapterContext.find(finder, finderParams, parentLocations);
-        setItems(result as V[] | null);
+        // Handle FindOperationResult
+        if (result && result.items) {
+          setItems(result.items as V[] | null);
+        } else {
+          setItems(null);
+        }
         setIsLoading(false);
       } catch (error) {
         console.error('Find operation failed:', error);

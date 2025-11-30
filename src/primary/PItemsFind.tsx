@@ -42,7 +42,7 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
       try {
         if (adapterContext.find) {
           const result = await adapterContext.find(finder, finderParams);
-          setItems(result as V[] | null);
+          setItems(result.items as V[] | null);
           setIsLoading(false);
         } else {
           setItems(null);

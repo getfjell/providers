@@ -85,7 +85,10 @@ describe('CItemsFind', () => {
     ];
 
     // Mock the find function
-    mockFind = vi.fn().mockResolvedValue(testItems);
+    mockFind = vi.fn().mockResolvedValue({
+      items: testItems,
+      metadata: { total: testItems.length, returned: testItems.length, offset: 0, hasMore: false }
+    });
 
     // Create mock adapter context
     mockAdapter = {
@@ -355,6 +358,7 @@ describe('CItemsFind', () => {
   });
 
   it('should handle null find results', async () => {
+    // find() should return FindOperationResult, but test null handling
     mockFind.mockResolvedValue(null);
 
     const { getByTestId } = render(

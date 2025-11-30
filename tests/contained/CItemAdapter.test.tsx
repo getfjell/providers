@@ -61,7 +61,10 @@ describe('CItemAdapter', () => {
         set: vi.fn().mockResolvedValue(testItem),
         facet: vi.fn().mockResolvedValue({ count: 5, data: 'facet result' }),
         allFacet: vi.fn().mockResolvedValue({ totalCount: 10, summary: 'all facet result' }),
-        find: vi.fn().mockResolvedValue([testItem])
+        find: vi.fn().mockResolvedValue({
+          items: [testItem],
+          metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+        })
       }
     } as unknown as TestItemCache;
 
@@ -375,11 +378,13 @@ describe('CItemAdapter', () => {
     const finderParams = { name: 'test', status: 'active' };
     let findResults: TestItem[] | undefined;
     await act(async () => {
-      findResults = await result.current.find('byNameAndStatus', finderParams, locKeyArray);
+      const findResult = await result.current.find('byNameAndStatus', finderParams, locKeyArray);
+      findResults = findResult.items;
     });
 
     expect(testItemCache.operations.find).toHaveBeenCalledTimes(1);
-    expect(testItemCache.operations.find).toHaveBeenCalledWith('byNameAndStatus', finderParams, locKeyArray);
+    // find() now accepts findOptions as 4th parameter
+    expect(testItemCache.operations.find).toHaveBeenCalledWith('byNameAndStatus', finderParams, locKeyArray, undefined);
     expect(findResults).toEqual(mockFindResults);
   });
 

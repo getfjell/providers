@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from '@fjell/core';
+import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from '@fjell/core';
 import { Cache } from '@fjell/cache';
 import { useCacheQuery } from '../../src/hooks/useCacheQuery';
 
@@ -75,7 +75,7 @@ describe('useCacheQuery', () => {
         kta: ['test']
       },
       operations: {
-        all: vi.fn().mockResolvedValue([testItem1, testItem2]),
+        all: vi.fn().mockResolvedValue({ items: [testItem1, testItem2], metadata: { total: 2, returned: 2, offset: 0, hasMore: false } } as AllOperationResult<TestItem>),
         get: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
@@ -153,9 +153,10 @@ describe('useCacheQuery', () => {
         const allItems = [testItem1, testItem2];
         // Use a custom property that exists in our test items
         if (query && typeof query === 'object' && 'value' in query) {
-          return Promise.resolve(allItems.filter(item => item.value === query.value));
+          const filtered = allItems.filter(item => item.value === query.value);
+          return Promise.resolve({ items: filtered, metadata: { total: filtered.length, returned: filtered.length, offset: 0, hasMore: false } } as AllOperationResult<TestItem>);
         }
-        return Promise.resolve(allItems);
+        return Promise.resolve({ items: allItems, metadata: { total: allItems.length, returned: allItems.length, offset: 0, hasMore: false } } as AllOperationResult<TestItem>);
       });
 
       const { result } = renderHook(() => useCacheQuery(cache, { value: 10 } as any, []));
@@ -222,7 +223,7 @@ describe('useCacheQuery', () => {
       const { result } = renderHook(() => useCacheQuery(cache, {}, []));
 
       const newItems = [testItem1];
-      vi.mocked(cache.operations.all).mockResolvedValue(newItems);
+      vi.mocked(cache.operations.all).mockResolvedValue({ items: newItems, metadata: { total: 1, returned: 1, offset: 0, hasMore: false } } as AllOperationResult<TestItem>);
 
       let refetchResult: TestItem[];
       await act(async () => {
@@ -295,9 +296,10 @@ describe('useCacheQuery', () => {
       cache.operations.all = vi.fn().mockImplementation((query) => {
         const allItems = [testItem1, testItem2];
         if (query && typeof query === 'object' && 'value' in query) {
-          return Promise.resolve(allItems.filter(item => item.value === query.value));
+          const filtered = allItems.filter(item => item.value === query.value);
+          return Promise.resolve({ items: filtered, metadata: { total: filtered.length, returned: filtered.length, offset: 0, hasMore: false } } as AllOperationResult<TestItem>);
         }
-        return Promise.resolve(allItems);
+        return Promise.resolve({ items: allItems, metadata: { total: allItems.length, returned: allItems.length, offset: 0, hasMore: false } } as AllOperationResult<TestItem>);
       });
 
       rerender({ query: { value: 10 } as any });
