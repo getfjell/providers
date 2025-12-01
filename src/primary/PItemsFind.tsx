@@ -38,21 +38,39 @@ export const PItemsFind = <V extends Item<S>, S extends string>(
 
   // Function to execute the finder
   const executeFinder = useCallback(async () => {
+    console.log('=== PItemsFind.executeFinder CALLED ===');
+    console.log('Finder:', finder);
+    console.log('Finder Params:', finderParams);
+    console.log('Adapter Context:', !!adapterContext);
+    console.log('Adapter Context.find:', !!adapterContext?.find);
+
     if (finder && finderParams && adapterContext) {
       try {
         if (adapterContext.find) {
+          console.log('=== CALLING adapterContext.find ===');
           const result = await adapterContext.find(finder, finderParams);
+          console.log('=== adapterContext.find SUCCESS ===');
+          console.log('Result items count:', result?.items?.length);
           setItems(result.items as V[] | null);
           setIsLoading(false);
         } else {
+          console.error('=== ERROR: adapterContext.find is not available ===');
           setItems(null);
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Find operation failed:', error);
+        console.error('=== Find operation failed ===');
+        console.error('Error:', error);
+        console.error('Error message:', (error as any)?.message);
+        console.error('Error stack:', (error as any)?.stack);
         setItems(null);
         setIsLoading(false);
       }
+    } else {
+      console.log('=== SKIPPING: Missing finder, finderParams, or adapterContext ===');
+      console.log('Finder:', finder);
+      console.log('Finder Params:', finderParams);
+      console.log('Adapter Context:', !!adapterContext);
     }
   }, [finder, finderParams, adapterContext]);
 
