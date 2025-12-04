@@ -31,9 +31,9 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.52",
-    "@fjell/client-api": "^4.4.61",
-    "@fjell/core": "^4.4.67",
+    "@fjell/cache": "^4.7.53",
+    "@fjell/client-api": "^4.4.62",
+    "@fjell/core": "^4.4.68",
     "@fjell/logging": "^4.4.59",
     "react-error-boundary": "^6.0.0"
   },
