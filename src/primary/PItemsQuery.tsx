@@ -1,5 +1,5 @@
 
-import { Item, ItemQuery } from "@fjell/core";
+import { AllOptions, Item, ItemQuery, PaginationMetadata } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
@@ -20,6 +20,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     contextName,
     query = {},
     renderEach,
+    allOptions,
   }: {
     name: string;
     adapter: PItemAdapter.Context<V, S>;
@@ -28,6 +29,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     contextName: string;
     query?: ItemQuery;
     renderEach?: (item: V) => React.ReactNode;
+    allOptions?: AllOptions;
   }
 ) => {
 
@@ -43,7 +45,9 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
   } = useMemo(() => adapterContext, [adapterContext]);
 
   const queryString = useMemo(() => createStableHash(query), [query]);
+  const allOptionsString = useMemo(() => createStableHash(allOptions), [allOptions]);
   const [items, setItems] = useState<V[]>([]);
+  const [metadata, setMetadata] = useState<PaginationMetadata | undefined>(void 0);
 
   // Load items when query changes
   useEffect(() => {
@@ -51,28 +55,34 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
       try {
         logger.trace('useEffect[queryString] %s', createStableHash(query));
         setIsLoading(true);
-        const result = await allItems(query, []);
+        const result = await allItems(query, [], allOptions);
         setItems(result?.items || []);
+        setMetadata(result?.metadata);
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error loading items:`, error);
         setItems([]);
+        setMetadata(void 0);
         setIsLoading(false);
         // Don't throw here as this would be lost in the async context
         // Let the all/one override functions handle error throwing
       }
     })();
-  }, [queryString, allItems, name]);
+  }, [queryString, allOptionsString, allItems, name]);
 
   // Store cache reference to detect changes
   const cacheRef = React.useRef(cache);
   const allItemsRef = React.useRef(allItems);
+  const queryRef = React.useRef(query);
+  const allOptionsRef = React.useRef(allOptions);
 
   // Listen for cache invalidation events to refetch data
   useEffect(() => {
     // Update refs
     cacheRef.current = cache;
     allItemsRef.current = allItems;
+    queryRef.current = query;
+    allOptionsRef.current = allOptions;
 
     if (!cache) {
       return;
@@ -82,8 +92,12 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
       try {
         logger.trace('Cache invalidation event received, refetching items');
         setIsLoading(true);
-        const result = await allItems(query, []);
+        const currentQuery = queryRef.current;
+        const currentAllOptions = allOptionsRef.current;
+        const currentAllItems = allItemsRef.current;
+        const result = await currentAllItems(currentQuery, [], currentAllOptions);
         setItems(result?.items || []);
+        setMetadata(result?.metadata);
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error refetching items after cache invalidation:`, error);
@@ -103,14 +117,15 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
         subscription.unsubscribe();
       }
     };
-  }, [cache, allItems, query, name]);
+  }, [cache, allItems, query, allOptions, name]);
 
   const all = useCallback(async () => {
     try {
       logger.trace('all', { query });
       setIsLoading(true);
-      const result = await allItems(query, []);
+      const result = await allItems(query, [], allOptions);
       const items = result?.items || null;
+      setMetadata(result?.metadata);
       setIsLoading(false);
       logger.debug('Items Returned for All', { items });
       return items;
@@ -119,7 +134,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
       setIsLoading(false);
       throw error;
     }
-  }, [allItems]);
+  }, [allItems, query, allOptions]);
 
   const one = useCallback(async () => {
     try {
@@ -144,6 +159,7 @@ export const PItemsQuery = <V extends Item<S>, S extends string>(
     renderEach,
     items,
     isLoadingParam: isLoading,
+    metadata,
     overrides: {
       all,
       one,
