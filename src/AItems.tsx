@@ -7,6 +7,7 @@ import {
   RemoveMethod as CoreRemoveMethod,
   UpdateMethod as CoreUpdateMethod,
   OperationParams,
+  PaginationMetadata,
 } from "@fjell/core";
 import { AllItemTypeArrays, Item, LocKeyArray } from "@fjell/core";
 import * as React from "react";
@@ -78,6 +79,8 @@ export interface ContextType<
     isUpdating: boolean;
     isRemoving: boolean;
     pkTypes: AllItemTypeArrays<S, L1, L2, L3, L4, L5>;
+    // Pagination metadata from AllOperationResult
+    metadata?: PaginationMetadata;
 
     // Collection operations - context-bound (no query/locations parameters)
     create: (item: Partial<Item<S, L1, L2, L3, L4, L5>>) => Promise<V>;

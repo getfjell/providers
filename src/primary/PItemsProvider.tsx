@@ -1,4 +1,4 @@
-import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PaginationMetadata, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 
@@ -18,6 +18,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     contextName,
     renderEach,
     isLoadingParam = false,
+    metadata,
     overrides,
   }: {
     name: string;
@@ -31,6 +32,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     contextName: string;
     renderEach?: (item: V) => React.ReactNode;
     isLoadingParam?: boolean;
+    metadata?: PaginationMetadata;
     overrides?: {
       all?: () => Promise<V[] | null>;
       one?: () => Promise<V | null>;
@@ -187,6 +189,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     isUpdating,
     isRemoving,
     facetResults: facetResults || {},
+    metadata,
     create,
     update,
     remove,

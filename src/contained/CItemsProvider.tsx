@@ -1,5 +1,5 @@
 import * as AItem from "../AItem";
-import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
+import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PaginationMetadata, PriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
@@ -30,6 +30,7 @@ export const CItemsProvider = <
       items = [],
       facetResults = {},
       isLoadingParam = false,
+      metadata,
       overrides,
     }: {
     name: string;
@@ -51,6 +52,7 @@ export const CItemsProvider = <
     items?: V[] | null;
     facetResults?: Record<string, any>;
     isLoadingParam?: boolean;
+    metadata?: PaginationMetadata;
     overrides?: {
       all?: () => Promise<V[] | null>;
       one?: () => Promise<V | null>;
@@ -147,8 +149,8 @@ export const CItemsProvider = <
       logger.debug(`${name}: all`, { query: {}, parentLocations: abbrevLKA(parentLocations as any) });
       setIsLoading(true);
       try {
-        const result = await allItems({}, parentLocations) as V[] | null;
-        return result;
+        const result = await allItems({}, parentLocations);
+        return result?.items || null;
       } catch (error) {
         logger.error(`${name}: Error getting all items`, error);
         throw error;
@@ -336,6 +338,7 @@ export const CItemsProvider = <
     isRemoving,
     pkTypes,
     locations: parentLocations as any,
+    metadata,
     create,
     update,
     remove,

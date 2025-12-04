@@ -1,6 +1,6 @@
 // @ts-nocheck
  
-import { ComKey, Item, ItemQuery, LocKeyArray, UUID } from '@fjell/core';
+import { AllOperationResult, AllOptions, ComKey, Item, ItemQuery, LocKeyArray, UUID } from '@fjell/core';
 import * as React from 'react';
 import { act, render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -97,7 +97,10 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   // Reset mock implementations
-  mockAdapterContext.all.mockResolvedValue([testItem]);
+  mockAdapterContext.all.mockResolvedValue({
+    items: [testItem],
+    metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+  } as AllOperationResult<TestItem>);
   mockAdapterContext.one.mockResolvedValue(testItem);
 
   mockUseCItemAdapter.mockReturnValue(mockAdapterContext);
@@ -179,7 +182,10 @@ describe('CItemsQuery', () => {
   });
 
   it('should create all callback function', () => {
-    mockAdapterContext.all.mockResolvedValue([testItem]);
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     const TestComponent = () => CItemsQuery({
       ...defaultProps,
@@ -202,7 +208,10 @@ describe('CItemsQuery', () => {
 
   it('should handle all callback with parent locations', async () => {
     const query: ItemQuery = { name: 'test' };
-    mockAdapterContext.all.mockResolvedValue([testItem]);
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     // We need to test the actual callback execution
     // This is a bit tricky with the current component structure
@@ -388,7 +397,10 @@ describe('Callback Execution', () => {
   it('should execute all callback successfully with parent locations', async () => {
     const query: ItemQuery = { name: 'test' };
     const expectedResult = [testItem];
-    mockAdapterContext.all.mockResolvedValue(expectedResult);
+    mockAdapterContext.all.mockResolvedValue({
+      items: expectedResult,
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     let capturedCallbacks: any = {};
     mockCItemsProvider.mockImplementation(({ overrides }) => {
@@ -409,7 +421,7 @@ describe('Callback Execution', () => {
     const result = await capturedCallbacks.all();
 
     expect(result).toEqual(expectedResult);
-    expect(mockAdapterContext.all).toHaveBeenCalledWith(query, parentLocations);
+    expect(mockAdapterContext.all).toHaveBeenCalledWith(query, parentLocations, void 0);
     expect(mockLogger.debug).toHaveBeenCalledWith(
       expect.stringContaining('all'),
       expect.objectContaining({
@@ -568,7 +580,10 @@ describe('Callback Execution', () => {
 describe('useEffect Behavior', () => {
   it('should call adapter.all during useEffect when parent locations are present', async () => {
     const query: ItemQuery = { name: 'test', limit: 5 };
-    mockAdapterContext.all.mockResolvedValue([testItem]);
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     const TestWrapper = () => {
       return CItemsQuery({
@@ -581,7 +596,7 @@ describe('useEffect Behavior', () => {
 
     // Wait for useEffect to complete
     await waitFor(() => {
-      expect(mockAdapterContext.all).toHaveBeenCalledWith(query, parentLocations);
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(query, parentLocations, void 0);
     });
 
     expect(mockLogger.trace).toHaveBeenCalledWith(
@@ -640,7 +655,10 @@ describe('useEffect Behavior', () => {
   it('should re-run useEffect when query changes', async () => {
     const initialQuery: ItemQuery = { name: 'initial' };
     const updatedQuery: ItemQuery = { name: 'updated' };
-    mockAdapterContext.all.mockResolvedValue([testItem]);
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     const TestWrapper = ({ query }: { query: ItemQuery }) => {
       return CItemsQuery({
@@ -652,7 +670,7 @@ describe('useEffect Behavior', () => {
     const { rerender } = render(<TestWrapper query={initialQuery} />);
 
     await waitFor(() => {
-      expect(mockAdapterContext.all).toHaveBeenCalledWith(initialQuery, parentLocations);
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(initialQuery, parentLocations, void 0);
     });
 
     // Clear previous calls
@@ -662,13 +680,16 @@ describe('useEffect Behavior', () => {
     rerender(<TestWrapper query={updatedQuery} />);
 
     await waitFor(() => {
-      expect(mockAdapterContext.all).toHaveBeenCalledWith(updatedQuery, parentLocations);
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(updatedQuery, parentLocations, void 0);
     });
   });
 
   it('should re-run useEffect when parent locations change', async () => {
     const newParentLocations: LocKeyArray<'container'> = [{ lk: '4-4-4-4-4' as UUID, kt: 'container' }];
-    mockAdapterContext.all.mockResolvedValue([testItem]);
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     const TestWrapper = ({ parentLocations }: { parentLocations: LocKeyArray<'container'> }) => {
       const mockParentContextWithLocations = {
@@ -685,7 +706,7 @@ describe('useEffect Behavior', () => {
     const { rerender } = render(<TestWrapper parentLocations={parentLocations} />);
 
     await waitFor(() => {
-      expect(mockAdapterContext.all).toHaveBeenCalledWith({}, parentLocations);
+      expect(mockAdapterContext.all).toHaveBeenCalledWith({}, parentLocations, void 0);
     });
 
     // Clear previous calls
@@ -695,7 +716,7 @@ describe('useEffect Behavior', () => {
     rerender(<TestWrapper parentLocations={newParentLocations} />);
 
     await waitFor(() => {
-      expect(mockAdapterContext.all).toHaveBeenCalledWith({}, newParentLocations);
+      expect(mockAdapterContext.all).toHaveBeenCalledWith({}, newParentLocations, void 0);
     });
   });
 });
@@ -842,8 +863,11 @@ describe('Edge Cases and Error Scenarios', () => {
       key: { ...itemKey, pk: `${i}-${i}-${i}-${i}-${i}` as UUID },
     }));
 
-    // Override the mock to return the large array
-    mockAdapterContext.all.mockResolvedValue(largeItemArray);
+    // Override the mock to return the large array wrapped in AllOperationResult
+    mockAdapterContext.all.mockResolvedValue({
+      items: largeItemArray,
+      metadata: { total: 1000, returned: 1000, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
 
     const TestWrapper = () => {
       return CItemsQuery({
@@ -977,5 +1001,222 @@ describe('Loading State Management', () => {
     await waitFor(() => {
       expect(finalLoadingState).toBe(false);
     });
+  });
+});
+
+describe('Pagination Support', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset to return AllOperationResult format
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 100, returned: 1, offset: 0, hasMore: true }
+    } as AllOperationResult<TestItem>);
+    mockAdapterContext.one.mockResolvedValue(testItem);
+    mockUseCItemAdapter.mockReturnValue(mockAdapterContext);
+    mockUseAItem.mockReturnValue(mockParentContext);
+    mockCItemsProvider.mockImplementation(({ children }) =>
+      React.createElement('div', { 'data-testid': 'citems-provider' }, children)
+    );
+  });
+
+  it('should pass allOptions to adapter.all when provided', async () => {
+    const allOptions: AllOptions = { limit: 10, offset: 0 };
+    const mockMetadata = { total: 100, returned: 10, offset: 0, hasMore: true };
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: mockMetadata
+    } as AllOperationResult<TestItem>);
+
+    const TestWrapper = () => {
+      return CItemsQuery({
+        ...defaultProps,
+        allOptions,
+      });
+    };
+
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(
+        {},
+        parentLocations,
+        allOptions
+      );
+    });
+  });
+
+  it('should expose pagination metadata through context', async () => {
+    const allOptions: AllOptions = { limit: 10, offset: 0 };
+    const mockMetadata = { total: 100, returned: 10, offset: 0, hasMore: true };
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: mockMetadata
+    } as AllOperationResult<TestItem>);
+
+    let capturedMetadata: any;
+    mockCItemsProvider.mockImplementation(({ metadata }) => {
+      capturedMetadata = metadata;
+      return React.createElement('div', { 'data-testid': 'citems-provider' });
+    });
+
+    const TestWrapper = () => {
+      return CItemsQuery({
+        ...defaultProps,
+        allOptions,
+      });
+    };
+
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(capturedMetadata).toEqual(mockMetadata);
+    });
+  });
+
+  it('should refetch when allOptions changes', async () => {
+    const TestWrapper = ({ allOptions }: { allOptions?: AllOptions }) => {
+      return CItemsQuery({
+        ...defaultProps,
+        allOptions,
+      });
+    };
+
+    const { rerender } = render(<TestWrapper allOptions={{ limit: 10, offset: 0 }} />);
+
+    await waitFor(() => {
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(
+        {},
+        parentLocations,
+        { limit: 10, offset: 0 }
+      );
+    });
+
+    rerender(<TestWrapper allOptions={{ limit: 10, offset: 10 }} />);
+
+    await waitFor(() => {
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(
+        {},
+        parentLocations,
+        { limit: 10, offset: 10 }
+      );
+    });
+
+    expect(mockAdapterContext.all).toHaveBeenCalledTimes(2);
+  });
+
+  it('should work without allOptions for backwards compatibility', async () => {
+    mockAdapterContext.all.mockResolvedValue({
+      items: [testItem],
+      metadata: { total: 1, returned: 1, offset: 0, hasMore: false }
+    } as AllOperationResult<TestItem>);
+
+    const TestWrapper = () => {
+      return CItemsQuery({
+        ...defaultProps,
+      });
+    };
+
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(
+        {},
+        parentLocations,
+        void 0
+      );
+    });
+
+    let capturedMetadata: any;
+    mockCItemsProvider.mockImplementation(({ metadata }) => {
+      capturedMetadata = metadata;
+      return React.createElement('div', { 'data-testid': 'citems-provider' });
+    });
+
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(capturedMetadata).toBeDefined();
+    });
+
+    // Metadata should be present from the mock response
+    expect(capturedMetadata).toEqual({ total: 1, returned: 1, offset: 0, hasMore: false });
+  });
+
+  it('should pass allOptions with parentLocations to adapter.all', async () => {
+    const allOptions: AllOptions = { limit: 25, offset: 0 };
+    const query: ItemQuery = { name: 'test' };
+
+    const TestWrapper = () => {
+      return CItemsQuery({
+        ...defaultProps,
+        query,
+        allOptions,
+      });
+    };
+
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(mockAdapterContext.all).toHaveBeenCalledWith(
+        query,
+        parentLocations,
+        allOptions
+      );
+    });
+  });
+
+  it('should pass allOptions in cache invalidation handler', async () => {
+    const allOptions: AllOptions = { limit: 25, offset: 0 };
+    const mockCache = {
+      subscribe: vi.fn((callback: () => void) => {
+        // Simulate cache invalidation
+        setTimeout(() => callback(), 100);
+        return { unsubscribe: vi.fn() };
+      }),
+    };
+
+    const adapterContextWithCache = {
+      ...mockAdapterContext,
+      cache: mockCache,
+    };
+
+    mockUseCItemAdapter.mockReturnValue(adapterContextWithCache);
+
+    const TestWrapper = () => {
+      return CItemsQuery({
+        ...defaultProps,
+        allOptions,
+      });
+    };
+
+    render(<TestWrapper />);
+
+    await waitFor(() => {
+      expect(adapterContextWithCache.all).toHaveBeenCalled();
+    });
+
+    const initialCallCount = adapterContextWithCache.all.mock.calls.length;
+
+    // Manually trigger cache invalidation by calling the callback
+    const subscribeCall = mockCache.subscribe.mock.calls[0];
+    if (subscribeCall && subscribeCall[0]) {
+      subscribeCall[0]();
+    }
+
+    // Wait for cache invalidation call
+    await waitFor(() => {
+      expect(adapterContextWithCache.all.mock.calls.length).toBeGreaterThan(initialCallCount);
+    }, { timeout: 200 });
+
+    // Verify that at least one call includes allOptions
+    const callsWithAllOptions = adapterContextWithCache.all.mock.calls.filter(
+      call => call[2] === allOptions
+    );
+    expect(callsWithAllOptions.length).toBeGreaterThan(0);
+
+    // Verify the last call includes allOptions
+    const lastCall = adapterContextWithCache.all.mock.calls[adapterContextWithCache.all.mock.calls.length - 1];
+    expect(lastCall).toEqual([{}, parentLocations, allOptions]);
   });
 });
