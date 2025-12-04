@@ -121,7 +121,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({}, []);
+        expect(mockAll).toHaveBeenCalledWith({}, [], void 0);
       });
     });
 
@@ -143,7 +143,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(customQuery, []);
+        expect(mockAll).toHaveBeenCalledWith(customQuery, [], void 0);
       });
     });
 
@@ -165,7 +165,7 @@ describe('PItemsQuery', () => {
       const { rerender } = render(<TestQueryComponent query={{}} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({}, []);
+        expect(mockAll).toHaveBeenCalledWith({}, [], void 0);
       });
 
       // Change query
@@ -173,7 +173,7 @@ describe('PItemsQuery', () => {
       rerender(<TestQueryComponent query={newQuery} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(newQuery, []);
+        expect(mockAll).toHaveBeenCalledWith(newQuery, [], void 0);
       });
 
       expect(mockAll).toHaveBeenCalledTimes(2);
@@ -230,7 +230,7 @@ describe('PItemsQuery', () => {
       );
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith(query, []);
+        expect(mockAll).toHaveBeenCalledWith(query, [], void 0);
       });
     });
   });
@@ -408,20 +408,211 @@ describe('PItemsQuery', () => {
       const { rerender } = render(<TestComponent query={{}} />);
 
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({}, []);
+        expect(mockAll).toHaveBeenCalledWith({}, [], void 0);
       });
 
       rerender(<TestComponent query={{ limit: 5 }} />);
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({ limit: 5 }, []);
+        expect(mockAll).toHaveBeenCalledWith({ limit: 5 }, [], void 0);
       });
 
       rerender(<TestComponent query={{ limit: 10, offset: 5 }} />);
       await waitFor(() => {
-        expect(mockAll).toHaveBeenCalledWith({ limit: 10, offset: 5 }, []);
+        expect(mockAll).toHaveBeenCalledWith({ limit: 10, offset: 5 }, [], void 0);
       });
 
       expect(mockAll).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('Pagination Support', () => {
+    it('should pass allOptions to adapter.all when provided', async () => {
+      const allOptions = { limit: 10, offset: 0 };
+      const mockMetadata = { total: 100, returned: 10, offset: 0, hasMore: true };
+      mockAll.mockResolvedValue({ items: [testItem], metadata: mockMetadata } as AllOperationResult<TestItem>);
+
+      render(
+        <TestItemAdapterContext.Provider value={mockAdapter}>
+          <PItemsQuery
+            name="test"
+            adapter={TestItemAdapterContext as any}
+            context={TestItemsProviderContext as any}
+            contextName="TestItemAdapterContext"
+            allOptions={allOptions}
+          >
+            <div>Test</div>
+          </PItemsQuery>
+        </TestItemAdapterContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(mockAll).toHaveBeenCalledWith({}, [], allOptions);
+      });
+    });
+
+    it('should expose pagination metadata through context', async () => {
+      const allOptions = { limit: 10, offset: 0 };
+      const mockMetadata = { total: 100, returned: 10, offset: 0, hasMore: true };
+      mockAll.mockResolvedValue({ items: [testItem], metadata: mockMetadata } as AllOperationResult<TestItem>);
+
+      let contextMetadata: any;
+
+      const TestComponent = () => {
+        const context = React.useContext(TestItemsProviderContext);
+        contextMetadata = context?.metadata;
+        return <div>Test</div>;
+      };
+
+      render(
+        <TestItemAdapterContext.Provider value={mockAdapter}>
+          <PItemsQuery
+            name="test"
+            adapter={TestItemAdapterContext as any}
+            context={TestItemsProviderContext as any}
+            contextName="TestItemAdapterContext"
+            allOptions={allOptions}
+          >
+            <TestComponent />
+          </PItemsQuery>
+        </TestItemAdapterContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(contextMetadata).toEqual(mockMetadata);
+      });
+    });
+
+    it('should refetch when allOptions changes', async () => {
+      const TestComponent = ({ allOptions }: { allOptions?: { limit?: number; offset?: number } }) => (
+        <TestItemAdapterContext.Provider value={mockAdapter}>
+          <PItemsQuery
+            name="test"
+            adapter={TestItemAdapterContext as any}
+            context={TestItemsProviderContext as any}
+            contextName="TestItemAdapterContext"
+            allOptions={allOptions}
+          >
+            <div>Test</div>
+          </PItemsQuery>
+        </TestItemAdapterContext.Provider>
+      );
+
+      const { rerender } = render(<TestComponent allOptions={{ limit: 10, offset: 0 }} />);
+
+      await waitFor(() => {
+        expect(mockAll).toHaveBeenCalledWith({}, [], { limit: 10, offset: 0 });
+      });
+
+      rerender(<TestComponent allOptions={{ limit: 10, offset: 10 }} />);
+
+      await waitFor(() => {
+        expect(mockAll).toHaveBeenCalledWith({}, [], { limit: 10, offset: 10 });
+      });
+
+      expect(mockAll).toHaveBeenCalledTimes(2);
+    });
+
+    it('should work without allOptions for backwards compatibility', async () => {
+      render(
+        <TestItemAdapterContext.Provider value={mockAdapter}>
+          <PItemsQuery
+            name="test"
+            adapter={TestItemAdapterContext as any}
+            context={TestItemsProviderContext as any}
+            contextName="TestItemAdapterContext"
+          >
+            <div>Test</div>
+          </PItemsQuery>
+        </TestItemAdapterContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(mockAll).toHaveBeenCalledWith({}, [], void 0);
+      });
+
+      let contextMetadata: any;
+      const TestComponent = () => {
+        const context = React.useContext(TestItemsProviderContext);
+        contextMetadata = context?.metadata;
+        return <div>Test</div>;
+      };
+
+      render(
+        <TestItemAdapterContext.Provider value={mockAdapter}>
+          <PItemsQuery
+            name="test"
+            adapter={TestItemAdapterContext as any}
+            context={TestItemsProviderContext as any}
+            contextName="TestItemAdapterContext"
+          >
+            <TestComponent />
+          </PItemsQuery>
+        </TestItemAdapterContext.Provider>
+      );
+
+      await waitFor(() => {
+        expect(contextMetadata).toBeDefined();
+      });
+
+      // Metadata should be present from the mock response
+      expect(contextMetadata).toEqual({ total: 1, returned: 1, offset: 0, hasMore: false });
+    });
+
+    it('should pass allOptions in cache invalidation handler', async () => {
+      const allOptions = { limit: 25, offset: 0 };
+      let cacheCallback: (() => void) | null = null;
+      const mockCache = {
+        subscribe: vi.fn((callback: () => void) => {
+          cacheCallback = callback;
+          return { unsubscribe: vi.fn() };
+        }),
+      };
+
+      const adapterWithCache = {
+        ...mockAdapter,
+        cache: mockCache,
+      };
+
+      render(
+        <TestItemAdapterContext.Provider value={adapterWithCache}>
+          <PItemsQuery
+            name="test"
+            adapter={TestItemAdapterContext as any}
+            context={TestItemsProviderContext as any}
+            contextName="TestItemAdapterContext"
+            allOptions={allOptions}
+          >
+            <div>Test</div>
+          </PItemsQuery>
+        </TestItemAdapterContext.Provider>
+      );
+
+      // Wait for initial call
+      await waitFor(() => {
+        expect(mockAll).toHaveBeenCalled();
+      });
+
+      const initialCallCount = mockAll.mock.calls.length;
+
+      // Manually trigger cache invalidation
+      if (cacheCallback) {
+        cacheCallback();
+      }
+
+      // Wait for cache invalidation call
+      await waitFor(() => {
+        expect(mockAll.mock.calls.length).toBeGreaterThan(initialCallCount);
+      }, { timeout: 200 });
+
+      // Verify that at least one call includes allOptions
+      const callsWithAllOptions = mockAll.mock.calls.filter(
+        call => call[2] === allOptions
+      );
+      expect(callsWithAllOptions.length).toBeGreaterThan(0);
+
+      // Verify the last call includes allOptions
+      const lastCall = mockAll.mock.calls[mockAll.mock.calls.length - 1];
+      expect(lastCall).toEqual([{}, [], allOptions]);
     });
   });
 });

@@ -1,5 +1,5 @@
 
-import { abbrevLKA, abbrevQuery, Item, ItemQuery } from "@fjell/core";
+import { abbrevLKA, abbrevQuery, AllOptions, Item, ItemQuery, PaginationMetadata } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 
@@ -31,6 +31,7 @@ export const CItemsQuery = <
       parentContextName,
       query = {},
       renderEach,
+      allOptions,
     }: {
     name: string;
     adapter: CItemAdapter.Context<V, S, L1, L2, L3, L4, L5>;
@@ -41,6 +42,7 @@ export const CItemsQuery = <
     parent: AItem.Context<Item<L1, L2, L3, L4, L5, never>, L1, L2, L3, L4, L5>;
     parentContextName: string;
     renderEach?: (item: V) => React.ReactNode;
+    allOptions?: AllOptions;
   }
   ) => {
 
@@ -61,14 +63,17 @@ export const CItemsQuery = <
   } = useMemo(() => parentContext, [parentContext]);
 
   const queryString = useMemo(() => createStableHash(query), [query]);
+  const allOptionsString = useMemo(() => createStableHash(allOptions), [allOptions]);
   const [items, setItems] = useState<V[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [metadata, setMetadata] = useState<PaginationMetadata | undefined>(void 0);
 
   // Load items when query changes or when cache events occur
   useEffect(() => {
     (async () => {
       if (!parentLocations) {
         setItems([]);
+        setMetadata(void 0);
         setIsLoading(false);
         return;
       }
@@ -76,22 +81,25 @@ export const CItemsQuery = <
       try {
         logger.trace('useEffect[queryString] %s', createStableHash(query));
         setIsLoading(true);
-        const results = await allItems(query, parentLocations);
-        setItems(results as V[] || []);
+        const result = await allItems(query, parentLocations, allOptions);
+        setItems(result?.items || []);
+        setMetadata(result?.metadata);
         setIsLoading(false);
       } catch (error) {
         logger.error(`${name}: Error loading items:`, error);
         setItems([]);
+        setMetadata(void 0);
         setIsLoading(false);
       }
     })();
-  }, [queryString, allItems, parentLocations, name]);
+  }, [queryString, allOptionsString, allItems, parentLocations, name]);
 
   // Store cache reference to detect changes
   const cacheRef = React.useRef(cache);
   const parentLocationsRef = React.useRef(parentLocations);
   const allItemsRef = React.useRef(allItems);
   const queryRef = React.useRef(query);  // CRITICAL FIX: Track current query
+  const allOptionsRef = React.useRef(allOptions);
 
   // Listen for cache invalidation events to refetch data
   useEffect(() => {
@@ -100,6 +108,7 @@ export const CItemsQuery = <
     parentLocationsRef.current = parentLocations;
     allItemsRef.current = allItems;
     queryRef.current = query;  // CRITICAL FIX: Update query ref
+    allOptionsRef.current = allOptions;
 
     if (!cache || !parentLocations) {
       return;
@@ -114,13 +123,16 @@ export const CItemsQuery = <
         const currentQuery = queryRef.current;
         const currentParentLocations = parentLocationsRef.current;
         const currentAllItems = allItemsRef.current;
+        const currentAllOptions = allOptionsRef.current;
 
         if (currentParentLocations && currentAllItems) {
-          const results = await currentAllItems(currentQuery, currentParentLocations);
-          setItems(results as V[] || []);
+          const result = await currentAllItems(currentQuery, currentParentLocations, currentAllOptions);
+          setItems(result?.items || []);
+          setMetadata(result?.metadata);
         } else {
           logger.error(`${name}: Missing current refs during cache invalidation`);
           setItems([]);
+          setMetadata(void 0);
         }
         setIsLoading(false);
       } catch (error) {
@@ -141,14 +153,15 @@ export const CItemsQuery = <
         subscription.unsubscribe();
       }
     };
-  }, [cache, allItems, query, parentLocations, name]);
+  }, [cache, allItems, query, allOptions, parentLocations, name]);
 
   const all = useCallback(async () => {
     if (parentLocations) {
       logger.debug(`${name}: all`, { query: abbrevQuery(query), parentLocations: abbrevLKA(parentLocations as any) });
       try {
-        const result = await allItems(query, parentLocations) as V[] | null;
-        return result;
+        const result = await allItems(query, parentLocations, allOptions);
+        setMetadata(result?.metadata);
+        return result?.items || null;
       } catch (error) {
         logger.error(`${name}: Error getting all items`, error);
         throw error;
@@ -158,7 +171,7 @@ export const CItemsQuery = <
         { query: abbrevQuery(query) });
       throw new Error(`No parent locations present to query for all containeditems in ${name}`);
     }
-  }, [allItems, parentLocations, query, name]);
+  }, [allItems, parentLocations, query, allOptions, name]);
 
   const one = useCallback(async () => {
     if (parentLocations) {
@@ -186,6 +199,7 @@ export const CItemsQuery = <
     renderEach,
     items: items || null,
     isLoadingParam: isLoading,
+    metadata,
     parent,
     parentContextName,
     overrides: {
