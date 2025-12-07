@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.5.82",
+  "version": "4.5.83",
   "license": "Apache-2.0",
   "keywords": [
     "react-providers",
@@ -31,15 +31,15 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.54",
-    "@fjell/client-api": "^4.4.63",
-    "@fjell/core": "^4.4.68",
-    "@fjell/logging": "^4.4.59",
+    "@fjell/cache": "^4.7.56",
+    "@fjell/client-api": "^4.4.65",
+    "@fjell/core": "^4.4.70",
+    "@fjell/logging": "^4.4.60",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
@@ -49,16 +49,16 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@tsconfig/recommended": "^1.0.10",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "@vitest/coverage-v8": "4.0.2",
     "esbuild": "0.25.11",
     "eslint": "^9.38.0",
     "jsdom": "^27.0.1",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^19.1.2",
+    "react-dom": "^19.1.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.2"
   },
