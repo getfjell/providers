@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
 import { ComKey, Item, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
@@ -29,6 +29,14 @@ export function useCacheItem<
 } {
   const [item, setItem] = useState<V | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Track the current request to prevent stale updates
+  const requestIdRef = useRef<number>(0);
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef<boolean>(true);
+
+  // Create stable key string for dependency tracking
+  const keyString = useMemo(() => key ? createStableHash(key) : null, [key]);
 
   // Normalize a key for comparison (same logic as CacheEventEmitter)
   const normalizeKey = useCallback((key: ComKey<S, L1, L2, L3, L4, L5> | PriKey<S>): string => {
@@ -54,22 +62,22 @@ export function useCacheItem<
 
   // Create event listener to update item when it changes
   const eventListener = useCallback((event: any) => {
-    if (!key) return;
+    if (!key || !isMountedRef.current) return;
 
-    const keyString = normalizeKey(key);
+    const currentKeyString = normalizeKey(key);
 
     switch (event.type) {
       case 'item_created':
       case 'item_updated':
       case 'item_retrieved':
       case 'item_set':
-        if (normalizeKey(event.key) === keyString) {
+        if (normalizeKey(event.key) === currentKeyString) {
           setItem(event.item);
         }
         break;
 
       case 'item_removed':
-        if (normalizeKey(event.key) === keyString) {
+        if (normalizeKey(event.key) === currentKeyString) {
           setItem(null);
         }
         break;
@@ -94,6 +102,14 @@ export function useCacheItem<
   // Subscribe to cache events
   useCacheSubscription(cache, eventListener, subscriptionOptions);
 
+  // Track mounted state
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Load initial item from cache - this effect should run whenever cache or key changes
   useEffect(() => {
     if (!cache || !key) {
@@ -102,6 +118,9 @@ export function useCacheItem<
       return;
     }
 
+    // Increment request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current;
+
     // Reset loading state when key changes
     setIsLoading(true);
 
@@ -109,17 +128,30 @@ export function useCacheItem<
     const loadInitialItem = async () => {
       try {
         const cachedItem = await cache.cacheMap.get(key);
-        setItem(cachedItem);
+        
+        // Only update state if this is still the current request and component is mounted
+        if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+          setItem(cachedItem);
+        }
       } catch (error) {
         console.error('Error loading initial item:', error);
-        setItem(null);
+        if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+          setItem(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadInitialItem();
-  }, [cache, key]);
+    
+    // Cleanup: mark this request as stale if key changes
+    return () => {
+      // Request ID is already incremented in the next effect run
+    };
+  }, [cache, keyString]); // Use stable keyString instead of key object
 
   // Refetch function to manually reload the item
   const refetch = useCallback(async (): Promise<V | null> => {
@@ -127,18 +159,27 @@ export function useCacheItem<
       return null;
     }
 
+    // Increment request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current;
+
     setIsLoading(true);
     try {
       const result = await cache.operations.get(key);
-      setItem(result);
+      
+      // Only update state if this is still the current request and component is mounted
+      if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+        setItem(result);
+      }
       return result;
     } catch (error) {
       console.error('Error refetching item:', error);
       return null;
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [cache, key]);
+  }, [cache, keyString]); // Use stable keyString
 
   return {
     item,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
 import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
 import { useCacheSubscription } from './useCacheSubscription';
@@ -36,10 +36,36 @@ export function useCacheQuery<
 } {
   const [items, setItems] = useState<V[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Track the current request to prevent stale updates
+  const requestIdRef = useRef<number>(0);
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef<boolean>(true);
+  // Use refs to access latest values in callbacks without stale closures
+  const queryRef = useRef(query);
+  const locationsRef = useRef(locations);
+  const allMethodRef = useRef(allMethod);
+  const cacheRef = useRef(cache);
+  
+  // Keep refs in sync with props
+  useEffect(() => {
+    queryRef.current = query;
+    locationsRef.current = locations;
+    allMethodRef.current = allMethod;
+    cacheRef.current = cache;
+  }, [query, locations, allMethod, cache]);
 
   // Stable query and locations strings for dependency tracking
   const queryString = useMemo(() => createStableHash(query), [query]);
   const locationsString = useMemo(() => createStableHash(locations), [locations]);
+
+  // Track mounted state
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Load initial items from cache
   useEffect(() => {
@@ -49,12 +75,16 @@ export function useCacheQuery<
       return;
     }
 
+    // Increment request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current;
+
     const loadItems = async () => {
       logger.debug('QUERY_CACHE: useCacheQuery.loadItems() called', {
         query: JSON.stringify(query),
         locations: JSON.stringify(locations),
         hasAllMethod: !!allMethod,
-        hasCache: !!cache
+        hasCache: !!cache,
+        requestId: currentRequestId
       });
       try {
         let cachedItems: V[] | null = null;
@@ -77,13 +107,23 @@ export function useCacheQuery<
           logger.debug('QUERY_CACHE: No cache or allMethod available', {});
           cachedItems = null;
         }
-        logger.debug('QUERY_CACHE: loadItems completed', {
-          itemCount: cachedItems?.length || 0,
-          query: JSON.stringify(query),
-          locations: JSON.stringify(locations)
-        });
-        setItems(cachedItems || []);
-        setIsLoading(false);
+        
+        // Only update state if this is still the current request and component is mounted
+        if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+          logger.debug('QUERY_CACHE: loadItems completed', {
+            itemCount: cachedItems?.length || 0,
+            query: JSON.stringify(query),
+            locations: JSON.stringify(locations),
+            requestId: currentRequestId
+          });
+          setItems(cachedItems || []);
+          setIsLoading(false);
+        } else {
+          logger.debug('QUERY_CACHE: loadItems completed but request is stale, ignoring', {
+            currentRequestId,
+            latestRequestId: requestIdRef.current
+          });
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error('QUERY_CACHE: Error querying items from cache', {
@@ -92,8 +132,12 @@ export function useCacheQuery<
           locations: JSON.stringify(locations)
         });
         console.error('Error querying items from cache:', error);
-        setItems([]);
-        setIsLoading(false);
+        
+        // Only update state if this is still the current request and component is mounted
+        if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+          setItems([]);
+          setIsLoading(false);
+        }
       }
     };
 
@@ -127,12 +171,20 @@ export function useCacheQuery<
   }, []);
 
   // Create event listener to update items when they change
+  // Uses refs to access latest values without stale closures
   const eventListener = useCallback((event: any) => {
+    if (!isMountedRef.current) return;
+    
+    const currentQuery = queryRef.current;
+    const currentLocations = locationsRef.current;
+    const currentAllMethod = allMethodRef.current;
+    const currentCache = cacheRef.current;
+
     switch (event.type) {
       case 'items_queried':
         // Check if this event matches our query with improved comparison
-        if (queriesMatch(event.query, query) &&
-            createStableHash(event.locations) === locationsString) {
+        if (queriesMatch(event.query, currentQuery) &&
+            createStableHash(event.locations) === createStableHash(currentLocations)) {
           setItems(event.items);
         }
         break;
@@ -162,52 +214,68 @@ export function useCacheQuery<
       case 'query_invalidated':
         // When queries are invalidated, we need to refetch
         logger.debug('QUERY_CACHE: Query invalidated event received, refetching', {
-          query: JSON.stringify(query),
-          locations: JSON.stringify(locations)
+          query: JSON.stringify(currentQuery),
+          locations: JSON.stringify(currentLocations)
         });
         // Use the allMethod if provided, otherwise use cache.operations.all
-        if (allMethod || cache) {
+        if (currentAllMethod || currentCache) {
           const loadItems = async () => {
+            // Increment request ID to track this specific request
+            const currentRequestId = ++requestIdRef.current;
+            
             try {
               let results: V[] | null = null;
-              if (allMethod) {
-                logger.debug('QUERY_CACHE: Refetching using allMethod after invalidation', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-                const result = await allMethod(query, locations);
+              if (currentAllMethod) {
+                logger.debug('QUERY_CACHE: Refetching using allMethod after invalidation', {
+                  query: JSON.stringify(currentQuery),
+                  locations: JSON.stringify(currentLocations)
+                });
+                const result = await currentAllMethod(currentQuery, currentLocations);
                 // Handle AllOperationResult or array
                 if (result && typeof result === 'object' && 'items' in result) {
                   results = (result as AllOperationResult<V>).items;
                 } else if (Array.isArray(result)) {
                   results = result;
                 }
-              } else if (cache) {
-                logger.debug('QUERY_CACHE: Refetching using cache.operations.all() after invalidation', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-                const result = await cache.operations.all(query, locations);
+              } else if (currentCache) {
+                logger.debug('QUERY_CACHE: Refetching using cache.operations.all() after invalidation', {
+                  query: JSON.stringify(currentQuery),
+                  locations: JSON.stringify(currentLocations)
+                });
+                const result = await currentCache.operations.all(currentQuery, currentLocations);
                 results = result.items;
               } else {
                 results = null;
               }
-              logger.debug('QUERY_CACHE: Refetch completed after invalidation', {
-                itemCount: results?.length || 0,
-                query: JSON.stringify(query),
-                locations: JSON.stringify(locations)
-              });
-              setItems(results || []);
+              
+              // Only update state if this is still the current request and component is mounted
+              if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+                logger.debug('QUERY_CACHE: Refetch completed after invalidation', {
+                  itemCount: results?.length || 0,
+                  query: JSON.stringify(currentQuery),
+                  locations: JSON.stringify(currentLocations)
+                });
+                setItems(results || []);
+              }
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : String(error);
               logger.error('QUERY_CACHE: Error refetching after query invalidation', {
                 error: errorMessage,
-                query: JSON.stringify(query),
-                locations: JSON.stringify(locations)
+                query: JSON.stringify(currentQuery),
+                locations: JSON.stringify(currentLocations)
               });
               console.error('Error refetching after query invalidation:', error);
-              setItems([]);
+              
+              if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+                setItems([]);
+              }
             }
           };
           loadItems();
         }
         break;
     }
-  }, [queryString, locationsString, normalizeKey, queriesMatch, allMethod, cache]); // Use stable strings
+  }, [normalizeKey, queriesMatch]); // Minimal dependencies - use refs for values
 
   // Subscription options with debouncing for query updates
   const subscriptionOptions = useMemo(() => ({
@@ -229,57 +297,80 @@ export function useCacheQuery<
 
   // Refetch function to manually reload the query
   const refetch = useCallback(async (): Promise<V[]> => {
+    const currentQuery = queryRef.current;
+    const currentLocations = locationsRef.current;
+    const currentAllMethod = allMethodRef.current;
+    const currentCache = cacheRef.current;
+    
     logger.debug('QUERY_CACHE: useCacheQuery.refetch() called', {
-      query: JSON.stringify(query),
-      locations: JSON.stringify(locations),
-      hasAllMethod: !!allMethod,
-      hasCache: !!cache
+      query: JSON.stringify(currentQuery),
+      locations: JSON.stringify(currentLocations),
+      hasAllMethod: !!currentAllMethod,
+      hasCache: !!currentCache
     });
     
-    if (!cache && !allMethod) {
+    if (!currentCache && !currentAllMethod) {
       logger.debug('QUERY_CACHE: No cache or allMethod available for refetch', {});
       return [];
     }
 
+    // Increment request ID to track this specific request
+    const currentRequestId = ++requestIdRef.current;
+
     setIsLoading(true);
     try {
       let results: V[] | null = null;
-      if (allMethod) {
-        logger.debug('QUERY_CACHE: Refetching using allMethod', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-        const result = await allMethod(query, locations);
+      if (currentAllMethod) {
+        logger.debug('QUERY_CACHE: Refetching using allMethod', {
+          query: JSON.stringify(currentQuery),
+          locations: JSON.stringify(currentLocations)
+        });
+        const result = await currentAllMethod(currentQuery, currentLocations);
         // Handle AllOperationResult or array
         if (result && typeof result === 'object' && 'items' in result) {
           results = (result as AllOperationResult<V>).items;
         } else if (Array.isArray(result)) {
           results = result;
         }
-      } else if (cache) {
-        logger.debug('QUERY_CACHE: Refetching using cache.operations.all()', { query: JSON.stringify(query), locations: JSON.stringify(locations) });
-        const result = await cache.operations.all(query, locations);
+      } else if (currentCache) {
+        logger.debug('QUERY_CACHE: Refetching using cache.operations.all()', {
+          query: JSON.stringify(currentQuery),
+          locations: JSON.stringify(currentLocations)
+        });
+        const result = await currentCache.operations.all(currentQuery, currentLocations);
         results = result.items;
       } else {
         results = null;
       }
-      logger.debug('QUERY_CACHE: Refetch completed', {
-        itemCount: results?.length || 0,
-        query: JSON.stringify(query),
-        locations: JSON.stringify(locations)
-      });
-      setItems(results || []);
+      
+      // Only update state if this is still the current request and component is mounted
+      if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+        logger.debug('QUERY_CACHE: Refetch completed', {
+          itemCount: results?.length || 0,
+          query: JSON.stringify(currentQuery),
+          locations: JSON.stringify(currentLocations)
+        });
+        setItems(results || []);
+        setIsLoading(false);
+      }
+      
       return results || [];
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('QUERY_CACHE: Error refetching query', {
         error: errorMessage,
-        query: JSON.stringify(query),
-        locations: JSON.stringify(locations)
+        query: JSON.stringify(currentQuery),
+        locations: JSON.stringify(currentLocations)
       });
       console.error('Error refetching query:', error);
+      
+      if (currentRequestId === requestIdRef.current && isMountedRef.current) {
+        setIsLoading(false);
+      }
+      
       return [];
-    } finally {
-      setIsLoading(false);
     }
-  }, [cache, allMethod, queryString, locationsString]); // Use stable strings
+  }, []); // No dependencies needed - uses refs for all values
 
   return {
     items,
