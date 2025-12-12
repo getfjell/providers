@@ -253,8 +253,21 @@ export const CItemLoad = <
         logger.trace('action', { itemKey: abbrevIK(itemKey), actionName, params });
         const retItem = await actionItem(itemKey, actionName, params);
         return retItem;
-      } catch (error) {
-        logger.error(`${name}: Error executing action '${actionName}'`, error);
+      } catch (error: any) {
+        logger.error(`${name}: Error executing action '${actionName}'`, {
+          component: 'providers',
+          subcomponent: 'CItemLoad',
+          provider: name,
+          operation: 'action',
+          action: actionName,
+          params: JSON.stringify(params),
+          itemKey: JSON.stringify(itemKey),
+          errorType: error?.constructor?.name,
+          errorMessage: error?.message,
+          errorCode: error?.code || error?.errorInfo?.code,
+          suggestion: 'Check action name, item state, and action implementation',
+          stack: error?.stack
+        });
         throw error;
       } finally {
         setIsUpdating(false);
