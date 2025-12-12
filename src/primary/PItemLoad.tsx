@@ -52,7 +52,14 @@ export const PItemLoad = <
   // Validate that both ik and item are not provided at the same time
   if (ik !== undefined && providedItem !== undefined) {
     const errorMessage = `${name}: Cannot provide both 'ik' and 'item' parameters. Please provide only one.`;
-    logger.error(errorMessage);
+    logger.error(errorMessage, {
+      component: 'PItemLoad',
+      provider: name,
+      reason: 'Ambiguous props - both ik and item provided',
+      ik: JSON.stringify(ik),
+      item: JSON.stringify(providedItem),
+      suggestion: 'Remove either the ik prop or the item prop. Use ik to load by key, or item to provide pre-loaded data.'
+    });
     throw new Error(errorMessage);
   }
 
