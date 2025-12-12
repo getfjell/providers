@@ -207,7 +207,16 @@ export const CItemsProvider = <
       }
     } else {
       logger.error(`${name}: No parent locations present to query for allAction containeditems`,
-        { action, body });
+        {
+          component: 'CItemsProvider',
+          operation: 'allAction',
+          provider: name,
+          action,
+          body,
+          reason: 'parentLocations is null or undefined',
+          suggestion: 'Ensure CItemsProvider is properly nested within a parent provider that sets locations',
+          currentLocations: parentLocations
+        });
       throw new Error(`No parent locations present to query for allAction containeditems in ${name}`);
     }
   }, [allActionItem, parentLocations]);
@@ -224,7 +233,16 @@ export const CItemsProvider = <
       }
     }
     const errorMessage = `${name}: No parent locations present to query for allFacet containeditems`;
-    logger.error(errorMessage, { facet, params });
+    logger.error(errorMessage, {
+      component: 'CItemsProvider',
+      operation: 'allFacet',
+      provider: name,
+      facet,
+      params,
+      reason: 'parentLocations is null or undefined',
+      suggestion: 'Ensure CItemsProvider is properly nested within a parent provider that sets locations',
+      currentLocations: parentLocations
+    });
     throw new Error(errorMessage);
   }, [allFacetItem, parentLocations]);
 
@@ -241,23 +259,45 @@ export const CItemsProvider = <
           const result = await actionItem(key, action, body);
           return result;
         } catch (error: any) {
-          // Simple string-based logging to avoid serialization issues
+          // Structured error logging for agentic/MCP debugging
           const errorMsg = error?.message || String(error);
           const errorCode = error?.fjellError?.code || error?.errorInfo?.code || error?.code;
           const validOpts = error?.fjellError?.details?.validOptions || error?.errorInfo?.details?.validOptions;
+          const suggestedAction = error?.fjellError?.details?.suggestedAction || error?.errorInfo?.details?.suggestedAction;
 
-          console.error(
-            `${name}: Error in action "${action}":`,
-            `Message: ${errorMsg}`,
-            errorCode ? `Code: ${errorCode}` : '',
-            validOpts ? `Valid options: ${validOpts.join(', ')}` : ''
-          );
+          logger.error(`${name}: Action operation failed`, {
+            component: 'CItemsProvider',
+            operation: 'action',
+            provider: name,
+            action,
+            key: JSON.stringify(key),
+            body: JSON.stringify(body),
+            parentLocations: JSON.stringify(parentLocations),
+            errorType: error?.constructor?.name || typeof error,
+            errorMessage: errorMsg,
+            errorCode,
+            validOptions: validOpts,
+            suggestedAction,
+            suggestion: suggestedAction || (validOpts ? `Try one of: ${validOpts.join(', ')}` : 'Check action name, permissions, and item state'),
+            stack: error?.stack
+          });
           throw error;
         } finally {
           setIsUpdating(false);
         }
       } else {
-        throw new Error(`No parent locations present to query for action ${action} in ${name}`);
+        const errorMessage = `No parent locations present to query for action ${action} in ${name}`;
+        logger.error(errorMessage, {
+          component: 'CItemsProvider',
+          operation: 'action',
+          provider: name,
+          action,
+          key: JSON.stringify(key),
+          reason: 'parentLocations is null or undefined',
+          suggestion: 'Ensure CItemsProvider is properly nested within a parent provider that sets locations',
+          currentLocations: parentLocations
+        });
+        throw new Error(errorMessage);
       }
     }, [actionItem, parentLocations]);
 
