@@ -53,6 +53,18 @@ export function useProviderOperation<T extends (...args: any[]) => Promise<any>>
       options?.onSuccess?.(res);
       return res;
     } catch (err: any) {
+      // Log structured error for debugging
+      console.error('Provider operation failed:', {
+        component: 'providers',
+        hook: 'useProviderOperation',
+        operation: operation.name || 'unknown',
+        errorType: err?.constructor?.name,
+        errorMessage: err?.message,
+        errorCode: err?.code || err?.errorInfo?.code || err?.fjellError?.code,
+        throwOnError: options?.throwOnError,
+        suggestion: 'Check operation implementation, network connectivity, and error handling'
+      });
+      
       // Transform error to UserError
       const userError = transformer.transform(err, {
         operation: operation.name || 'unknown'
