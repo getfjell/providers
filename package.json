@@ -31,10 +31,10 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.59",
-    "@fjell/client-api": "^4.4.66",
-    "@fjell/core": "^4.4.70",
-    "@fjell/logging": "^4.4.62",
+    "@fjell/cache": "^4.7.61",
+    "@fjell/client-api": "^4.4.68",
+    "@fjell/core": "^4.4.73",
+    "@fjell/logging": "^4.4.65",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
@@ -44,7 +44,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.38.0",
-    "@fjell/common-config": "^1.1.31",
+    "@fjell/common-config": "^1.1.36",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
