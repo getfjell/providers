@@ -18,11 +18,29 @@ export const useAsyncError = () => {
   }
 
   const throwAsyncError = useCallback((error: Error) => {
+    // Log structured error information for agentic debugging
+    const errorInfo = {
+      component: 'useAsyncError',
+      operation: 'throwAsyncError',
+      errorType: error.constructor?.name || typeof error,
+      errorMessage: error.message,
+      errorCode: (error as any).code || (error as any).errorInfo?.code || (error as any).fjellError?.code,
+      suggestion: 'This error will be caught by React Error Boundary. Check component error boundaries and error fallback UI.',
+      stack: error.stack
+    };
+    
+    console.error('Async error being converted to sync error for Error Boundary:', JSON.stringify(errorInfo, null, 2));
+    
     setError(error);
 
     // Transform to UserError for display
     const transformed = defaultErrorTransformer.transform(error);
     setUserError(transformed);
+    
+    console.error('User-friendly error message:', transformed.message);
+    if (transformed.suggestedAction) {
+      console.error('Suggested action:', transformed.suggestedAction);
+    }
   }, []);
 
   const clearError = useCallback(() => {
@@ -47,9 +65,33 @@ export const withAsyncErrorHandling = <T extends any[], R>(
       return await asyncFn(...args);
     } catch (error) {
       if (!optional) {
-        // Safely convert unknown error to Error instance
+        // Log structured error information for agentic debugging
         const errorInstance = error instanceof Error ? error : new Error(String(error));
+        const errorInfo = {
+          component: 'withAsyncErrorHandling',
+          operation: 'async-wrapper',
+          optional,
+          errorType: errorInstance.constructor?.name || typeof errorInstance,
+          errorMessage: errorInstance.message,
+          errorCode: error && typeof error === 'object'
+            ? ((error as any).code || (error as any).errorInfo?.code || (error as any).fjellError?.code)
+            : void 0,
+          suggestion: 'Error caught in async operation wrapper. Will be propagated to Error Boundary.',
+          stack: errorInstance.stack
+        };
+        console.error('Async operation error:', JSON.stringify(errorInfo, null, 2));
+        
         throwAsyncError(errorInstance);
+      } else {
+        // For optional operations, log but don't throw
+        const errorInstance = error instanceof Error ? error : new Error(String(error));
+        console.warn('Optional async operation failed (suppressed):', {
+          component: 'withAsyncErrorHandling',
+          optional: true,
+          errorType: errorInstance.constructor?.name || typeof errorInstance,
+          errorMessage: errorInstance.message,
+          note: 'This error was suppressed because the operation is optional'
+        });
       }
       return null;
     }
