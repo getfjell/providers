@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Cache } from '@fjell/cache';
-import { Item } from '@fjell/core';
+import { Item } from '@fjell/types';
 import { CacheEventListener, CacheSubscription, CacheSubscriptionOptions } from '@fjell/cache';
 
 /**

@@ -1,5 +1,5 @@
  
-import { Item } from "@fjell/core";
+import { Item } from "@fjell/types";
 import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { useAItemAdapter } from '../src/AItemAdapter';

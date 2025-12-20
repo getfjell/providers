@@ -3,7 +3,7 @@ import * as React from 'react';
 import { PItemsFind } from '../../src/primary/PItemsFind';
 import { ContextType as PItemAdapterContextType } from '../../src/primary/PItemAdapter';
 import { ContextType as PItemsContextType } from '../../src/primary/PItems';
-import { ComKey, Item, PriKey, UUID } from '@fjell/core';
+import { ComKey, Item, PriKey, UUID } from "@fjell/types";
 import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';

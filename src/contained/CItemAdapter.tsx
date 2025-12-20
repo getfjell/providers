@@ -2,17 +2,8 @@
 /* eslint-disable no-undefined */
 import LibLogger from "../logger";
 import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";
-import {
-  abbrevIK, abbrevLKA, abbrevQuery,
-  AllOperationResult,
-  AllOptions,
-  ComKey,
-  CreateOptions,
-  FindOperationResult,
-  FindOptions,
-  Item,
-  ItemQuery, LocKey, LocKeyArray, OperationParams, PriKey
-} from "@fjell/core";
+import { AllOperationResult, AllOptions, ComKey, CreateOptions, FindOperationResult, FindOptions, Item, ItemQuery, LocKey, LocKeyArray, OperationParams, PriKey } from "@fjell/types";
+import { abbrevIK, abbrevLKA, abbrevQuery } from "@fjell/core";
 import * as React from "react";
 import * as AItem from "../AItem";
 import * as AItemAdapter from "../AItemAdapter";

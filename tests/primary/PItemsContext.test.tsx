@@ -1,5 +1,6 @@
  
-import { cPK, Item, PriKey } from '@fjell/core';
+import { Item, PriKey } from "@fjell/types";
+import { cPK } from "@fjell/core";
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';
 import * as PItems from '../../src/primary/PItems';

@@ -1,5 +1,5 @@
 
-import { Item, PriKey } from "@fjell/core";
+import { Item, PriKey } from "@fjell/types";
 import { Cache } from "@fjell/cache";
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';

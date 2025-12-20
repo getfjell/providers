@@ -2,7 +2,7 @@ import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cache } from '@fjell/cache';
-import { Item } from '@fjell/core';
+import { Item } from "@fjell/types";
 import { PItemAdapter, useCacheSubscription } from '../src';
 
 // Mock logger to avoid console noise in tests

@@ -2,7 +2,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { FacetParams } from "./types";
 import { createStableHash } from "./utils";
-import { LocKeyArray } from "@fjell/core";
+import { LocKeyArray } from "@fjell/types";
 
 export type FacetMethod<
   L1 extends string = never,

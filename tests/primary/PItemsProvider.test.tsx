@@ -1,4 +1,4 @@
-import { AllOperationResult, Item, PriKey } from '@fjell/core';
+import { AllOperationResult, Item, PriKey } from "@fjell/types";
 import { act, render, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

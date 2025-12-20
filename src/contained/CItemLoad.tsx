@@ -1,18 +1,8 @@
 /* eslint-disable no-undefined */
 import * as AItem from "../AItem";
 import LibLogger from "../logger";
-import {
-  abbrevIK,
-  ComKey,
-  ikToLKA,
-  isComKey,
-  isValidComKey,
-  Item,
-  LocKey,
-  LocKeyArray,
-  OperationParams,
-  PriKey,
-} from "@fjell/core";
+import { ComKey, Item, LocKey, LocKeyArray, OperationParams, PriKey } from "@fjell/types";
+import { abbrevIK, ikToLKA, isComKey, isValidComKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 import * as CItemAdapter from "./CItemAdapter";

@@ -1,14 +1,8 @@
 /* eslint-disable no-undefined */
 import * as AItem from "../AItem";
 import LibLogger from "../logger";
-import {
-  abbrevLKA,
-  abbrevQuery,
-  ComKey,
-  Item,
-  ItemQuery,
-  PriKey,
-} from "@fjell/core";
+import { ComKey, Item, ItemQuery, PriKey } from "@fjell/types";
+import { abbrevLKA, abbrevQuery } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 import { createStableHash } from '../utils';

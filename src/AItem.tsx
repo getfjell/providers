@@ -1,8 +1,12 @@
 import {
   AffectedKeys,
-  OperationParams
-} from "@fjell/core";
-import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PriKey } from "@fjell/core";
+  AllItemTypeArrays,
+  ComKey,
+  Item,
+  LocKeyArray,
+  OperationParams,
+  PriKey
+} from "@fjell/types";
 import * as Faceted from "./Faceted";
 import * as React from "react";
 

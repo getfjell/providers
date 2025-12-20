@@ -2,7 +2,7 @@
  * Common type aliases to reduce repetition and improve maintainability
  */
 
-import { Item, LocKeyArray } from "@fjell/core";
+import { Item, LocKeyArray } from "@fjell/types";
 
 /**
  * Commonly used parameter type for facet operations

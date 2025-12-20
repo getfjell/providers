@@ -1,5 +1,6 @@
 
-import { abbrevLKA, abbrevQuery, AllOptions, Item, ItemQuery, PaginationMetadata } from "@fjell/core";
+import { AllOptions, Item, ItemQuery, PaginationMetadata } from "@fjell/types";
+import { abbrevLKA, abbrevQuery } from "@fjell/core";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 

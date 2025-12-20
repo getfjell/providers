@@ -1,4 +1,4 @@
-import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PaginationMetadata, PriKey } from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, PaginationMetadata, PriKey } from "@fjell/types";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 

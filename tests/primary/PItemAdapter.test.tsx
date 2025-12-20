@@ -1,7 +1,7 @@
  
 import * as React from 'react';
 import { Adapter, ContextType, usePItemAdapter } from '../../src/primary/PItemAdapter';
-import { AllOperationResult, ComKey, Item, ItemQuery, PriKey, UUID } from '@fjell/core';
+import { AllOperationResult, ComKey, Item, ItemQuery, PriKey, UUID } from "@fjell/types";
 import { vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { ReactNode } from 'react';

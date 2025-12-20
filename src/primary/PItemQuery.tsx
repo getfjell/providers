@@ -1,11 +1,7 @@
 
 import LibLogger from "../logger";
-import {
-  abbrevQuery,
-  Item,
-  ItemQuery,
-  PriKey,
-} from "@fjell/core";
+import { Item, ItemQuery, PriKey } from "@fjell/types";
+import { abbrevQuery } from "@fjell/core";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import { createStableHash } from '../utils';

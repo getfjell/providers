@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Cache } from '@fjell/cache';
-import { Item, PriKey } from '@fjell/core';
+import { Item, PriKey } from "@fjell/types";
 import {
   PItem,
   PItemAdapter,
