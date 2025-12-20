@@ -1,5 +1,6 @@
 import * as AItem from "../AItem";
-import { abbrevIK, abbrevLKA, ComKey, Item, LocKeyArray, PaginationMetadata, PriKey } from "@fjell/core";
+import { ComKey, Item, LocKeyArray, PaginationMetadata, PriKey } from "@fjell/types";
+import { abbrevIK, abbrevLKA } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 import { useCItemAdapter } from "./CItemAdapter";
 

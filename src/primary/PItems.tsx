@@ -1,7 +1,7 @@
 /* eslint-disable no-undefined */
 import * as React from "react";
 import * as AItems from "../AItems";
-import { Item } from "@fjell/core";
+import { Item } from "@fjell/types";
 
 export type ContextType<
   V extends Item<S>,

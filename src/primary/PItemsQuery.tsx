@@ -1,5 +1,5 @@
 
-import { AllOptions, Item, ItemQuery, PaginationMetadata } from "@fjell/core";
+import { AllOptions, Item, ItemQuery, PaginationMetadata } from "@fjell/types";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 

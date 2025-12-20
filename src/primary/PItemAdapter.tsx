@@ -1,5 +1,6 @@
 /* eslint-disable no-undefined */
-import { abbrevIK, AllItemTypeArrays, AllOperationResult, AllOptions, ComKey, FindOperationResult, FindOptions, Item, ItemQuery, LocKeyArray, OperationParams, PriKey } from "@fjell/core";
+import { AllItemTypeArrays, AllOperationResult, AllOptions, ComKey, FindOperationResult, FindOptions, Item, ItemQuery, LocKeyArray, OperationParams, PriKey } from "@fjell/types";
+import { abbrevIK } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo } from "react";
 
 import { AggregateConfig, Cache, createAggregator } from "@fjell/cache";

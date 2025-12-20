@@ -1,5 +1,5 @@
  
-import { Item } from '@fjell/core';
+import { Item } from "@fjell/types";
 import { render, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

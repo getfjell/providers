@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from '@fjell/core';
+import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from "@fjell/types";
 import { Cache } from '@fjell/cache';
 import { useCacheQuery } from '../../src/hooks/useCacheQuery';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Cache } from '@fjell/cache';
-import { Item, ItemQuery, PriKey } from '@fjell/core';
+import { Item, ItemQuery, PriKey } from "@fjell/types";
 import { useCacheItem, useCacheQuery } from '../src/hooks';
 
 // Example item type

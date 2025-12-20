@@ -1,7 +1,7 @@
 
 import * as React from 'react';
 import { Adapter, ContextType, useCItemAdapter } from '../../src/contained/CItemAdapter';
-import { ComKey, Item, LocKeyArray, PriKey, UUID } from '@fjell/core';
+import { ComKey, Item, LocKeyArray, PriKey, UUID } from "@fjell/types";
 import { vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';

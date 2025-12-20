@@ -1,15 +1,17 @@
 import {
   AffectedKeys,
+  AllItemTypeArrays,
   ActionOperationMethod as CoreActionMethod,
   FacetOperationMethod as CoreFacetMethod,
   FindMethod as CoreFindMethod,
   FindOneMethod as CoreFindOneMethod,
   RemoveMethod as CoreRemoveMethod,
   UpdateMethod as CoreUpdateMethod,
+  Item,
+  LocKeyArray,
   OperationParams,
-  PaginationMetadata,
-} from "@fjell/core";
-import { AllItemTypeArrays, Item, LocKeyArray } from "@fjell/core";
+  PaginationMetadata
+} from "@fjell/types";
 import * as React from "react";
 import * as AItemAdapter from "./AItemAdapter";
 import * as Faceted from "./Faceted";

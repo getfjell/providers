@@ -1,15 +1,7 @@
 /* eslint-disable no-undefined */
 import LibLogger from "../logger";
-import {
-  AllItemTypeArrays,
-  ComKey,
-  ikToLKA,
-  isValidPriKey,
-  Item,
-  LocKeyArray,
-  OperationParams,
-  PriKey,
-} from "@fjell/core";
+import { AllItemTypeArrays, ComKey, Item, LocKeyArray, OperationParams, PriKey } from "@fjell/types";
+import { ikToLKA, isValidPriKey } from "@fjell/core";
 import React, { createElement, useCallback, useEffect, useMemo, useState } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import * as PItem from "./PItem";

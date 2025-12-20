@@ -2,7 +2,7 @@
  
 import * as React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from '@fjell/core';
+import { ComKey, Item, ItemQuery, LocKeyArray, PriKey, UUID } from "@fjell/types";
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CItemQuery } from '../../src/contained/CItemQuery';
 import { CItemAdapterContextType } from '../../src/contained/CItemAdapterContext';

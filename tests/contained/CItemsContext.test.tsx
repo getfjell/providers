@@ -1,5 +1,5 @@
  
-import { ComKey, Item, PriKey, UUID } from '@fjell/core';
+import { ComKey, Item, PriKey, UUID } from "@fjell/types";
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
