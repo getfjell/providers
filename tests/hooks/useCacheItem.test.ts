@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Cache } from '@fjell/cache';
-import { ComKey, Item, PriKey } from '@fjell/core';
+import { ComKey, Item, PriKey } from "@fjell/types";
 import { useCacheItem } from '../../src/hooks/useCacheItem';
 
 // Mock logger to avoid console noise in tests

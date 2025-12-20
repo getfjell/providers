@@ -1,4 +1,4 @@
-import { Item } from "@fjell/core";
+import { Item } from "@fjell/types";
 import React, { useEffect, useMemo } from "react";
 import { usePItemAdapter } from "./PItemAdapter";
 import { createStableHash } from '../utils';

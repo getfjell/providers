@@ -1,5 +1,5 @@
  
-import { ComKey, Item, LocKeyArray, UUID } from '@fjell/core';
+import { ComKey, Item, LocKeyArray, UUID } from "@fjell/types";
 import { render, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,6 +1,6 @@
 // @ts-nocheck
  
-import { AllOperationResult, AllOptions, ComKey, Item, ItemQuery, LocKeyArray, UUID } from '@fjell/core';
+import { AllOperationResult, AllOptions, ComKey, Item, ItemQuery, LocKeyArray, UUID } from "@fjell/types";
 import * as React from 'react';
 import { act, render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

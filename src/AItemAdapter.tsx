@@ -15,7 +15,7 @@ import {
   UpdateMethod as CoreUpdateMethod,
   Item,
   PriKey,
-} from "@fjell/core";
+} from "@fjell/types";
 import React from "react";
 import * as AItem from "./AItem";
 import * as AItems from "./AItems";

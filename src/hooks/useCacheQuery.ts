@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Cache, CacheEventType, normalizeKeyValue } from '@fjell/cache';
-import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/core';
+import { AllOperationResult, ComKey, Item, ItemQuery, LocKeyArray, PriKey } from '@fjell/types';
 import { useCacheSubscription } from './useCacheSubscription';
 import { createStableHash, deepEqual } from '../utils';
 import LibLogger from '../logger';

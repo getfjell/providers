@@ -1,5 +1,5 @@
  
-import { Item } from '@fjell/core';
+import { Item } from "@fjell/types";
 import { renderHook } from '@testing-library/react';
 import * as React from 'react';
 import * as PItem from '../../src/primary/PItem';

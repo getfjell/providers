@@ -1,6 +1,6 @@
 /* eslint-disable no-undefined */
 import * as AItems from "../AItems";
-import { Item } from "@fjell/core";
+import { Item } from "@fjell/types";
 import * as React from "react";
 
 export interface ContextType<

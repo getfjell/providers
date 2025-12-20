@@ -1,5 +1,5 @@
 /* eslint-disable no-undefined */
-import { Item } from "@fjell/core";
+import { Item } from "@fjell/types";
 import * as React from "react";
 import * as AItem from "../AItem";
 
