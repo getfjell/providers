@@ -1,7 +1,7 @@
 {
   "name": "@fjell/providers",
   "description": "Providers for Fjell",
-  "version": "4.5.88",
+  "version": "4.5.89",
   "license": "Apache-2.0",
   "keywords": [
     "react-providers",
@@ -31,11 +31,11 @@
     "docs:test": "cd docs && npm run test"
   },
   "dependencies": {
-    "@fjell/cache": "^4.7.63",
-    "@fjell/client-api": "^4.4.70",
-    "@fjell/core": "^4.4.76",
-    "@fjell/logging": "^4.4.66",
-    "@fjell/types": "^4.4.6",
+    "@fjell/cache": "^4.7.64",
+    "@fjell/client-api": "^4.4.71",
+    "@fjell/core": "^4.4.77",
+    "@fjell/logging": "^4.4.67",
+    "@fjell/types": "^4.4.7",
     "react-error-boundary": "^6.0.0"
   },
   "peerDependencies": {
@@ -45,7 +45,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.38.0",
-    "@fjell/common-config": "^1.1.36",
+    "@fjell/common-config": "^1.1.37",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
@@ -65,6 +65,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/getfjell/providers.git"
+    "url": "git+https://github.com/fjellgrunn/providers.git"
   }
 }
