@@ -65,6 +65,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/getfjell/providers.git"
+    "url": "git+https://github.com/fjellgrunn/providers.git"
   }
 }
