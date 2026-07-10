@@ -327,6 +327,100 @@ describe("useCacheQuery edge cases", () => {
       expect(result.current.items[0].name).toBe("item2");
     });
 
+    it("should update in-place on item_updated for items already in results (issue #127)", async () => {
+      const items = [
+        { key: { kt: "test", pk: "1" }, name: "item1", value: 1 },
+        { key: { kt: "test", pk: "2" }, name: "item2", value: 2 }
+      ];
+      const updated = { key: { kt: "test", pk: "1" }, name: "item1-updated", value: 99 };
+
+      mockOperations.all.mockResolvedValue({ items, metadata: { total: 2 } });
+
+      const { result } = renderHook(() =>
+        useCacheQuery(mockCache, {}, [])
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      expect(result.current.items[0].name).toBe("item1");
+
+      await act(async () => {
+        const handlers = eventListeners.get('all') || new Set();
+        handlers.forEach(handler => {
+          handler({
+            type: 'item_updated',
+            key: { kt: "test", pk: "1" },
+            item: updated
+          });
+        });
+      });
+
+      expect(result.current.items).toHaveLength(2);
+      expect(result.current.items[0]).toEqual(updated);
+      expect(result.current.items[1].name).toBe("item2");
+      // Must not trigger a re-query (avoids infinite loops)
+      expect(mockOperations.all).toHaveBeenCalledTimes(1);
+    });
+
+    it("should not append unknown keys on item_updated (membership via query_invalidated)", async () => {
+      const items = [{ key: { kt: "test", pk: "1" }, name: "item1" }];
+      const outsider = { key: { kt: "test", pk: "99" }, name: "outsider" };
+
+      mockOperations.all.mockResolvedValue({ items, metadata: { total: 1 } });
+
+      const { result } = renderHook(() =>
+        useCacheQuery(mockCache, {}, [])
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      await act(async () => {
+        const handlers = eventListeners.get('all') || new Set();
+        handlers.forEach(handler => {
+          handler({
+            type: 'item_updated',
+            key: outsider.key,
+            item: outsider
+          });
+        });
+      });
+
+      expect(result.current.items).toEqual(items);
+    });
+
+    it("should update in-place on item_set for items already in results", async () => {
+      const items = [{ key: { kt: "test", pk: "1" }, name: "old" }];
+      const setItem = { key: { kt: "test", pk: "1" }, name: "new" };
+
+      mockOperations.all.mockResolvedValue({ items, metadata: { total: 1 } });
+
+      const { result } = renderHook(() =>
+        useCacheQuery(mockCache, {}, [])
+      );
+
+      await act(async () => {
+        await vi.runAllTimersAsync();
+      });
+
+      await act(async () => {
+        const handlers = eventListeners.get('all') || new Set();
+        handlers.forEach(handler => {
+          handler({
+            type: 'item_set',
+            key: setItem.key,
+            item: setItem
+          });
+        });
+      });
+
+      expect(result.current.items[0]).toEqual(setItem);
+      expect(mockOperations.all).toHaveBeenCalledTimes(1);
+    });
+
     it("should clear items on cache_cleared event", async () => {
       const items = [{ key: { kt: "test", pk: "1" }, name: "item" }];
       

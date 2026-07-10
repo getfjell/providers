@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Cache } from '@fjell/cache';
 import { Item } from '@fjell/types';
 import { CacheEventListener, CacheSubscription, CacheSubscriptionOptions } from '@fjell/cache';
+import { createStableHash } from '../utils';
 
 /**
  * React hook for subscribing to cache events
@@ -28,7 +29,7 @@ export function useCacheSubscription<
   const listenerRef = useRef<CacheEventListener<V, S, L1, L2, L3, L4, L5>>(listener);
   const optionsRef = useRef(options);
 
-  // Update refs when props change but don't recreate subscription
+  // Keep refs current without forcing resubscribe on identity-only changes
   listenerRef.current = listener;
   optionsRef.current = options;
 
@@ -37,9 +38,14 @@ export function useCacheSubscription<
     listenerRef.current(event);
   }, []);
 
+  // Content-stable key so we resubscribe when filters change, not on object identity
+  const optionsKey = useMemo(
+    () => (options == null ? 'null' : createStableHash(options)),
+    [options]
+  );
+
   useEffect(() => {
     if (!cache) {
-      // Clear any existing subscription if cache becomes null
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
@@ -47,23 +53,22 @@ export function useCacheSubscription<
       return;
     }
 
-    // Subscribe to cache events with stable options
-    const subscriptionOptions = optionsRef.current ? {
-      ...optionsRef.current,
+    const currentOptions = optionsRef.current;
+    const subscriptionOptions = currentOptions ? {
+      ...currentOptions,
       // eslint-disable-next-line no-undefined
-      eventTypes: optionsRef.current.eventTypes ? [...optionsRef.current.eventTypes] : undefined
+      eventTypes: currentOptions.eventTypes ? [...currentOptions.eventTypes] : undefined
     } : {};
 
     subscriptionRef.current = cache.subscribe(stableListener, subscriptionOptions);
 
-    // Cleanup subscription on unmount or cache change
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
     };
-  }, [cache, stableListener]); // Only recreate when cache changes, not when options change
+  }, [cache, stableListener, optionsKey]);
 
   return subscriptionRef.current;
 }

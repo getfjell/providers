@@ -618,14 +618,14 @@ describe('useCacheItem', () => {
         expect.objectContaining({ keys: [key1] })
       );
 
-      // Change key - subscription should not be recreated, only options updated internally
+      // Change key — must resubscribe so event filters track the new key (issue #128)
       rerender({ key: key2 });
 
-      // The subscription should only be called once (when cache was first provided)
-      expect(mockCache.subscribe).toHaveBeenCalledTimes(1);
-
-      // The subscription options are updated internally without recreating the subscription
-      // This is the correct behavior to prevent infinite loops
+      expect(mockCache.subscribe).toHaveBeenCalledTimes(2);
+      expect(mockCache.subscribe).toHaveBeenLastCalledWith(
+        expect.any(Function),
+        expect.objectContaining({ keys: [key2] })
+      );
     });
 
     it('should reload item from cache when key changes', async () => {

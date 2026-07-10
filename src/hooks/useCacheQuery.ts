@@ -190,12 +190,31 @@ export function useCacheQuery<
         break;
 
       case 'item_created':
-      case 'item_updated':
       case 'item_retrieved':
+        // Membership / full-list refresh is driven by query_invalidated from
+        // create/update/remove/set ops. Re-querying here on item_retrieved would
+        // risk loops when all()/get() populate the item cache.
+        break;
+
+      case 'item_updated':
       case 'item_set':
-        // TODO: Re-enable automatic re-querying after fixing infinite loop issues
-        // For now, we rely on explicit cache invalidation to avoid infinite loops
-        // This means query results may become stale until manually refreshed
+        // Safe in-place refresh for items already in the result set (issue #127).
+        // Does not append/remove membership — that still comes from query_invalidated.
+        if (event.item && event.key) {
+          setItems(prevItems => {
+            const eventKeyHash = normalizeKey(event.key);
+            const idx = prevItems.findIndex(item => normalizeKey(item.key) === eventKeyHash);
+            if (idx === -1) {
+              return prevItems;
+            }
+            if (prevItems[idx] === event.item) {
+              return prevItems;
+            }
+            const next = prevItems.slice();
+            next[idx] = event.item;
+            return next;
+          });
+        }
         break;
 
       case 'item_removed':
