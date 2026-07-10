@@ -58,8 +58,8 @@
     "esbuild": "0.28.1",
     "eslint": "^9.39.4",
     "jsdom": "^27.4.0",
-    "react": "^19.1.2",
-    "react-dom": "^19.1.2",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
