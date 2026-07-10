@@ -38,8 +38,8 @@ export const useAsyncError = () => {
     setUserError(transformed);
     
     console.error('User-friendly error message:', transformed.message);
-    if (transformed.suggestedAction) {
-      console.error('Suggested action:', transformed.suggestedAction);
+    if (transformed.details?.code) {
+      console.error('Error code:', transformed.details.code);
     }
   }, []);
 

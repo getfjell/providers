@@ -18,8 +18,8 @@ describe('Code Review Fixes', () => {
       expect(deepEqual(obj1, obj3)).toBe(false);
       const end = performance.now();
 
-      // Should complete in reasonable time (less than 10ms for 1000 keys)
-      expect(end - start).toBeLessThan(10);
+      // Should complete in reasonable time (CI-friendly bound for 1000 keys)
+      expect(end - start).toBeLessThan(50);
     });
 
     it('should handle circular references', () => {

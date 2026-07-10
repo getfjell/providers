@@ -180,6 +180,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     return result;
   }, [setItem]);
 
+  // Primary collection methods are PriKey-scoped; core method types also allow ComKey.
   const contextValue: PItems.ContextType<V, S> = {
     name,
     pkTypes: pkTypes as AllItemTypeArrays<S>,
@@ -202,7 +203,7 @@ export const PItemsProvider = <V extends Item<S>, S extends string>(
     set,
     action,
     facet,
-  };
+  } as PItems.ContextType<V, S>;
 
   contextValue.allActions = useMemo(() => addAllActions && addAllActions(contextValue.allAction), [addAllActions, contextValue.allAction]);
   contextValue.allFacets = useMemo(() => addAllFacets && addAllFacets(contextValue.allFacet), [addAllFacets, contextValue.allFacet]);

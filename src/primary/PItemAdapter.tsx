@@ -418,6 +418,8 @@ export const Adapter = <
     return newItem as V;
   }, [ensureCache]);
 
+  // Primary adapters accept PriKey; core Get/Update/etc. also allow ComKey with empty locs.
+  // Cast keeps ContextType assignable without widening primary-only call sites.
   const contextValue: ContextType<V, S> = useMemo(() => ({
     name,
     pkTypes: pkTypes || (['placeholder' as S] as AllItemTypeArrays<S>),
@@ -440,7 +442,7 @@ export const Adapter = <
     addFacets,
     addAllActions,
     addAllFacets,
-  }), [
+  } as ContextType<V, S>), [
     name,
     pkTypes,
     resolvedSourceCache,

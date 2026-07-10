@@ -37,6 +37,7 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
   }
 ) => {
   const [itemKey, setItemKey] = React.useState<PriKey<S> | null>(null);
+  const setPrimaryItemKey = (key: Item<S>['key']) => setItemKey(key as PriKey<S>);
   const [queryRunning, setQueryRunning] = React.useState<boolean>(true);
   const { throwAsyncError } = useAsyncError();
 
@@ -63,13 +64,13 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
           const item = await oneItem(query);
           if (item) {
             logger.default(`${name}: Setting Item Key After oneItem`, { itemKey: item.key });
-            setItemKey(item.key);
+            setPrimaryItemKey(item.key);
             setQueryRunning(false);
           } else if (create) {
             logger.default(`${name}: Creating new item`, { create });
             const newItem = await createItem(create);
             logger.default(`${name}: Setting Item Key After createItem`, { itemKey: newItem.key });
-            setItemKey(newItem.key);
+            setPrimaryItemKey(newItem.key);
             setQueryRunning(false);
           } else {
             if (!optional) {
@@ -86,7 +87,7 @@ export const PItemQuery = <V extends Item<S>, S extends string>({
             logger.default(`${name}: Creating new item after exception throw for NotFound`, { err, create });
             const newItem = await createItem(create);
             logger.default(`${name}: Setting Item Key After createItem during Exception`, { itemKey: newItem.key });
-            setItemKey(newItem.key);
+            setPrimaryItemKey(newItem.key);
             setQueryRunning(false);
           } else {
             if (!optional) {

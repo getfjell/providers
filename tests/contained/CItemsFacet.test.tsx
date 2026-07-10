@@ -89,7 +89,9 @@ describe('CItemsFacet', () => {
     });
   });
 
-  const defaultProps = {
+  // Built per-test so context/adapter refs from beforeEach are live React contexts
+  // (Vitest 4.1 JSX runtime no longer lets createElement spies paper over undefined.Provider).
+  const getDefaultProps = () => ({
     name: 'test-facet',
     adapter: mockAdapter,
     context: mockCItemsContext,
@@ -98,10 +100,10 @@ describe('CItemsFacet', () => {
     parentContextName: 'TestParentContext',
     facet: 'testFacet',
     facetParams: { param1: 'value1', param2: 42 },
-  };
+  });
 
   it('should render CItemsProvider with correct props', () => {
-    render(<CItemsFacet {...defaultProps} />);
+    render(<CItemsFacet {...getDefaultProps()} />);
 
     expect(CItemsProvider).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -115,7 +117,7 @@ describe('CItemsFacet', () => {
   });
 
   it('should call allFacet with correct parameters when all required data is present', async () => {
-    render(<CItemsFacet {...defaultProps} />);
+    render(<CItemsFacet {...getDefaultProps()} />);
 
     // Wait for the effect to run
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -131,7 +133,7 @@ describe('CItemsFacet', () => {
     const mockResult = { data: 'facet-result' };
     mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-    render(<CItemsFacet {...defaultProps} />);
+    render(<CItemsFacet {...getDefaultProps()} />);
 
     // Wait for the effect to complete
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -156,7 +158,7 @@ describe('CItemsFacet', () => {
   });
 
   it('should not call allFacet when facet is missing', () => {
-    const propsWithoutFacet = { ...defaultProps };
+    const propsWithoutFacet = { ...getDefaultProps() };
     delete (propsWithoutFacet as any).facet;
 
     render(<CItemsFacet {...propsWithoutFacet} facet="" />);
@@ -171,7 +173,7 @@ describe('CItemsFacet', () => {
     };
     vi.spyOn(AItem, 'useAItem').mockReturnValue(mockAItemContextWithoutLocations as any);
 
-    render(<CItemsFacet {...defaultProps} />);
+    render(<CItemsFacet {...getDefaultProps()} />);
 
     expect(mockCItemAdapterContext.allFacet).not.toHaveBeenCalled();
   });
@@ -179,13 +181,13 @@ describe('CItemsFacet', () => {
   it('should not call allFacet when adapterContext is null', () => {
     vi.spyOn(CItemAdapter, 'useCItemAdapter').mockReturnValue(null as any);
 
-    render(<CItemsFacet {...defaultProps} />);
+    render(<CItemsFacet {...getDefaultProps()} />);
 
     expect(mockCItemAdapterContext.allFacet).not.toHaveBeenCalled();
   });
 
   it('should handle default facetParams when not provided', async () => {
-    const propsWithoutFacetParams = { ...defaultProps };
+    const propsWithoutFacetParams = { ...getDefaultProps() };
     delete (propsWithoutFacetParams as any).facetParams;
 
     render(<CItemsFacet {...propsWithoutFacetParams} />);
@@ -200,14 +202,14 @@ describe('CItemsFacet', () => {
   });
 
   it('should re-run effect when facet changes', async () => {
-    const { rerender } = render(<CItemsFacet {...defaultProps} />);
+    const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
     expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledTimes(1);
 
     // Change the facet
-    rerender(<CItemsFacet {...defaultProps} facet="newFacet" />);
+    rerender(<CItemsFacet {...getDefaultProps()} facet="newFacet" />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -220,7 +222,7 @@ describe('CItemsFacet', () => {
   });
 
   it('should re-run effect when facetParams change', async () => {
-    const { rerender } = render(<CItemsFacet {...defaultProps} />);
+    const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -228,7 +230,7 @@ describe('CItemsFacet', () => {
 
     // Change the facetParams
     const newFacetParams = { param1: 'newValue', param3: 100 };
-    rerender(<CItemsFacet {...defaultProps} facetParams={newFacetParams} />);
+    rerender(<CItemsFacet {...getDefaultProps()} facetParams={newFacetParams} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -241,7 +243,7 @@ describe('CItemsFacet', () => {
   });
 
   it('should re-run effect when parentLocations change', async () => {
-    const { rerender } = render(<CItemsFacet {...defaultProps} />);
+    const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -259,7 +261,7 @@ describe('CItemsFacet', () => {
     };
     vi.spyOn(AItem, 'useAItem').mockReturnValue(newMockAItemContext as any);
 
-    rerender(<CItemsFacet {...defaultProps} />);
+    rerender(<CItemsFacet {...getDefaultProps()} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -274,7 +276,7 @@ describe('CItemsFacet', () => {
   it('should pass children to CItemsProvider', () => {
     const children = <div>Test Children</div>;
 
-    render(<CItemsFacet {...defaultProps}>{children}</CItemsFacet>);
+    render(<CItemsFacet {...getDefaultProps()}>{children}</CItemsFacet>);
 
     expect(CItemsProvider).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -286,7 +288,7 @@ describe('CItemsFacet', () => {
   it('should pass renderEach to CItemsProvider', () => {
     const renderEach = (item: TestItem) => <div key={item.test}>Item: {item.test}</div>;
 
-    render(<CItemsFacet {...defaultProps} renderEach={renderEach} />);
+    render(<CItemsFacet {...getDefaultProps()} renderEach={renderEach} />);
 
     expect(CItemsProvider).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -296,25 +298,27 @@ describe('CItemsFacet', () => {
   });
 
   it('should use default adapterContext name when not provided', () => {
-    render(<CItemsFacet {...defaultProps} />);
+    const props = getDefaultProps();
+    render(<CItemsFacet {...props} />);
 
     expect(CItemAdapter.useCItemAdapter).toHaveBeenCalledWith(
-      defaultProps.adapter,
+      props.adapter,
       'TestCItemsContextAdapter'
     );
   });
 
   it('should use provided adapterContext name when specified', () => {
-    render(<CItemsFacet {...defaultProps} adapterContext="CustomAdapterName" />);
+    const props = getDefaultProps();
+    render(<CItemsFacet {...props} adapterContext="CustomAdapterName" />);
 
     expect(CItemAdapter.useCItemAdapter).toHaveBeenCalledWith(
-      defaultProps.adapter,
+      props.adapter,
       'CustomAdapterName'
     );
   });
 
   it('should render with default empty children when none provided', () => {
-    render(<CItemsFacet {...defaultProps} />);
+    render(<CItemsFacet {...getDefaultProps()} />);
 
     expect(CItemsProvider).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -332,7 +336,7 @@ describe('CItemsFacet', () => {
       arrayParam: ['item1', 'item2', 123, true],
     };
 
-    render(<CItemsFacet {...defaultProps} facetParams={complexFacetParams} />);
+    render(<CItemsFacet {...getDefaultProps()} facetParams={complexFacetParams} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -351,7 +355,7 @@ describe('CItemsFacet', () => {
 
     // Should not throw
     expect(() => {
-      render(<CItemsFacet {...defaultProps} />);
+      render(<CItemsFacet {...getDefaultProps()} />);
     }).not.toThrow();
 
     // Wait for effect and catch any unhandled rejections
@@ -373,7 +377,6 @@ describe('CItemsFacet', () => {
 
   describe('existing context enhancement', () => {
     let existingContextMock: any;
-    let mockReactCreateElement: any;
 
     beforeEach(() => {
       existingContextMock = {
@@ -399,39 +402,40 @@ describe('CItemsFacet', () => {
 
       // Mock useCItems to return existing context instead of throwing
       vi.spyOn(CItems, 'useCItems').mockReturnValue(existingContextMock as any);
-
-      // Mock React.createElement to avoid Provider issues
-      mockReactCreateElement = vi.spyOn(React, 'createElement').mockReturnValue(<div data-testid="enhanced-context">Enhanced Context</div>);
-    });
-
-    afterEach(() => {
-      mockReactCreateElement.mockRestore();
     });
 
     it('should enhance existing context with new facet results', async () => {
       const mockResult = { newFacetData: 'test-result' };
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-      render(<CItemsFacet {...defaultProps} />);
+      const { getByTestId } = render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Should call React.createElement with enhanced context
-      expect(mockReactCreateElement).toHaveBeenCalled();
+      // Enhancement path uses context.Provider directly (not CItemsProvider)
       expect(CItemsProvider).not.toHaveBeenCalled();
+      expect(getByTestId('enhanced-child')).toBeTruthy();
     });
 
     it('should preserve existing facet results when adding new ones', async () => {
       const mockResult = { newData: 'test' };
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-      const { container } = render(<CItemsFacet {...defaultProps} />);
+      const { container, getByTestId } = render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // The enhanced context should be provided to children
       expect(container).toBeDefined();
-      expect(mockReactCreateElement).toHaveBeenCalled();
+      expect(CItemsProvider).not.toHaveBeenCalled();
+      expect(getByTestId('enhanced-child')).toBeTruthy();
     });
 
     it('should handle multiple calls with different parameters', async () => {
@@ -464,12 +468,14 @@ describe('CItemsFacet', () => {
       const mockResult = { newFacetData: 'test-result' };
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Should call React.createElement instead of CItemsProvider
-      expect(mockReactCreateElement).toHaveBeenCalled();
       expect(CItemsProvider).not.toHaveBeenCalled();
     });
 
@@ -477,16 +483,19 @@ describe('CItemsFacet', () => {
       // Don't set up allFacet to return anything
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(null);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
 
       // Should still enhance the context even without results
-      expect(mockReactCreateElement).toHaveBeenCalled();
       expect(CItemsProvider).not.toHaveBeenCalled();
     });
   });
 
   it('should handle empty facetParams object', async () => {
-    render(<CItemsFacet {...defaultProps} facetParams={{}} />);
+    render(<CItemsFacet {...getDefaultProps()} facetParams={{}} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -498,10 +507,10 @@ describe('CItemsFacet', () => {
   });
 
   it('should memoize parent context correctly', () => {
-    const { rerender } = render(<CItemsFacet {...defaultProps} />);
+    const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
     // Rerender with same parent context
-    rerender(<CItemsFacet {...defaultProps} />);
+    rerender(<CItemsFacet {...getDefaultProps()} />);
 
     // Should only call useAItem hooks, not re-create contexts
     expect(AItem.useAItem).toHaveBeenCalled();
@@ -510,7 +519,7 @@ describe('CItemsFacet', () => {
   it('should handle query prop pass-through', () => {
     const mockQuery = { limit: 10, offset: 0 } as any;
 
-    render(<CItemsFacet {...defaultProps} query={mockQuery} />);
+    render(<CItemsFacet {...getDefaultProps()} query={mockQuery} />);
 
     expect(CItemsProvider).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -529,7 +538,7 @@ describe('CItemsFacet', () => {
       mixedArray: ['string', 123, true, new Date('2023-01-01')]
     };
 
-    render(<CItemsFacet {...defaultProps} facetParams={arrayParams} />);
+    render(<CItemsFacet {...getDefaultProps()} facetParams={arrayParams} />);
 
     await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -545,13 +554,13 @@ describe('CItemsFacet', () => {
       const params1 = { param1: 'value1', param2: 42 };
       const params2 = { param2: 42, param1: 'value1' }; // Different order
 
-      const { rerender } = render(<CItemsFacet {...defaultProps} facetParams={params1} />);
+      const { rerender } = render(<CItemsFacet {...getDefaultProps()} facetParams={params1} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       const callCountAfterFirst = mockCItemAdapterContext.allFacet.mock.calls.length;
 
       // Rerender with same params but different object reference and key order
-      rerender(<CItemsFacet {...defaultProps} facetParams={params2} />);
+      rerender(<CItemsFacet {...getDefaultProps()} facetParams={params2} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       // Should not trigger additional calls since hash should be the same
@@ -571,7 +580,7 @@ describe('CItemsFacet', () => {
         primitive: 'simple'
       };
 
-      render(<CItemsFacet {...defaultProps} facetParams={complexParams} />);
+      render(<CItemsFacet {...getDefaultProps()} facetParams={complexParams} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledWith(
@@ -587,7 +596,7 @@ describe('CItemsFacet', () => {
 
       // Should not throw when creating stable hash
       expect(() => {
-        render(<CItemsFacet {...defaultProps} facetParams={circularObj} />);
+        render(<CItemsFacet {...getDefaultProps()} facetParams={circularObj} />);
       }).not.toThrow();
     });
 
@@ -598,7 +607,7 @@ describe('CItemsFacet', () => {
         normalValue: 'test'
       };
 
-      render(<CItemsFacet {...defaultProps} facetParams={paramsWithNulls} />);
+      render(<CItemsFacet {...getDefaultProps()} facetParams={paramsWithNulls} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledWith(
@@ -624,7 +633,7 @@ describe('CItemsFacet', () => {
       const testError = new Error('Specific facet error');
       mockCItemAdapterContext.allFacet = vi.fn().mockRejectedValue(testError);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(<CItemsFacet {...getDefaultProps()} />);
       await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -638,7 +647,7 @@ describe('CItemsFacet', () => {
     it('should maintain loading state when allFacet throws', async () => {
       mockCItemAdapterContext.allFacet = vi.fn().mockRejectedValue(new Error('Test error'));
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(<CItemsFacet {...getDefaultProps()} />);
       await new Promise(resolve => setTimeout(resolve, 10));
 
       // Should remain in loading state when error occurs
@@ -654,7 +663,7 @@ describe('CItemsFacet', () => {
       timeoutError.name = 'TimeoutError';
       mockCItemAdapterContext.allFacet = vi.fn().mockRejectedValue(timeoutError);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(<CItemsFacet {...getDefaultProps()} />);
       await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -668,7 +677,7 @@ describe('CItemsFacet', () => {
     it('should handle Promise rejection without result update', async () => {
       mockCItemAdapterContext.allFacet = vi.fn().mockRejectedValue(new Error('Rejection test'));
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(<CItemsFacet {...getDefaultProps()} />);
       await new Promise(resolve => setTimeout(resolve, 10));
 
       // Verify that result remains null and no facetResults are created
@@ -682,12 +691,12 @@ describe('CItemsFacet', () => {
 
   describe('async state management', () => {
     it('should handle rapid facet parameter changes without race conditions', async () => {
-      const { rerender } = render(<CItemsFacet {...defaultProps} facetParams={{ version: 1 }} />);
+      const { rerender } = render(<CItemsFacet {...getDefaultProps()} facetParams={{ version: 1 }} />);
 
       // Quickly change parameters multiple times
-      rerender(<CItemsFacet {...defaultProps} facetParams={{ version: 2 }} />);
-      rerender(<CItemsFacet {...defaultProps} facetParams={{ version: 3 }} />);
-      rerender(<CItemsFacet {...defaultProps} facetParams={{ version: 4 }} />);
+      rerender(<CItemsFacet {...getDefaultProps()} facetParams={{ version: 2 }} />);
+      rerender(<CItemsFacet {...getDefaultProps()} facetParams={{ version: 3 }} />);
+      rerender(<CItemsFacet {...getDefaultProps()} facetParams={{ version: 4 }} />);
 
       await new Promise(resolve => setTimeout(resolve, 20));
 
@@ -703,7 +712,7 @@ describe('CItemsFacet', () => {
 
       mockCItemAdapterContext.allFacet = vi.fn().mockReturnValue(pendingPromise);
 
-      const { unmount } = render(<CItemsFacet {...defaultProps} />);
+      const { unmount } = render(<CItemsFacet {...getDefaultProps()} />);
 
       // Unmount before the promise resolves
       unmount();
@@ -719,7 +728,7 @@ describe('CItemsFacet', () => {
     });
 
     it('should handle sequential loading states correctly', async () => {
-      const { rerender } = render(<CItemsFacet {...defaultProps} />);
+      const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
       // Initial render should be loading
       expect(CItemsProvider).toHaveBeenLastCalledWith(
@@ -738,7 +747,7 @@ describe('CItemsFacet', () => {
       );
 
       // Change params to trigger new loading - this will immediately set loading back to true
-      rerender(<CItemsFacet {...defaultProps} facetParams={{ newParam: 'value' }} />);
+      rerender(<CItemsFacet {...getDefaultProps()} facetParams={{ newParam: 'value' }} />);
 
       // Since the rerender triggers a new effect and sets loading to true, then resolves quickly
       // We need to check the second-to-last call or handle the fact that it may resolve immediately
@@ -753,7 +762,6 @@ describe('CItemsFacet', () => {
 
   describe('context enhancement edge cases', () => {
     let existingContextMock: any;
-    let mockReactCreateElement: any;
 
     beforeEach(() => {
       existingContextMock = {
@@ -774,11 +782,6 @@ describe('CItemsFacet', () => {
       };
 
       vi.spyOn(CItems, 'useCItems').mockReturnValue(existingContextMock as any);
-      mockReactCreateElement = vi.spyOn(React, 'createElement').mockReturnValue(<div data-testid="enhanced-context">Enhanced</div>);
-    });
-
-    afterEach(() => {
-      mockReactCreateElement.mockRestore();
     });
 
     it('should handle enhancement when existing context has no facetResults', async () => {
@@ -787,24 +790,15 @@ describe('CItemsFacet', () => {
       const mockResult = { data: 'test' };
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Verify that React.createElement was called for enhancement
-      expect(mockReactCreateElement).toHaveBeenCalled();
-
-      // Check that the enhanced context was provided
-      const createElementCalls = mockReactCreateElement.mock.calls;
-      const enhancementCall = createElementCalls.find((call: any) =>
-        call[1] && call[1].value && typeof call[1].value === 'object'
-      );
-
-      if (enhancementCall) {
-        expect(enhancementCall[1].value).toHaveProperty('facetResults');
-      } else {
-        // If direct enhancement call not found, verify CItemsProvider wasn't called
-        expect(CItemsProvider).not.toHaveBeenCalled();
-      }
+      // Enhancement path uses context.Provider directly (not CItemsProvider)
+      expect(CItemsProvider).not.toHaveBeenCalled();
     });
 
     it('should preserve all existing context properties when enhancing', async () => {
@@ -814,13 +808,14 @@ describe('CItemsFacet', () => {
       const mockResult = { enhancedData: 'test' };
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      // Verify React.createElement was called with enhanced context
-      expect(mockReactCreateElement).toHaveBeenCalled();
-      const callArgs = mockReactCreateElement.mock.calls[0];
-      expect(callArgs).toBeDefined();
+      expect(CItemsProvider).not.toHaveBeenCalled();
     });
 
     it('should handle multiple facets in existing context correctly', async () => {
@@ -832,33 +827,40 @@ describe('CItemsFacet', () => {
       const mockResult = { newData: 'test3' };
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(mockResult);
 
-      render(<CItemsFacet {...defaultProps} facet="facet3" />);
+      render(
+        <CItemsFacet {...getDefaultProps()} facet="facet3">
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(mockReactCreateElement).toHaveBeenCalled();
+      expect(CItemsProvider).not.toHaveBeenCalled();
     });
 
     it('should handle enhancement with null/undefined result gracefully', async () => {
       mockCItemAdapterContext.allFacet = vi.fn().mockResolvedValue(null);
 
-      render(<CItemsFacet {...defaultProps} />);
+      render(
+        <CItemsFacet {...getDefaultProps()}>
+          <div data-testid="enhanced-child">child</div>
+        </CItemsFacet>
+      );
       await new Promise(resolve => setTimeout(resolve, 10));
 
       // Should still enhance context even with null result
-      expect(mockReactCreateElement).toHaveBeenCalled();
       expect(CItemsProvider).not.toHaveBeenCalled();
     });
   });
 
   describe('parameter validation and edge cases', () => {
     it('should handle empty string facet name', () => {
-      render(<CItemsFacet {...defaultProps} facet="" />);
+      render(<CItemsFacet {...getDefaultProps()} facet="" />);
 
       expect(mockCItemAdapterContext.allFacet).not.toHaveBeenCalled();
     });
 
     it('should handle whitespace-only facet name', () => {
-      render(<CItemsFacet {...defaultProps} facet="   " />);
+      render(<CItemsFacet {...getDefaultProps()} facet="   " />);
 
       // Should still call allFacet as whitespace is technically a valid string
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalled();
@@ -867,7 +869,7 @@ describe('CItemsFacet', () => {
     it('should handle very long facet names', async () => {
       const longFacetName = 'a'.repeat(1000);
 
-      render(<CItemsFacet {...defaultProps} facet={longFacetName} />);
+      render(<CItemsFacet {...getDefaultProps()} facet={longFacetName} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledWith(
@@ -880,7 +882,7 @@ describe('CItemsFacet', () => {
     it('should handle special characters in facet names', async () => {
       const specialFacetName = 'facet-with.special_chars@123';
 
-      render(<CItemsFacet {...defaultProps} facet={specialFacetName} />);
+      render(<CItemsFacet {...getDefaultProps()} facet={specialFacetName} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledWith(
@@ -896,7 +898,7 @@ describe('CItemsFacet', () => {
         largeFacetParams[`param${i}`] = `value${i}`;
       }
 
-      render(<CItemsFacet {...defaultProps} facetParams={largeFacetParams} />);
+      render(<CItemsFacet {...getDefaultProps()} facetParams={largeFacetParams} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledWith(
@@ -915,7 +917,7 @@ describe('CItemsFacet', () => {
       }
       current.finalValue = 'deep';
 
-      render(<CItemsFacet {...defaultProps} facetParams={deeplyNested} />);
+      render(<CItemsFacet {...getDefaultProps()} facetParams={deeplyNested} />);
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockCItemAdapterContext.allFacet).toHaveBeenCalledWith(
@@ -935,7 +937,7 @@ describe('CItemsFacet', () => {
 
       mockCItemAdapterContext.allFacet = vi.fn().mockReturnValue(delayedPromise);
 
-      const { unmount } = render(<CItemsFacet {...defaultProps} />);
+      const { unmount } = render(<CItemsFacet {...getDefaultProps()} />);
 
       // Unmount before the promise resolves
       unmount();
@@ -951,7 +953,7 @@ describe('CItemsFacet', () => {
 
     it('should handle rapid mount/unmount cycles', () => {
       for (let i = 0; i < 10; i++) {
-        const { unmount } = render(<CItemsFacet {...defaultProps} />);
+        const { unmount } = render(<CItemsFacet {...getDefaultProps()} />);
         unmount();
       }
 
@@ -960,11 +962,11 @@ describe('CItemsFacet', () => {
     });
 
     it('should handle effect cleanup when dependencies change rapidly', async () => {
-      const { rerender } = render(<CItemsFacet {...defaultProps} facetParams={{ version: 1 }} />);
+      const { rerender } = render(<CItemsFacet {...getDefaultProps()} facetParams={{ version: 1 }} />);
 
       // Rapidly change dependencies
       for (let i = 2; i <= 10; i++) {
-        rerender(<CItemsFacet {...defaultProps} facetParams={{ version: i }} />);
+        rerender(<CItemsFacet {...getDefaultProps()} facetParams={{ version: i }} />);
       }
 
       await new Promise(resolve => setTimeout(resolve, 20));
@@ -976,12 +978,12 @@ describe('CItemsFacet', () => {
 
   describe('memoization and performance', () => {
     it('should memoize parentLocations correctly and not cause unnecessary re-renders', () => {
-      const { rerender } = render(<CItemsFacet {...defaultProps} />);
+      const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
       const initialCallCount = mockCItemAdapterContext.allFacet.mock.calls.length;
 
       // Rerender with same props - should not trigger additional allFacet calls
-      rerender(<CItemsFacet {...defaultProps} />);
+      rerender(<CItemsFacet {...getDefaultProps()} />);
 
       // Should not increase call count since dependencies haven't changed
       expect(mockCItemAdapterContext.allFacet.mock.calls.length).toBe(initialCallCount);
@@ -1000,10 +1002,10 @@ describe('CItemsFacet', () => {
         locations: sameLocations, // Same content, different reference
       };
 
-      const { rerender } = render(<CItemsFacet {...defaultProps} />);
+      const { rerender } = render(<CItemsFacet {...getDefaultProps()} />);
 
       vi.spyOn(AItem, 'useAItem').mockReturnValue(newMockAItemContext as any);
-      rerender(<CItemsFacet {...defaultProps} />);
+      rerender(<CItemsFacet {...getDefaultProps()} />);
 
       // Should trigger new call since locations reference changed
       expect(mockCItemAdapterContext.allFacet.mock.calls.length).toBeGreaterThan(1);
